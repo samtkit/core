@@ -10,6 +10,7 @@ repositories {
 }
 
 dependencies {
+    implementation(libs.jCommander)
     testImplementation(testLibs.kotlin.test)
 }
 
@@ -25,6 +26,8 @@ tasks.withType<Test> {
 
 tasks {
     shadowJar {
+        archiveBaseName.set("samt-cli")
+        archiveClassifier.set("")
         manifest {
             attributes("Main-Class" to "tools.samt.cli.AppKt")
         }

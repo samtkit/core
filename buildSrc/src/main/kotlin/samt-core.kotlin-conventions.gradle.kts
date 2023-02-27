@@ -2,6 +2,8 @@ plugins {
     kotlin("jvm")
 }
 
+apply(plugin = "kover")
+
 kotlin {
     jvmToolchain(17)
 }

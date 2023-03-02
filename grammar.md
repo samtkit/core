@@ -33,11 +33,11 @@ Statement = PackageDeclaration
             | TypeAliasDeclaration
             | ServiceDeclaration;
 
-PackageDeclaration = "package", (String | BundleIdentifier);
+PackageDeclaration = "package", BundleIdentifier, "{", { Statement }, "}";
 
-ImportStatement = "import", (String | BundleIdentifier);
+ImportStatement = "import", [BundleIdentifier, "from"], BundleIdentifier;
 
-StructDeclaration = "struct", Identifier, "{", { StructField }, "}";
+StructDeclaration = "struct", Identifier, ["extends", BundleIdentifier, {"and", BundleIdentifier}], "{", { StructField }, "}";
 
 StructField = { Annotation }, Identifier, ":", Type;
 
@@ -45,9 +45,13 @@ EnumDeclaration = "enum", Identifier, "{", { Identifier }, "}";
 
 TypeAliasDeclaration = "alias", Identifier, "=", Type;
 
-ServiceDeclaration = { Annotation }, "service", "Identifier", "{", { OperationDeclaration }, "}";
+ServiceDeclaration = { Annotation }, "service", "Identifier", "{", { OperationDeclaration | AsyncOperationDeclaration | OnewayOperationDeclaration }, "}";
 
-OperationDeclaration = { Annotation }, Identifier, "(", ArgumentList, ")", [ ":", Type ];
+OperationDeclaration = { Annotation }, Identifier, "(", ArgumentList, ")", ":", Type ;
+
+AsyncOperationDeclaration = { Annotation }, "async", Identifier, "(", ArgumentList, ")", ":", Type;
+
+OnewayOperationDeclaration = { Annotation }, "oneway", Identifier, "(", ArgumentList, ")";
 
 ArgumentList = [ ArgumentListEntry, { ",", ArgumentListEntry } ];
 
@@ -65,7 +69,7 @@ ConstraintParameter = Expression | ClosedRange | OpenRange;
 
 ClosedRange = Expression, "..", Expression;
 
-OpenRange = Expression, "..";
+OpenRange = (Expression, "..") | ("..", Expression);
 
 BundleIdentifier = Identifier, { ".", Identifier};
 

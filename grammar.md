@@ -45,11 +45,9 @@ EnumDeclaration = "enum", Identifier, "{", { Identifier }, "}";
 
 TypeAliasDeclaration = "alias", Identifier, "=", Type;
 
-ServiceDeclaration = { Annotation }, "service", "Identifier", "{", { OperationDeclaration | AsyncOperationDeclaration | OnewayOperationDeclaration }, "}";
+ServiceDeclaration = { Annotation }, "service", Identifier, "{", { OperationDeclaration | OnewayOperationDeclaration }, "}";
 
-OperationDeclaration = { Annotation }, Identifier, "(", ArgumentList, ")", ":", Type ;
-
-AsyncOperationDeclaration = { Annotation }, "async", Identifier, "(", ArgumentList, ")", ":", Type;
+OperationDeclaration = { Annotation }, [ "async" ], Identifier, "(", ArgumentList, ")", [ ":", Type ];
 
 OnewayOperationDeclaration = { Annotation }, "oneway", Identifier, "(", ArgumentList, ")";
 
@@ -63,25 +61,21 @@ Type = BundleIdentifier, [ GenericSpecialization ], [ Constraint ], [ "?" ];
 
 GenericSpecialization = "<", Type, { ",", Type }, ">";
 
-Constraint = "(", ConstraintParameter, { ",", ConstraintParameter }, ")";
-
-ConstraintParameter = Expression | ClosedRange | OpenRange;
-
-ClosedRange = Expression, "..", Expression;
-
-OpenRange = (Expression, "..") | ("..", Expression);
+Constraint = "(", Expression, { ",", Expression }, ")";
 
 BundleIdentifier = Identifier, { ".", Identifier};
 
-Expression = Identifier | Integer | Float | Boolean | String | RegEx | Type | ("(", Expression, ")");
+Expression = Identifier | Integer | Float | Boolean | String | RegEx | Type | Range | ("(", Expression, ")");
+
+Range = Expression, "..", Expression;
 
 ExpressionList = [ Expression, { ",", Expression } ];
 
 Identifier = Letter, { Letter | Digit };
 Integer = Digit, { Digit };
-Float = Integer, ".", Integer;
+Float = (Digit, { Digit }), ".", (Digit, { Digit });
 Boolean = "true" | "false";
-Letter = ? A - Z | a - z ?;
+Letter = ? A - Z | a - z | _ ?;
 Digit = ? 0 - 9 ?;
 String = '"', ?utf8 codepoints or escaped special characters?, '"';
 RegEx = ?regex expression?;

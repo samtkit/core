@@ -1,41 +1,15 @@
-# SAMT Grammar
+File = ImportList, PackageDeclaration, { Statement };
 
-This grammar describes the basic syntax and structure of a SAMT file.
-Some language constructs (like comments, eof, newlines, etc) are not specified in the grammar, as they are handled
-differently by the parser.
-We plan on writing our parser by hand from scratch, using this grammar only as a reference.
+ImportList = { ImportStatement };
 
-Syntactic problems like left-recursion are also not removed from the grammar,
-because they are handled in our parsing algorithm.
+ImportStatement = "import", BundleIdentifier, [(".", "*") | ("as", Identifier)];
 
-Semantic concerns and limitations are also not present in the grammar, they are handled either directly
-inside the parser or in a subsequent semantic checking step.
+PackageDeclaration = "package", BundleIdentifier;
 
-## EBNF
-
-The below grammatic still misses some features, it's a WIP.
-
-TODO
-- Comments
-- Faults / Raises (exception stuff in general)
-- Providers
-- Consumers
-- Custom annotation declarations
-- Inheritance / Polymorphism
-
-```ebnf
-File = { Statement };
-
-Statement = PackageDeclaration
-            | ImportStatement
-            | StructDeclaration
+Statement = StructDeclaration
             | EnumDeclaration
             | TypeAliasDeclaration
             | ServiceDeclaration;
-
-PackageDeclaration = "package", BundleIdentifier, "{", { Statement }, "}";
-
-ImportStatement = "import", [BundleIdentifier, "from"], BundleIdentifier;
 
 StructDeclaration = "struct", Identifier, ["extends", BundleIdentifier, {"and", BundleIdentifier}], "{", { StructField }, "}";
 
@@ -65,18 +39,18 @@ Constraint = "(", Expression, { ",", Expression }, ")";
 
 BundleIdentifier = Identifier, { ".", Identifier};
 
-Expression = Identifier | Integer | Float | Boolean | String | RegEx | Type | Range | ("(", Expression, ")");
+Expression = Identifier | Number | Boolean | String | RegEx | Type | Range | ("(", Expression, ")");
 
 Range = Expression, "..", Expression;
 
 ExpressionList = [ Expression, { ",", Expression } ];
 
+Letter = ? A - Z | a - z | _ ?;
 Identifier = Letter, { Letter | Digit };
+Number = ["-"], (Integer | Float);
 Integer = Digit, { Digit };
 Float = (Digit, { Digit }), ".", (Digit, { Digit });
 Boolean = "true" | "false";
-Letter = ? A - Z | a - z | _ ?;
 Digit = ? 0 - 9 ?;
 String = '"', ?utf8 codepoints or escaped special characters?, '"';
 RegEx = ?regex expression?;
-```

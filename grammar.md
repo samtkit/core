@@ -1,49 +1,81 @@
-File = ImportList, PackageDeclaration, { Statement };
+File = { ImportStatement }, PackageDeclaration, { Statement };
 
-ImportList = { ImportStatement };
-
-ImportStatement = "import", BundleIdentifier, [(".", "*") | ("as", Identifier)];
+ImportStatement = { Annotation }, "import", BundleIdentifier, [(".", "*") | ("as", Identifier)];
 
 PackageDeclaration = "package", BundleIdentifier;
 
 Statement = StructDeclaration
-            | EnumDeclaration
-            | TypeAliasDeclaration
-            | ServiceDeclaration;
+                            | EnumDeclaration
+                            | TypeAliasDeclaration
+                            | ServiceDeclaration
+                            | ProviderDeclaration
+                            | ConsumerDeclaration;
 
-StructDeclaration = "struct", Identifier, ["extends", BundleIdentifier, {"and", BundleIdentifier}], "{", { StructField }, "}";
+StructDeclaration = { Annotation }, "struct", Identifier, ["extends", BundleIdentifier, {",", BundleIdentifier}], "{", { StructField }, "}";
 
-StructField = { Annotation }, Identifier, ":", Type;
+StructField = { Annotation }, Identifier, ":", Expression;
 
-EnumDeclaration = "enum", Identifier, "{", { Identifier }, "}";
+EnumDeclaration = { Annotation }, "enum", Identifier, "{", [IdentifierList], "}";
 
-TypeAliasDeclaration = "alias", Identifier, "=", Type;
+TypeAliasDeclaration = { Annotation }, "alias", Identifier, "=", Expression;
 
 ServiceDeclaration = { Annotation }, "service", Identifier, "{", { OperationDeclaration | OnewayOperationDeclaration }, "}";
 
-OperationDeclaration = { Annotation }, [ "async" ], Identifier, "(", ArgumentList, ")", [ ":", Type ];
+OperationDeclaration = { Annotation }, [ "async" ], Identifier, "(", ArgumentList, ")", [ ":", Expression ], ["raises", ExpressionList];
 
 OnewayOperationDeclaration = { Annotation }, "oneway", Identifier, "(", ArgumentList, ")";
 
 ArgumentList = [ ArgumentListEntry, { ",", ArgumentListEntry } ];
 
-ArgumentListEntry = Identifier, ":", Type;
+ArgumentListEntry = Identifier, ":", Expression;
 
-Annotation = "@", Identifier, [ "(", ExpressionList, ")" ];
+ProviderDeclaration = "provider", Identifier, "{", {ProviderDeclarationStatement}, "}";
 
-Type = BundleIdentifier, [ GenericSpecialization ], [ Constraint ], [ "?" ];
+ProviderDeclarationStatement = ProviderImplementsStatement
+                              | ProviderTransportStatement
+                              | ProviderTargetStatement;
 
-GenericSpecialization = "<", Type, { ",", Type }, ">";
+ProviderImplementsStatement = "implements", BundleIdentifier, ["{", [IdentifierList], "}"];
 
-Constraint = "(", Expression, { ",", Expression }, ")";
+ProviderTransportStatement = "transport", Identifier;
+
+ProviderTargetStatement = "target", Identifier;
+
+ConsumerDeclaration = "consume", BundleIdentifier, "{", {ConsumerDeclarationStatement}, "}";
+
+ConsumerDeclarationStatement = ConsumerUsesStatement
+                              | ConsumerTargetStatement;
+
+ConsumerUsesStatement = "uses", BundleIdentifier, ["{", [IdentifierList], "}"];
+
+ConsumerTargetStatement = "target", Identifier;
+
+Annotation = "@", Identifier, [ "(", [ExpressionList], ")" ];
+
+Expression = BundleIdentifier
+            | Number
+            | Boolean
+            | String
+            | RegEx
+            | Range
+            | CallExpression
+            | GenericSpecialization
+            | OptionalPostOperatorT
+            | ("(", Expression, ")");
 
 BundleIdentifier = Identifier, { ".", Identifier};
 
-Expression = Identifier | Number | Boolean | String | RegEx | Type | Range | ("(", Expression, ")");
+CallExpression = Expression, "(", [ExpressionList], ")";
+
+GenericSpecialization = Expression, "<", ExpressionList, ">";
+
+OptionalPostOperator = Expression, "?";
 
 Range = Expression, "..", Expression;
 
-ExpressionList = [ Expression, { ",", Expression } ];
+ExpressionList = Expression, { ",", Expression };
+
+IdentifierList = Identifier, { ",", Identifier };
 
 Letter = ? A - Z | a - z | _ ?;
 Identifier = Letter, { Letter | Digit };

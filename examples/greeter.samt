@@ -1,0 +1,47 @@
+import samt.greeter
+
+package samt.greeter
+
+struct GreetRequest {
+  name: String
+}
+
+struct GreetResponse {
+  message: String
+  timestamp: DateTime
+}
+
+service GreetService {
+  greet(request: GreetRequest): GreetResponse
+}
+
+@Author("Leonard Schütz")
+@Description("Lorem ipsum dolor sit amet")
+@Bongo("Bongo Bongo")
+@Description("
+  This is some long comment
+  This is some long comment
+  This is some long comment
+  This is some long comment
+")
+provider GreetProvider {
+  implements GreetService                 // implement all operations from GreetService
+  implements GreetService { greet }       // implement only specific operations from GreetService
+
+  transport http {
+    option: "hehe"
+  }
+
+  target java {
+    package: "com.org.package.name"
+  }
+}
+
+consume GreetProvider {
+  uses GreetService
+  uses GreetService { greet }
+
+  target python {
+    max: "mustermann"
+  }
+}

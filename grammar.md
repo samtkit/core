@@ -29,13 +29,13 @@ ArgumentList = [ ArgumentListEntry, { ",", ArgumentListEntry } ];
 
 ArgumentListEntry = Identifier, ":", Expression;
 
-ProviderDeclaration = "provider", Identifier, "{", {ProviderDeclarationStatement}, "}";
+ProviderDeclaration = "provide", Identifier, "{", {ProviderDeclarationStatement}, "}";
 
 ProviderDeclarationStatement = ProviderImplementsStatement
                               | ProviderTransportStatement
                               | ProviderTargetStatement;
 
-ProviderImplementsStatement = "implements", BundleIdentifier, ["{", [IdentifierList], "}"];
+ProviderImplementsStatement = "with", BundleIdentifier, ["{", [IdentifierList], "}"];
 
 ProviderTransportStatement = "transport", Identifier;
 

@@ -1,35 +1,44 @@
 import samt.greeter
+import samt.other
+import samt.foo.bar.baz
+import samt.sometype as mytype
+import samt.stuff.*
 
 package samt.greeter
 
 struct GreetRequest {
-  name: String
+  name: String(length(20..100))
 }
 
 struct GreetResponse {
-  message: String
+  message: String(pattern("a-z"))
+
+  @Description("The precise time at which the response was generated")
   timestamp: DateTime
 }
 
+@Author("Leonard Schütz")
+@Description("
+  This is some very long comment
+  which describes the service.
+")
 service GreetService {
   greet(request: GreetRequest): GreetResponse
 }
 
-@Author("Leonard Schütz")
-@Description("Lorem ipsum dolor sit amet")
-@Bongo("Bongo Bongo")
-@Description("
-  This is some long comment
-  This is some long comment
-  This is some long comment
-  This is some long comment
-")
-provider GreetProvider {
-  implements GreetService                 // implement all operations from GreetService
-  implements GreetService { greet }       // implement only specific operations from GreetService
+provide GreetProvider {
+  // implement all operations from GreetService
+  implements GreetService
+
+  // implement only specific operations from GreetService
+  implements GreetService { greet }
 
   transport http {
-    option: "hehe"
+    serialization: "JSON",
+    jsonOptions: {
+      pretty: true,
+      indent: 4
+    }
   }
 
   target java {
@@ -38,10 +47,13 @@ provider GreetProvider {
 }
 
 consume GreetProvider {
+  // use all operations from GreetService
   uses GreetService
+
+  // use only specific operations from GreetService
   uses GreetService { greet }
 
   target python {
-    max: "mustermann"
+    version: "3.7"
   }
 }

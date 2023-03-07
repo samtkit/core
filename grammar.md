@@ -37,9 +37,9 @@ ProviderDeclarationStatement = ProviderImplementsStatement
 
 ProviderImplementsStatement = "with", BundleIdentifier, ["{", [IdentifierList], "}"];
 
-ProviderTransportStatement = "transport", Identifier;
+ProviderTransportStatement = "transport", Identifier, [Object];
 
-ProviderTargetStatement = "target", Identifier;
+ProviderTargetStatement = "target", Identifier, [Object];
 
 ConsumerDeclaration = "consume", BundleIdentifier, "{", {ConsumerDeclarationStatement}, "}";
 
@@ -48,7 +48,7 @@ ConsumerDeclarationStatement = ConsumerUsesStatement
 
 ConsumerUsesStatement = "uses", BundleIdentifier, ["{", [IdentifierList], "}"];
 
-ConsumerTargetStatement = "target", Identifier;
+ConsumerTargetStatement = "target", Identifier, [Object];
 
 Annotation = "@", Identifier, [ "(", [ExpressionList], ")" ];
 
@@ -58,6 +58,7 @@ Expression = BundleIdentifier
             | String
             | RegEx
             | Range
+            | Object
             | CallExpression
             | GenericSpecialization
             | OptionalPostOperatorT
@@ -72,6 +73,10 @@ GenericSpecialization = Expression, "<", ExpressionList, ">";
 OptionalPostOperator = Expression, "?";
 
 Range = Expression, "..", Expression;
+
+Object = "{", [ObjectFieldDeclaration, {",", ObjectFieldDeclaration}] "}";
+
+ObjectFieldDeclaration = Identifier, ":", Expression;
 
 ExpressionList = Expression, { ",", Expression };
 

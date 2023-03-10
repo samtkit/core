@@ -5,16 +5,16 @@ ImportStatement = { Annotation }, "import", BundleIdentifier, [(".", "*") | ("as
 
 PackageDeclaration = "package", BundleIdentifier;
 
-Declaration = StructDeclaration
+Declaration = RecordDeclaration
                             | EnumDeclaration
                             | TypeAliasDeclaration
                             | ServiceDeclaration
                             | ProviderDeclaration
                             | ConsumerDeclaration;
 
-StructDeclaration = { Annotation }, "struct", Identifier, ["extends", BundleIdentifier, {",", BundleIdentifier}], "{", { StructField }, "}";
+RecordDeclaration = { Annotation }, "record", Identifier, ["extends", BundleIdentifier, {",", BundleIdentifier}], "{", { RecordField }, "}";
 
-StructField = { Annotation }, Identifier, ":", Expression;
+RecordField = { Annotation }, Identifier, ":", Expression;
 
 EnumDeclaration = { Annotation }, "enum", Identifier, "{", [IdentifierList], "}";
 

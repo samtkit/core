@@ -62,7 +62,7 @@ Expression = BundleIdentifier
             | Object
             | CallExpression
             | GenericSpecialization
-            | OptionalPostOperatorT
+            | OptionalPostOperator
             | ("(", Expression, ")");
 
 BundleIdentifier = Identifier, { ".", Identifier};

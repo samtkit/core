@@ -76,7 +76,7 @@ OptionalPostOperator = Expression, "?";
 
 Range = Expression, "..", Expression;
 
-Object = "{", [ObjectFieldDeclaration, {",", ObjectFieldDeclaration}] "}";
+Object = "{", [ObjectFieldDeclaration, {",", ObjectFieldDeclaration}], "}";
 
 ObjectFieldDeclaration = Identifier, ":", Expression;
 

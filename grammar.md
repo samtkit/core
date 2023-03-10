@@ -33,23 +33,17 @@ ArgumentListEntry = Identifier, ":", Expression;
 ProviderDeclaration = "provide", Identifier, "{", {ProviderDeclarationStatement}, "}";
 
 ProviderDeclarationStatement = ProviderImplementsStatement
-                              | ProviderTransportStatement
-                              | ProviderTargetStatement;
+                              | ProviderTransportStatement;
 
 ProviderImplementsStatement = "with", BundleIdentifier, ["{", [IdentifierList], "}"];
 
 ProviderTransportStatement = "transport", Identifier, [Object];
 
-ProviderTargetStatement = "target", Identifier, [Object];
-
 ConsumerDeclaration = "consume", BundleIdentifier, "{", {ConsumerDeclarationStatement}, "}";
 
-ConsumerDeclarationStatement = ConsumerUsesStatement
-                              | ConsumerTargetStatement;
+ConsumerDeclarationStatement = ConsumerUsesStatement;
 
 ConsumerUsesStatement = "uses", BundleIdentifier, ["{", [IdentifierList], "}"];
-
-ConsumerTargetStatement = "target", Identifier, [Object];
 
 Annotation = "@", Identifier, [ "(", [ExpressionList], ")" ];
 

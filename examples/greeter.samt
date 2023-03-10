@@ -40,10 +40,6 @@ provide GreetProvider {
       indent: 4
     }
   }
-
-  target java {
-    package: "com.org.package.name"
-  }
 }
 
 consume GreetProvider {
@@ -52,8 +48,4 @@ consume GreetProvider {
 
   // use only specific operations from GreetService
   uses GreetService { greet }
-
-  target python {
-    version: "3.7"
-  }
 }

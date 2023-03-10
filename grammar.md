@@ -63,6 +63,7 @@ Expression = BundleIdentifier
             | CallExpression
             | GenericSpecialization
             | OptionalPostOperator
+            | Wildcard
             | ("(", Expression, ")");
 
 BundleIdentifier = Identifier, { ".", Identifier};
@@ -82,6 +83,8 @@ ObjectFieldDeclaration = Identifier, ":", Expression;
 ExpressionList = Expression, { ",", Expression };
 
 IdentifierList = Identifier, { ",", Identifier };
+
+Wildcard = "*";
 
 Letter = ? A - Z | a - z | _ ?;
 Identifier = Letter, { Letter | Digit };

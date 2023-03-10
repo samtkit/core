@@ -54,6 +54,7 @@ ConsumerTargetStatement = "target", Identifier, [Object];
 Annotation = "@", Identifier, [ "(", [ExpressionList], ")" ];
 
 Expression = BundleIdentifier
+            | "^", Identifier
             | Number
             | Boolean
             | String

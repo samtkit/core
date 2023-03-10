@@ -1,13 +1,14 @@
-import samt.greeter
-import samt.other
-import samt.foo.bar.baz
-import samt.sometype as mytype
+import samt.foo.bar.Baz
+import samt.SomeType as MyType
 import samt.stuff.*
 
 package samt.greeter
 
+// define type alias for names
+alias Name : String(size(20..100))
+
 struct GreetRequest {
-  name: String(length(20..100))
+  name: Name
 }
 
 struct GreetResponse {

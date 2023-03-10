@@ -18,7 +18,7 @@ StructField = { Annotation }, Identifier, ":", Expression;
 
 EnumDeclaration = { Annotation }, "enum", Identifier, "{", [IdentifierList], "}";
 
-TypeAliasDeclaration = { Annotation }, "alias", Identifier, "=", Expression;
+TypeAliasDeclaration = { Annotation }, "alias", Identifier, ":", Expression;
 
 ServiceDeclaration = { Annotation }, "service", Identifier, "{", { OperationDeclaration | OnewayOperationDeclaration }, "}";
 

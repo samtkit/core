@@ -94,3 +94,5 @@ Digit = ? 0 - 9 ?;
 String = '"', ?utf8 codepoints or escaped special characters?, '"';
 RegEx = ?regex expression?;
 ```
+
+![Grammar Visualization](./ebnf.svg)

@@ -1,11 +1,11 @@
 ```ebnf
-File = { ImportStatement }, PackageDeclaration, { Statement };
+File = { ImportStatement }, PackageDeclaration, { Declaration };
 
 ImportStatement = { Annotation }, "import", BundleIdentifier, [(".", "*") | ("as", Identifier)];
 
 PackageDeclaration = "package", BundleIdentifier;
 
-Statement = StructDeclaration
+Declaration = StructDeclaration
                             | EnumDeclaration
                             | TypeAliasDeclaration
                             | ServiceDeclaration

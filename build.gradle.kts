@@ -15,7 +15,7 @@ koverMerged {
         rule {
             name = "Minimal line coverage rate in percent"
             bound {
-                minValue = 0 // Increase to 80% once code exists
+                minValue = 80
             }
         }
     }

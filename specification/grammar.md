@@ -35,7 +35,7 @@ ProviderDeclaration = "provide", Identifier, "{", {ProviderDeclarationStatement}
 ProviderDeclarationStatement = ProviderImplementsStatement
                               | ProviderTransportStatement;
 
-ProviderImplementsStatement = "with", BundleIdentifier, ["{", [IdentifierList], "}"];
+ProviderImplementsStatement = "implements", BundleIdentifier, ["{", [IdentifierList], "}"];
 
 ProviderTransportStatement = "transport", Identifier, [Object];
 

@@ -55,6 +55,7 @@ Expression = BundleIdentifier
             | RegEx
             | Range
             | Object
+            | Array
             | CallExpression
             | GenericSpecialization
             | OptionalPostOperator
@@ -74,6 +75,8 @@ Range = Expression, "..", Expression;
 Object = "{", [ObjectFieldDeclaration, {",", ObjectFieldDeclaration}], "}";
 
 ObjectFieldDeclaration = Identifier, ":", Expression;
+
+Array = "[", [ ExpressionList ], "]";
 
 ExpressionList = Expression, { ",", Expression };
 

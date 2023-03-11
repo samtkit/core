@@ -1,7 +1,7 @@
 ```ebnf
 File = { ImportStatement }, PackageDeclaration, { Declaration };
 
-ImportStatement = "import", BundleIdentifier, [(".", "*") | ("as", Identifier)];
+ImportStatement = "import", ImportBundleIdentifier, ["as", Identifier];
 
 PackageDeclaration = "package", BundleIdentifier;
 
@@ -81,6 +81,7 @@ Wildcard = "*";
 Letter = ? A - Z | a - z | _ ?;
 Identifier = ["^"], Letter, { Letter | Digit };
 BundleIdentifier = Identifier, { ".", Identifier};
+ImportBundleIdentifier = Identifier, { ".", Identifier}, [".", "*"];
 Number = ["-"], (Integer | Float);
 Integer = Digit, { Digit };
 Float = (Digit, { Digit }), ".", (Digit, { Digit });

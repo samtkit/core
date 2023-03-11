@@ -3,15 +3,21 @@ package lexer
 import common.DiagnosticConsole
 import common.FileOffset
 import common.Location
+import java.io.BufferedReader
 import java.io.Reader
 
 class Lexer private constructor(
         private val filePath: String,
-        private val reader: Reader,
+        reader: Reader,
         private val diagnostics: DiagnosticConsole,
 ) {
     private var current = '0'
     private var end = false
+    private val reader: Reader
+
+    init {
+        this.reader = if (reader.markSupported()) reader else BufferedReader(reader)
+    }
 
     /**
      * Index of the last read character, 0 based

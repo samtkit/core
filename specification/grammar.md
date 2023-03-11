@@ -22,13 +22,13 @@ TypeAliasDeclaration = { Annotation }, "alias", Identifier, ":", Expression;
 
 ServiceDeclaration = { Annotation }, "service", Identifier, "{", { OperationDeclaration | OnewayOperationDeclaration }, "}";
 
-OperationDeclaration = { Annotation }, [ "async" ], Identifier, "(", ArgumentList, ")", [ ":", Expression ], ["raises", ExpressionList];
+OperationDeclaration = { Annotation }, [ "async" ], Identifier, "(", OperationParameterList, ")", [ ":", Expression ], ["raises", ExpressionList];
 
-OnewayOperationDeclaration = { Annotation }, "oneway", Identifier, "(", ArgumentList, ")";
+OnewayOperationDeclaration = { Annotation }, "oneway", Identifier, "(", OperationParameterList, ")";
 
-ArgumentList = [ ArgumentListEntry, { ",", ArgumentListEntry } ];
+OperationParameterList = [ OperationParameter, { ",", OperationParameter } ];
 
-ArgumentListEntry = Identifier, ":", Expression;
+OperationParameter = Identifier, ":", Expression;
 
 ProviderDeclaration = "provide", Identifier, "{", {ProviderDeclarationStatement}, "}";
 

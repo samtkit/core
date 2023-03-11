@@ -3,15 +3,20 @@ package lexer
 import common.DiagnosticConsole
 import common.FileOffset
 import common.Location
+import java.io.BufferedReader
 import java.io.Reader
 
 class Lexer private constructor(
-        private val filePath: String,
-        private val reader: Reader,
+        reader: Reader,
         private val diagnostics: DiagnosticConsole,
 ) {
     private var current = '0'
     private var end = false
+    private val reader: Reader
+
+    init {
+        this.reader = if (reader.markSupported()) reader else BufferedReader(reader)
+    }
 
     /**
      * Index of the last read character, 0 based
@@ -40,19 +45,19 @@ class Lexer private constructor(
             '/' -> skipComment()
             '.' -> readDot()
             '^' -> readName(caretPassed = true)
-            '{' -> readStaticToken(Tag.OpenBrace)
-            '}' -> readStaticToken(Tag.CloseBrace)
-            '[' -> readStaticToken(Tag.OpenBracket)
-            ']' -> readStaticToken(Tag.CloseBracket)
-            '(' -> readStaticToken(Tag.OpenParenthesis)
-            ')' -> readStaticToken(Tag.CloseParenthesis)
-            ',' -> readStaticToken(Tag.Comma)
-            ':' -> readStaticToken(Tag.Colon)
-            '*' -> readStaticToken(Tag.Asterisk)
-            '@' -> readStaticToken(Tag.AtSign)
-            '<' -> readStaticToken(Tag.LessThanSign)
-            '>' -> readStaticToken(Tag.GreaterThanSign)
-            '?' -> readStaticToken(Tag.QuestionMark)
+            '{' -> readStaticToken { OpenBraceToken(it) }
+            '}' -> readStaticToken { CloseBraceToken(it) }
+            '[' -> readStaticToken { OpenBracketToken(it) }
+            ']' -> readStaticToken { CloseBracketToken(it) }
+            '(' -> readStaticToken { OpenParenthesisToken(it) }
+            ')' -> readStaticToken { CloseParenthesisToken(it) }
+            ',' -> readStaticToken { CommaToken(it) }
+            ':' -> readStaticToken { ColonToken(it) }
+            '*' -> readStaticToken { AsteriskToken(it) }
+            '@' -> readStaticToken { AtSignToken(it) }
+            '<' -> readStaticToken { LessThanSignToken(it) }
+            '>' -> readStaticToken { GreaterThanSignToken(it) }
+            '?' -> readStaticToken { QuestionMarkToken(it) }
             else -> {
                 val start = currentPosition
                 readNext() // Skip unrecognized character
@@ -63,10 +68,10 @@ class Lexer private constructor(
         }
     }
 
-    private fun readStaticToken(tag: Tag): StaticToken {
+    private inline fun <reified T: StaticToken> readStaticToken(factory: (location: Location) -> T): StaticToken {
         val start = currentPosition
         readNext()
-        return StaticToken(locationFromStart(start), tag)
+        return factory(locationFromStart(start))
     }
 
     private fun readNumber(isNegative: Boolean = false): NumberToken {
@@ -155,7 +160,7 @@ class Lexer private constructor(
 
         return when {
             parsedKeyword != null && caretPassed -> IdentifierToken(location, name)
-            parsedKeyword != null -> StaticToken(location, parsedKeyword)
+            parsedKeyword != null -> parsedKeyword(location)
             caretPassed -> {
                 diagnostics.reportWarning("Escaped word '$name' is not a keyword, please remove unnecessary ^", location)
                 IdentifierToken(location, name)
@@ -211,11 +216,11 @@ class Lexer private constructor(
         if (!end) {
             if (current == '.') {
                 readNext()
-                return StaticToken(locationFromStart(start), Tag.DoublePeriod)
+                return DoublePeriodToken(locationFromStart(start))
             }
         }
 
-        return StaticToken(locationFromStart(start), Tag.Period)
+        return PeriodToken(locationFromStart(start))
     }
 
     private fun skipComment(): Token? {
@@ -256,7 +261,7 @@ class Lexer private constructor(
         return null
     }
 
-    private fun locationFromStart(start: FileOffset) = Location(filePath, start, currentPosition)
+    private fun locationFromStart(start: FileOffset) = Location(start, currentPosition)
 
     private fun skipBlanks() {
         while (!end && (current == ' ' || current == '\n' || current == '\t' || current == '\r')) {
@@ -288,30 +293,30 @@ class Lexer private constructor(
     }
 
     companion object {
-        private val KEYWORDS = mapOf(
-                "record" to Tag.Record,
-                "enum" to Tag.Enum,
-                "service" to Tag.Service,
-                "alias" to Tag.Alias,
-                "package" to Tag.Package,
-                "import" to Tag.Import,
-                "provider" to Tag.Provider,
-                "consume" to Tag.Consume,
-                "transport" to Tag.Transport,
-                "implements" to Tag.Implements,
-                "uses" to Tag.Uses,
-                "fault" to Tag.Fault,
-                "extends" to Tag.Extends,
-                "as" to Tag.As,
-                "async" to Tag.Async,
-                "oneway" to Tag.Oneway,
-                "raises" to Tag.Raises,
-                "true" to Tag.True,
-                "false" to Tag.False,
+        private val KEYWORDS: Map<String, (location: Location) -> StaticToken> = mapOf(
+                "record" to { RecordToken(it) },
+                "enum" to { EnumToken(it) },
+                "service" to { ServiceToken(it) },
+                "alias" to { AliasToken(it) },
+                "package" to { PackageToken(it) },
+                "import" to { ImportToken(it) },
+                "provider" to { ProviderToken(it) },
+                "consume" to { ConsumeToken(it) },
+                "transport" to { TransportToken(it) },
+                "implements" to { ImplementsToken(it) },
+                "uses" to { UsesToken(it) },
+                "fault" to { FaultToken(it) },
+                "extends" to { ExtendsToken(it) },
+                "as" to { AsToken(it) },
+                "async" to { AsyncToken(it) },
+                "oneway" to { OnewayToken(it) },
+                "raises" to { RaisesToken(it) },
+                "true" to { TrueToken(it) },
+                "false" to { FalseToken(it) },
         )
 
-        fun scan(filePath: String, reader: Reader, diagnostics: DiagnosticConsole): Sequence<Token> {
-            return Lexer(filePath, reader, diagnostics).readTokenStream()
+        fun scan(reader: Reader, diagnostics: DiagnosticConsole): Sequence<Token> {
+            return Lexer(reader, diagnostics).readTokenStream()
         }
     }
 }

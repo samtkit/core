@@ -1,6 +1,9 @@
 package lexer
 
 import common.DiagnosticConsole
+import common.DiagnosticContext
+import java.io.IOException
+import java.io.StringReader
 import kotlin.test.*
 
 class LexerTest {
@@ -8,7 +11,7 @@ class LexerTest {
 
     @BeforeTest
     fun setup() {
-        diagnostics = DiagnosticConsole()
+        diagnostics = DiagnosticConsole(DiagnosticContext("test", ""))
     }
 
     @AfterTest
@@ -28,10 +31,10 @@ class LexerTest {
     fun `block comment`() {
         val source = "service /* Comment */ A { }"
         val stream = readTokenStream(source)
-        assertStaticToken(Tag.Service, stream.next())
+        assertIs<ServiceToken>(stream.next())
         assertIdentifierToken("A", stream.next())
-        assertStaticToken(Tag.OpenBrace, stream.next())
-        assertStaticToken(Tag.CloseBrace, stream.next())
+        assertIs<OpenBraceToken>(stream.next())
+        assertIs<CloseBraceToken>(stream.next())
         assertFalse(stream.hasNext())
         assertFalse(diagnostics.hasErrors())
     }
@@ -48,10 +51,10 @@ class LexerTest {
     fun `line comment`() {
         val source = "record // Comment \r\nA { }"
         val stream = readTokenStream(source)
-        assertStaticToken(Tag.Record, stream.next())
+        assertIs<RecordToken>(stream.next())
         assertIdentifierToken("A", stream.next())
-        assertStaticToken(Tag.OpenBrace, stream.next())
-        assertStaticToken(Tag.CloseBrace, stream.next())
+        assertIs<OpenBraceToken>(stream.next())
+        assertIs<CloseBraceToken>(stream.next())
         assertFalse(stream.hasNext())
         assertFalse(diagnostics.hasErrors())
     }
@@ -91,7 +94,7 @@ class LexerTest {
     fun `float without whole part`() {
         val source = ".5"
         val stream = readTokenStream(source)
-        assertStaticToken(Tag.Period, stream.next())
+        assertIs<PeriodToken>(stream.next())
         assertIntegerToken(5, stream.next())
         assertFalse(stream.hasNext())
         assertFalse(diagnostics.hasErrors())
@@ -110,10 +113,10 @@ class LexerTest {
     fun `illegal emoji in identifier`() {
         val source = "record foo🙈 { }"
         val stream = readTokenStream(source)
-        assertStaticToken(Tag.Record, stream.next())
+        assertIs<RecordToken>(stream.next())
         assertIdentifierToken("foo", stream.next())
-        assertStaticToken(Tag.OpenBrace, stream.next())
-        assertStaticToken(Tag.CloseBrace, stream.next())
+        assertIs<OpenBraceToken>(stream.next())
+        assertIs<CloseBraceToken>(stream.next())
         assertFalse(stream.hasNext())
         assertTrue(diagnostics.hasErrors())
     }
@@ -174,14 +177,14 @@ SAMT!""", stream.next())
         val source = """Long ( range(1..*) )"""
         val stream = readTokenStream(source)
         assertIdentifierToken("Long", stream.next())
-        assertStaticToken(Tag.OpenParenthesis, stream.next())
+        assertIs<OpenParenthesisToken>(stream.next())
         assertIdentifierToken("range", stream.next())
-        assertStaticToken(Tag.OpenParenthesis, stream.next())
+        assertIs<OpenParenthesisToken>(stream.next())
         assertIntegerToken(1, stream.next())
-        assertStaticToken(Tag.DoublePeriod, stream.next())
-        assertStaticToken(Tag.Asterisk, stream.next())
-        assertStaticToken(Tag.CloseParenthesis, stream.next())
-        assertStaticToken(Tag.CloseParenthesis, stream.next())
+        assertIs<DoublePeriodToken>(stream.next())
+        assertIs<AsteriskToken>(stream.next())
+        assertIs<CloseParenthesisToken>(stream.next())
+        assertIs<CloseParenthesisToken>(stream.next())
     }
 
     @Test
@@ -189,14 +192,14 @@ SAMT!""", stream.next())
         val source = """Double ( range(0.01..1.00) )"""
         val stream = readTokenStream(source)
         assertIdentifierToken("Double", stream.next())
-        assertStaticToken(Tag.OpenParenthesis, stream.next())
+        assertIs<OpenParenthesisToken>(stream.next())
         assertIdentifierToken("range", stream.next())
-        assertStaticToken(Tag.OpenParenthesis, stream.next())
+        assertIs<OpenParenthesisToken>(stream.next())
         assertFloatToken(0.01, stream.next())
-        assertStaticToken(Tag.DoublePeriod, stream.next())
+        assertIs<DoublePeriodToken>(stream.next())
         assertFloatToken(1.00, stream.next())
-        assertStaticToken(Tag.CloseParenthesis, stream.next())
-        assertStaticToken(Tag.CloseParenthesis, stream.next())
+        assertIs<CloseParenthesisToken>(stream.next())
+        assertIs<CloseParenthesisToken>(stream.next())
         assertFalse(stream.hasNext())
         assertFalse(diagnostics.hasErrors())
     }
@@ -206,9 +209,9 @@ SAMT!""", stream.next())
         val source = """foo.. bar ..baz"""
         val stream = readTokenStream(source)
         assertIdentifierToken("foo", stream.next())
-        assertStaticToken(Tag.DoublePeriod, stream.next())
+        assertIs<DoublePeriodToken>(stream.next())
         assertIdentifierToken("bar", stream.next())
-        assertStaticToken(Tag.DoublePeriod, stream.next())
+        assertIs<DoublePeriodToken>(stream.next())
         assertIdentifierToken("baz", stream.next())
         assertFalse(stream.hasNext())
         assertFalse(diagnostics.hasErrors())
@@ -218,7 +221,7 @@ SAMT!""", stream.next())
     fun `escaped keyword is read as identifier`() {
         val source = """record ^record"""
         val stream = readTokenStream(source)
-        assertStaticToken(Tag.Record, stream.next())
+        assertIs<RecordToken>(stream.next())
         assertIdentifierToken("record", stream.next())
         assertFalse(stream.hasNext())
         assertFalse(diagnostics.hasErrors())
@@ -228,20 +231,29 @@ SAMT!""", stream.next())
     fun `escaped identifier is read as identifier but emits warning`() {
         val source = """record ^foo"""
         val stream = readTokenStream(source)
-        assertStaticToken(Tag.Record, stream.next())
+        assertIs<RecordToken>(stream.next())
         assertIdentifierToken("foo", stream.next())
         assertFalse(stream.hasNext())
         assertFalse(diagnostics.hasErrors())
         assertTrue(diagnostics.hasWarnings())
     }
 
-    private fun readTokenStream(source: String): Iterator<Token> {
-        return Lexer.scan("LexerTest.samt", source.reader(), diagnostics).iterator()
+    @Test
+    fun `reader without mark support does not fail on number parse`() {
+        val source = "1.5 42..128"
+        val stream = Lexer.scan(object : StringReader(source) {
+            override fun mark(readAheadLimit: Int): Unit = throw IOException()
+
+            override fun markSupported(): Boolean = false
+        }, diagnostics).iterator()
+        assertFloatToken(1.5, stream.next())
+        assertIntegerToken(42, stream.next())
+        assertIs<DoublePeriodToken>(stream.next())
+        assertIntegerToken(128, stream.next())
     }
 
-    private fun assertStaticToken(tag: Tag, actual: Token) {
-        assertIs<StaticToken>(actual)
-        assertEquals(tag, actual.tag)
+    private fun readTokenStream(source: String): Iterator<Token> {
+        return Lexer.scan(source.reader(), diagnostics).iterator()
     }
 
     private fun assertIdentifierToken(value: String, actual: Token) {

@@ -28,7 +28,7 @@ OnewayOperationDeclaration = { Annotation }, "oneway", Identifier, "(", Operatio
 
 OperationParameterList = [ OperationParameter, { ",", OperationParameter } ];
 
-OperationParameter = Identifier, ":", Expression;
+OperationParameter = { Annotation }, Identifier, ":", Expression;
 
 ProviderDeclaration = "provide", Identifier, "{", {ProviderDeclarationStatement}, "}";
 

@@ -1,5 +1,7 @@
 rootProject.name = "samt-core"
-include("cli")
+include(":common")
+include(":cli")
+include(":lexer")
 
 dependencyResolutionManagement {
     versionCatalogs {

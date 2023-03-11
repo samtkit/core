@@ -1,7 +1,7 @@
 ```ebnf
 File = { ImportStatement }, PackageDeclaration, { Declaration };
 
-ImportStatement = { Annotation }, "import", BundleIdentifier, [(".", "*") | ("as", Identifier)];
+ImportStatement = "import", BundleIdentifier, [(".", "*") | ("as", Identifier)];
 
 PackageDeclaration = "package", BundleIdentifier;
 

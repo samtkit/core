@@ -7,7 +7,6 @@ import java.io.BufferedReader
 import java.io.Reader
 
 class Lexer private constructor(
-        private val filePath: String,
         reader: Reader,
         private val diagnostics: DiagnosticConsole,
 ) {
@@ -262,7 +261,7 @@ class Lexer private constructor(
         return null
     }
 
-    private fun locationFromStart(start: FileOffset) = Location(filePath, start, currentPosition)
+    private fun locationFromStart(start: FileOffset) = Location(start, currentPosition)
 
     private fun skipBlanks() {
         while (!end && (current == ' ' || current == '\n' || current == '\t' || current == '\r')) {
@@ -316,8 +315,8 @@ class Lexer private constructor(
                 "false" to { FalseToken(it) },
         )
 
-        fun scan(filePath: String, reader: Reader, diagnostics: DiagnosticConsole): Sequence<Token> {
-            return Lexer(filePath, reader, diagnostics).readTokenStream()
+        fun scan(reader: Reader, diagnostics: DiagnosticConsole): Sequence<Token> {
+            return Lexer(reader, diagnostics).readTokenStream()
         }
     }
 }

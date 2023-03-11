@@ -5,9 +5,12 @@ data class FileOffset(val charIndex: Int, val row: Int, val col: Int) {
 }
 
 data class Location(
-    val fullPath: String,
     val start: FileOffset,
     val end: FileOffset,
 ) {
-    override fun toString(): String = "$fullPath ($start - $end)"
+    init {
+        require(start.row <= end.row) { "Location end row (${end.row}) cannot be before start row ${start.row}" }
+    }
+
+    override fun toString(): String = start.toString()
 }

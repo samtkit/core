@@ -1,6 +1,7 @@
 package lexer
 
 import common.DiagnosticConsole
+import common.DiagnosticContext
 import java.io.IOException
 import java.io.StringReader
 import kotlin.test.*
@@ -10,7 +11,7 @@ class LexerTest {
 
     @BeforeTest
     fun setup() {
-        diagnostics = DiagnosticConsole()
+        diagnostics = DiagnosticConsole(DiagnosticContext("test", ""))
     }
 
     @AfterTest
@@ -240,7 +241,7 @@ SAMT!""", stream.next())
     @Test
     fun `reader without mark support does not fail on number parse`() {
         val source = "1.5 42..128"
-        val stream = Lexer.scan("LexerTest.samt", object : StringReader(source) {
+        val stream = Lexer.scan(object : StringReader(source) {
             override fun mark(readAheadLimit: Int): Unit = throw IOException()
 
             override fun markSupported(): Boolean = false
@@ -252,7 +253,7 @@ SAMT!""", stream.next())
     }
 
     private fun readTokenStream(source: String): Iterator<Token> {
-        return Lexer.scan("LexerTest.samt", source.reader(), diagnostics).iterator()
+        return Lexer.scan(source.reader(), diagnostics).iterator()
     }
 
     private fun assertIdentifierToken(value: String, actual: Token) {

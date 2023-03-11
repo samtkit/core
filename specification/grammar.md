@@ -39,9 +39,7 @@ ProviderImplementsStatement = "implements", BundleIdentifier, ["{", [IdentifierL
 
 ProviderTransportStatement = "transport", Identifier, [Object];
 
-ConsumerDeclaration = "consume", BundleIdentifier, "{", {ConsumerDeclarationStatement}, "}";
-
-ConsumerDeclarationStatement = ConsumerUsesStatement;
+ConsumerDeclaration = "consume", BundleIdentifier, "{", {ConsumerUsesStatement}, "}";
 
 ConsumerUsesStatement = "uses", BundleIdentifier, ["{", [IdentifierList], "}"];
 

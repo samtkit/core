@@ -48,7 +48,6 @@ ConsumerUsesStatement = "uses", BundleIdentifier, ["{", [IdentifierList], "}"];
 Annotation = "@", Identifier, [ "(", [ExpressionList], ")" ];
 
 Expression = BundleIdentifier
-            | "^", Identifier
             | Number
             | Boolean
             | String
@@ -84,7 +83,7 @@ IdentifierList = Identifier, { ",", Identifier };
 Wildcard = "*";
 
 Letter = ? A - Z | a - z | _ ?;
-Identifier = Letter, { Letter | Digit };
+Identifier = ["^"], Letter, { Letter | Digit };
 Number = ["-"], (Integer | Float);
 Integer = Digit, { Digit };
 Float = (Digit, { Digit }), ".", (Digit, { Digit });

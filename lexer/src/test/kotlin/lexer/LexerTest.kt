@@ -1,6 +1,8 @@
 package lexer
 
 import common.DiagnosticConsole
+import java.io.IOException
+import java.io.StringReader
 import kotlin.test.*
 
 class LexerTest {
@@ -233,6 +235,20 @@ SAMT!""", stream.next())
         assertFalse(stream.hasNext())
         assertFalse(diagnostics.hasErrors())
         assertTrue(diagnostics.hasWarnings())
+    }
+
+    @Test
+    fun `reader without mark support does not fail on number parse`() {
+        val source = "1.5 42..128"
+        val stream = Lexer.scan("LexerTest.samt", object : StringReader(source) {
+            override fun mark(readAheadLimit: Int): Unit = throw IOException()
+
+            override fun markSupported(): Boolean = false
+        }, diagnostics).iterator()
+        assertFloatToken(1.5, stream.next())
+        assertIntegerToken(42, stream.next())
+        assertIs<DoublePeriodToken>(stream.next())
+        assertIntegerToken(128, stream.next())
     }
 
     private fun readTokenStream(source: String): Iterator<Token> {

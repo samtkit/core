@@ -34,13 +34,7 @@ provide GreetProvider {
   // implement only specific operations from GreetService
   implements GreetService { greet }
 
-  transport http {
-    serialization: "JSON",
-    jsonOptions: {
-      pretty: true,
-      indent: 4
-    }
-  }
+  transport http
 }
 
 consume GreetProvider {

@@ -101,7 +101,7 @@ class LexerTest {
     }
 
     @Test
-    fun `float without fraciton part`() {
+    fun `float without fraction part`() {
         val source = "5."
         val stream = readTokenStream(source)
         assertFloatToken(5.0, stream.next())
@@ -134,11 +134,13 @@ class LexerTest {
     fun `string literal with escape sequences`() {
         val source = """"Hello \"SAMT\"\r\n    Space indented\r\n\tTab indented!""""
         val stream = readTokenStream(source)
-        assertStringToken("""
+        assertStringToken(
+            """
 Hello "SAMT"
     Space indented
 	Tab indented!
-        """.trimIndent().replace("\n", "\r\n"), stream.next())
+        """.trimIndent().replace("\n", "\r\n"), stream.next()
+        )
         assertFalse(stream.hasNext())
         assertFalse(diagnostics.hasErrors())
     }
@@ -157,8 +159,10 @@ Hello "SAMT"
         val source = """"Hello
 SAMT!""""
         val stream = readTokenStream(source)
-        assertStringToken("""Hello
-SAMT!""", stream.next())
+        assertStringToken(
+            """Hello
+SAMT!""", stream.next()
+        )
         assertFalse(stream.hasNext())
         assertFalse(diagnostics.hasErrors())
     }
@@ -250,6 +254,82 @@ SAMT!""", stream.next())
         assertIntegerToken(42, stream.next())
         assertIs<DoublePeriodToken>(stream.next())
         assertIntegerToken(128, stream.next())
+    }
+
+    @Test
+    fun `verify all keywords`() {
+        val source = """
+            record
+            enum
+            service
+            alias
+            package
+            import
+            provide
+            consume
+            transport
+            implements
+            uses
+            fault
+            extends
+            as
+            async
+            oneway
+            raises
+            true
+            false
+            {
+            }
+            [
+            ]
+            (
+            )
+            ,
+            .
+            ..
+            :
+            *
+            @
+            <
+            >
+            ?
+"""
+        val stream = Lexer.scan(source.reader(), diagnostics).iterator()
+
+        assertIs<RecordToken>(stream.next())
+        assertIs<EnumToken>(stream.next())
+        assertIs<ServiceToken>(stream.next())
+        assertIs<AliasToken>(stream.next())
+        assertIs<PackageToken>(stream.next())
+        assertIs<ImportToken>(stream.next())
+        assertIs<ProvideToken>(stream.next())
+        assertIs<ConsumeToken>(stream.next())
+        assertIs<TransportToken>(stream.next())
+        assertIs<ImplementsToken>(stream.next())
+        assertIs<UsesToken>(stream.next())
+        assertIs<FaultToken>(stream.next())
+        assertIs<ExtendsToken>(stream.next())
+        assertIs<AsToken>(stream.next())
+        assertIs<AsyncToken>(stream.next())
+        assertIs<OnewayToken>(stream.next())
+        assertIs<RaisesToken>(stream.next())
+        assertIs<TrueToken>(stream.next())
+        assertIs<FalseToken>(stream.next())
+        assertIs<OpenBraceToken>(stream.next())
+        assertIs<CloseBraceToken>(stream.next())
+        assertIs<OpenBracketToken>(stream.next())
+        assertIs<CloseBracketToken>(stream.next())
+        assertIs<OpenParenthesisToken>(stream.next())
+        assertIs<CloseParenthesisToken>(stream.next())
+        assertIs<CommaToken>(stream.next())
+        assertIs<PeriodToken>(stream.next())
+        assertIs<DoublePeriodToken>(stream.next())
+        assertIs<ColonToken>(stream.next())
+        assertIs<AsteriskToken>(stream.next())
+        assertIs<AtSignToken>(stream.next())
+        assertIs<LessThanSignToken>(stream.next())
+        assertIs<GreaterThanSignToken>(stream.next())
+        assertIs<QuestionMarkToken>(stream.next())
     }
 
     private fun readTokenStream(source: String): Iterator<Token> {

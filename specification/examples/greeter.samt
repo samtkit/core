@@ -1,0 +1,46 @@
+import samt.foo.bar.Baz
+import samt.SomeType as MyType
+import samt.stuff.*
+
+package samt.greeter
+
+// define type alias for names
+alias Name : String(size(20..100))
+
+record GreetRequest {
+  name: Name
+}
+
+record GreetResponse {
+  message: String(pattern("a-z"))
+
+  @Description("The precise time at which the response was generated")
+  timestamp: DateTime
+}
+
+@Author("Leonard Schütz")
+@Description("
+  This is some very long comment
+  which describes the service.
+")
+service GreetService {
+  greet(request: GreetRequest): GreetResponse
+}
+
+provide GreetProvider {
+  // implement all operations from GreetService
+  implements GreetService
+
+  // implement only specific operations from GreetService
+  implements GreetService { greet }
+
+  transport http
+}
+
+consume GreetProvider {
+  // use all operations from GreetService
+  uses GreetService
+
+  // use only specific operations from GreetService
+  uses GreetService { greet }
+}

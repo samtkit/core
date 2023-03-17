@@ -1,0 +1,6 @@
+package tools.samt.examples.common
+
+alias UUID: String ( pattern("[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}") )
+
+record NotFoundFault : Fault {}
+record MissingPermissionsFault : Fault {}

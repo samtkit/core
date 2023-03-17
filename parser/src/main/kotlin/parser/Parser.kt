@@ -254,7 +254,7 @@ class Parser private constructor(
         return if (isOneway) {
             OnewayOperationNode(locationFromStart(start), name, parameters, annotations)
         } else {
-            RegularOperationNode(locationFromStart(start), name, parameters, returnType, raisesList, isAsync, annotations)
+            RequestResponseOperationNode(locationFromStart(start), name, parameters, returnType, raisesList, isAsync, annotations)
         }
     }
 

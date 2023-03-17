@@ -90,7 +90,7 @@ class OperationParameterNode(
     val annotations: List<AnnotationNode>,
 ) : Node(location)
 
-class RegularOperationNode(
+class RequestResponseOperationNode(
     location: Location,
     name: IdentifierNode,
     arguments: List<OperationParameterNode>,

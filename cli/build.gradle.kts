@@ -7,6 +7,9 @@ plugins {
 
 dependencies {
     implementation(libs.jCommander)
+    implementation(project(":common"))
+    implementation(project(":lexer"))
+    implementation(project(":parser"))
 }
 
 application {

@@ -300,7 +300,7 @@ class Lexer private constructor(
                 "alias" to { AliasToken(it) },
                 "package" to { PackageToken(it) },
                 "import" to { ImportToken(it) },
-                "provider" to { ProviderToken(it) },
+                "provide" to { ProvideToken(it) },
                 "consume" to { ConsumeToken(it) },
                 "transport" to { TransportToken(it) },
                 "implements" to { ImplementsToken(it) },

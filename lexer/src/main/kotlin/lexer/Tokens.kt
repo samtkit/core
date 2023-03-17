@@ -13,7 +13,7 @@ data class ServiceToken(override val location: Location): StaticToken
 data class AliasToken(override val location: Location): StaticToken
 data class PackageToken(override val location: Location): StaticToken
 data class ImportToken(override val location: Location): StaticToken
-data class ProviderToken(override val location: Location): StaticToken
+data class ProvideToken(override val location: Location): StaticToken
 data class ConsumeToken(override val location: Location): StaticToken
 data class TransportToken(override val location: Location): StaticToken
 data class ImplementsToken(override val location: Location): StaticToken

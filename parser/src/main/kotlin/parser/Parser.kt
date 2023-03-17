@@ -80,7 +80,7 @@ class Parser private constructor(
         is EnumToken -> parseEnumDeclaration()
         is AliasToken -> parseTypeAlias()
         is ServiceToken -> parseServiceDeclaration()
-        is ProviderToken -> parseProviderDeclaration()
+        is ProvideToken -> parseProviderDeclaration()
         is ConsumeToken -> parseConsumerDeclaration()
         else -> reportFatalError("Expected declaration but got $current", Location(currentStart, currentStart))
     }
@@ -265,7 +265,7 @@ class Parser private constructor(
 
     private fun parseProviderDeclaration(): ProviderDeclarationNode {
         val start = currentStart
-        expect<ProviderToken>()
+        expect<ProvideToken>()
         val name = parseIdentifier()
         expect<OpenBraceToken>()
 

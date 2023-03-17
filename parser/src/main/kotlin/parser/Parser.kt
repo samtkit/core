@@ -153,12 +153,13 @@ class Parser private constructor(
             parseCommaSeparatedList(::parseBundleIdentifier)
         } else emptyList()
 
-        expect<OpenBraceToken>()
-        val fields = buildList {
-            while (!skip<CloseBraceToken>()) {
-                add(parseRecordField())
+        val fields = if (skip<OpenBraceToken>()) {
+            buildList {
+                while (!skip<CloseBraceToken>()) {
+                    add(parseRecordField())
+                }
             }
-        }
+        } else emptyList()
 
         return RecordDeclarationNode(locationFromStart(start), name, extends, fields, annotations)
     }

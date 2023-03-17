@@ -61,6 +61,37 @@ class ParserUnitTest {
     }
 
     @Test
+    fun `empty record without braces`() {
+        val source = """
+            package emptyRecord
+
+            record A
+            record B extends com.test.C
+        """
+        val fileTree = parse(source)
+        assertPackage("emptyRecord", fileTree.packageDeclaration)
+        assertNodes(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            assertNext<RecordDeclarationNode> { recordA ->
+                assertIdentifier("A", recordA.name)
+                assertNodes(recordA.annotations)
+                assertNodes(recordA.extends)
+                assertNodes(recordA.fields)
+            }
+            assertNext<RecordDeclarationNode> { recordB ->
+                assertIdentifier("B", recordB.name)
+                assertNodes(recordB.annotations)
+                assertNodes(recordB.extends) {
+                    assertNext<BundleIdentifierNode> {
+                        assertBundleIdentifier("com.test.C", it)
+                    }
+                }
+                assertNodes(recordB.fields)
+            }
+        }
+    }
+
+    @Test
     fun `simple and wildcard imports`() {
         val source = """
             import tools.samt.*

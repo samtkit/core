@@ -213,53 +213,48 @@ class Parser private constructor(
     private fun parseOperation(): OperationNode {
         val annotations = parseAnnotations()
         val start = currentStart
-        return if (skip<OnewayToken>()) {
-            val name = parseIdentifier()
 
-            expect<OpenParenthesisToken>()
-            val parameters: List<OperationParameterNode>
-            if (!skip<CloseParenthesisToken>()) {
-                parameters = parseCommaSeparatedList(::parseOperationParameter)
-                expect<CloseParenthesisToken>()
-            } else {
-                parameters = emptyList()
-            }
+        var isOneway = false
+        var isAsync = false
 
-            val returnTypeStart = previousEnd
-            if (skip<ColonToken>()) {
-                parseExpression()
+        if (skip<OnewayToken>()) {
+            isOneway = true
+        } else if (skip<AsyncToken>()) {
+            isAsync = true
+        }
+
+        val name = parseIdentifier()
+
+        expect<OpenParenthesisToken>()
+
+        var parameters: List<OperationParameterNode> = emptyList()
+        if (!skip<CloseParenthesisToken>()) {
+            parameters = parseCommaSeparatedList(::parseOperationParameter)
+            expect<CloseParenthesisToken>()
+        }
+
+        val returnTypeStart = previousEnd
+        val returnType = if (skip<ColonToken>()) {
+            val returnType = parseExpression()
+            if (isOneway) {
                 reportError("Oneway operations cannot have a return type", locationFromStart(returnTypeStart))
             }
+            returnType
+        } else null
 
-            val raisesStart = previousEnd
-            if (skip<RaisesToken>()) {
-                parseCommaSeparatedList(::parseExpression)
+        val raisesStart = previousEnd
+        val raisesList = if (skip<RaisesToken>()) {
+            val raisesList = parseCommaSeparatedList(::parseExpression)
+            if (isOneway) {
                 reportError("Oneway operations cannot raise exceptions", locationFromStart(raisesStart))
             }
+            raisesList
+        } else emptyList()
 
+        return if (isOneway) {
             OnewayOperationNode(locationFromStart(start), name, parameters, annotations)
         } else {
-            val isAsync = skip<AsyncToken>()
-            val name = parseIdentifier()
-
-            expect<OpenParenthesisToken>()
-            val parameters: List<OperationParameterNode>
-            if (!skip<CloseParenthesisToken>()) {
-                parameters = parseCommaSeparatedList(::parseOperationParameter)
-                expect<CloseParenthesisToken>()
-            } else {
-                parameters = emptyList()
-            }
-
-            val returnType = if (skip<ColonToken>()) {
-                parseExpression()
-            } else null
-
-            val raises = if (skip<RaisesToken>()) {
-                parseCommaSeparatedList(::parseExpression)
-            } else emptyList()
-
-            RegularOperationNode(locationFromStart(start), name, parameters, returnType, raises, isAsync, annotations)
+            RegularOperationNode(locationFromStart(start), name, parameters, returnType, raisesList, isAsync, annotations)
         }
     }
 

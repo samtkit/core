@@ -510,7 +510,7 @@ class Parser private constructor(
     private inline fun <reified T : Token> expectOrNull(): T? {
         val ret = current as? T
 
-        if (!isEnd) {
+        if (ret != null && !isEnd) {
             next()
         }
         return ret

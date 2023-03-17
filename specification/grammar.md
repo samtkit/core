@@ -1,5 +1,16 @@
+# SAMT Grammar Specification
+
+Warning: The grammar is not meant to be useful for use in tooling (e.g. a parser generator)
+as there are many issues with it regarding precedence and left-recursion.
+
+We have decided to build our own recursive descend parser from scratch, using this grammar only as a guideline.
+
 ```ebnf
-File = { ImportStatement }, PackageDeclaration, { Declaration };
+File = { TopLevelStatement };
+
+TopLevelStatement = ImportStatement
+                  | PackageDeclaration
+                  | Declaration;
 
 ImportStatement = "import", ImportBundleIdentifier, ["as", Identifier];
 

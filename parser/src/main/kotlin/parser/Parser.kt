@@ -12,6 +12,7 @@ class Parser private constructor(
     private val tokenStream: Iterator<Token> = tokenStream.iterator()
 
     private var current: Token? = null
+    private var previous: Token? = null
     private var currentStart = FileOffset(charIndex = 0, row = 0, col = 0)
     private var previousEnd = FileOffset(charIndex = 0, row = 0, col = 0)
 
@@ -55,8 +56,7 @@ class Parser private constructor(
             reportFatalError("Files must have at least one package declaration")
         }
 
-        val location = locationFromStart(start)
-        return FileNode(location, imports, packageDeclaration, statements)
+        return FileNode(locationFromStart(start), imports, packageDeclaration, statements)
     }
 
     private fun parseStatement(): StatementNode = when (current) {
@@ -121,8 +121,8 @@ class Parser private constructor(
                 add(parseIdentifier())
             }
         }
-        val location = locationFromStart(start)
-        return ImportBundleIdentifierNode(location, components, isWildcard)
+
+        return ImportBundleIdentifierNode(locationFromStart(start), components, isWildcard)
     }
 
     private fun parseBundleIdentifier(): BundleIdentifierNode {
@@ -135,8 +135,7 @@ class Parser private constructor(
             }
         }
 
-        val location = locationFromStart(start)
-        return BundleIdentifierNode(location, components)
+        return BundleIdentifierNode(locationFromStart(start), components)
     }
 
     private fun parsePackageDeclaration(): PackageDeclarationNode {
@@ -227,11 +226,7 @@ class Parser private constructor(
 
         expect<OpenParenthesisToken>()
 
-        var parameters: List<OperationParameterNode> = emptyList()
-        if (!skip<CloseParenthesisToken>()) {
-            parameters = parseCommaSeparatedList(::parseOperationParameter)
-            expect<CloseParenthesisToken>()
-        }
+        val parameters = parseCommaSeparatedTokenTerminatedList<CloseParenthesisToken, _>(::parseOperationParameter)
 
         val returnTypeStart = previousEnd
         val returnType = if (skip<ColonToken>()) {
@@ -277,27 +272,30 @@ class Parser private constructor(
         var transport: ProviderTransportNode? = null
 
         while (!skip<CloseBraceToken>()) {
+            val statementStart = currentStart
             when {
-                skip<ImplementsToken>() -> {
-                    if (transport != null) {
-                        reportError("Provider 'implements' must come before 'transport'", locationFromStart(start))
-                    }
+                check<ImplementsToken>() -> {
                     implements.add(parseProviderImplements())
                 }
 
-                skip<TransportToken>() -> {
+                check<TransportToken>() -> {
                     if (transport != null) {
-                        reportFatalError("Provider can only have one transport", locationFromStart(start))
+                        reportError("Provider can only have one transport", locationFromStart(statementStart))
+                        reportInfo("Previously declared here", transport.location)
                     }
                     transport = parseProviderTransport()
                 }
 
-                else -> reportFatalError("Expected 'implements' or 'transport' keyword", locationFromStart(start))
+                else -> reportFatalError("Expected 'implements' or 'transport' keyword", locationFromStart(statementStart))
             }
         }
 
         if (transport == null) {
-            reportFatalError("Provider must have a transport", locationFromStart(start))
+            reportError("Provider must have a transport", locationFromStart(start))
+
+            // The previously reported error would prevent any semantic checks from ever interacting with
+            // this dummy node. This might be implemented in a different manner in the future
+            transport = ProviderTransportNode(locationFromStart(start), IdentifierNode(locationFromStart(start), "DUMMY"), null)
         }
 
         return ProviderDeclarationNode(locationFromStart(start), name, implements, transport)
@@ -305,14 +303,17 @@ class Parser private constructor(
 
     private fun parseProviderImplements(): ProviderImplementsNode {
         val start = currentStart
+        expect<ImplementsToken>()
         val serviceName = parseBundleIdentifier()
-        val serviceMethodNames: List<IdentifierNode>
-        if (skip<OpenBraceToken>() && !skip<CloseBraceToken>()) {
-            serviceMethodNames = parseCommaSeparatedList(::parseIdentifier)
-            expect<CloseBraceToken>()
-        } else {
-            serviceMethodNames = emptyList()
+        var serviceMethodNames: List<IdentifierNode> = emptyList()
+        if (skip<OpenBraceToken>()) {
+            serviceMethodNames = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
+
+            if (serviceMethodNames.isEmpty()) {
+                reportError("Expected at least one method name", locationFromStart(start))
+            }
         }
+
         return ProviderImplementsNode(locationFromStart(start), serviceName, serviceMethodNames)
     }
 
@@ -320,34 +321,12 @@ class Parser private constructor(
         val start = currentStart
         expect<TransportToken>()
         val protocolName = parseIdentifier()
-        val config = if (current is OpenBraceToken) {
+        val config = if (check<OpenBraceToken>()) {
             parseObjectNode()
         } else {
             null
         }
         return ProviderTransportNode(locationFromStart(start), protocolName, config)
-    }
-
-    private fun parseObjectNode(): ObjectNode {
-        val start = currentStart
-        expect<OpenBraceToken>()
-
-        val fields: List<ObjectFieldNode>
-        if (!skip<CloseBraceToken>()) {
-            fields = parseCommaSeparatedList(::parseObjectField)
-            expect<CloseBraceToken>()
-        } else {
-            fields = emptyList()
-        }
-        return ObjectNode(locationFromStart(start), fields)
-    }
-
-    private fun parseObjectField(): ObjectFieldNode {
-        val start = currentStart
-        val name = parseIdentifier()
-        expect<ColonToken>()
-        val value = parseExpression()
-        return ObjectFieldNode(locationFromStart(start), name, value)
     }
 
     private fun parseConsumerDeclaration(): ConsumerDeclarationNode {
@@ -367,18 +346,114 @@ class Parser private constructor(
         val start = currentStart
         expect<UsesToken>()
         val serviceName = parseBundleIdentifier()
-        val serviceMethodNames: List<IdentifierNode>
-        if (skip<OpenBraceToken>() && !skip<CloseBraceToken>()) {
-            serviceMethodNames = parseCommaSeparatedList(::parseIdentifier)
-            expect<CloseBraceToken>()
-        } else {
-            serviceMethodNames = emptyList()
+        var serviceMethodNames: List<IdentifierNode> = emptyList()
+        if (skip<OpenBraceToken>()) {
+            serviceMethodNames = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
+
+            if (serviceMethodNames.isEmpty()) {
+                reportError("Expected at least one method name", locationFromStart(start))
+            }
         }
+
         return ConsumerUsesNode(locationFromStart(start), serviceName, serviceMethodNames)
     }
 
-    private fun parseExpression(): ExpressionNode {
-        TODO()
+    private fun parseExpression(): ExpressionNode = parseRangeExpression()
+
+    private fun parseRangeExpression(): ExpressionNode {
+        val start = currentStart
+        val leftSide = parseCallGenericOptionalExpression()
+        if (skip<DoublePeriodToken>()) {
+            val rightSide = parseRangeExpression()
+            return RangeExpressionNode(locationFromStart(start), leftSide, rightSide)
+        }
+
+        return leftSide
+    }
+
+    private fun parseCallGenericOptionalExpression(): ExpressionNode {
+        val start = currentStart
+
+        var target = parseLiteral()
+
+        while (true) {
+            when {
+                skip<OpenParenthesisToken>() -> {
+                    val arguments = parseCommaSeparatedTokenTerminatedList<CloseParenthesisToken, _>(::parseExpression)
+                    target = CallExpressionNode(locationFromStart(start), target, arguments)
+                }
+
+                skip<LessThanSignToken>() -> {
+                    val arguments = parseCommaSeparatedTokenTerminatedList<GreaterThanSignToken, _>(::parseExpression)
+                    if (arguments.isEmpty()) {
+                        reportError("Generic specialization requires at least one argument", locationFromStart(start))
+                    }
+                    target = GenericSpecializationNode(locationFromStart(start), target, arguments)
+                }
+
+                skip<QuestionMarkToken>() -> {
+                    target = OptionalDeclarationNode(locationFromStart(start), target)
+                }
+
+                else -> return target
+            }
+        }
+    }
+
+    private fun parseLiteral(): ExpressionNode {
+        val start = currentStart
+
+        when {
+            skip<IntegerToken>() -> {
+                return IntegerNode(locationFromStart(start), (previous as IntegerToken).value)
+            }
+
+            skip<FloatToken>() -> {
+                return FloatNode(locationFromStart(start), (previous as FloatToken).value)
+            }
+
+            check<IdentifierToken>() -> return parseBundleIdentifier()
+            check<StringToken>() -> return parseString()
+            skip<TrueToken>() -> return BooleanNode(locationFromStart(start), true)
+            skip<FalseToken>() -> return BooleanNode(locationFromStart(start), false)
+
+            skip<OpenParenthesisToken>() -> {
+                var exp = parseExpression()
+                expect<CloseParenthesisToken>()
+                return exp
+            }
+
+            check<OpenBracketToken>() -> return parseArrayNode()
+            check<OpenBraceToken>() -> return parseObjectNode()
+
+            check<AsteriskToken>() -> return WildcardNode(locationFromStart(start))
+
+            else -> {
+                reportFatalError("Expected an expression", locationFromStart(start))
+            }
+        }
+    }
+
+    private fun parseObjectNode(): ObjectNode {
+        val start = currentStart
+        expect<OpenBraceToken>()
+        val fields = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseObjectField)
+        return ObjectNode(locationFromStart(start), fields)
+    }
+
+    private fun parseObjectField(): ObjectFieldNode {
+        val start = currentStart
+        val name = parseIdentifier()
+        expect<ColonToken>()
+        val value = parseExpression()
+        return ObjectFieldNode(locationFromStart(start), name, value)
+    }
+
+    private fun parseArrayNode(): ArrayNode {
+        val start = currentStart
+        expect<OpenBracketToken>()
+        val values = parseCommaSeparatedTokenTerminatedList<CloseBracketToken, _>(::parseExpression)
+        return ArrayNode(locationFromStart(start), values)
     }
 
     private fun parseIdentifier() = expect<IdentifierToken>().let { IdentifierNode(it.location, it.value) }
@@ -386,7 +461,7 @@ class Parser private constructor(
     private fun parseString() = expect<StringToken>().let { StringNode(it.location, it.value) }
 
     private fun parseAnnotations(): List<AnnotationNode> = buildList {
-        while (current is AtSignToken) {
+        while (check<AtSignToken>()) {
             add(parseAnnotation())
         }
     }
@@ -396,13 +471,7 @@ class Parser private constructor(
         expect<AtSignToken>()
         val name = parseIdentifier()
         expect<OpenParenthesisToken>()
-        val arguments: List<ExpressionNode>
-        if (!skip<CloseParenthesisToken>()) {
-            arguments = parseCommaSeparatedList(::parseExpression)
-            expect<CloseParenthesisToken>()
-        } else {
-            arguments = emptyList()
-        }
+        val arguments = parseCommaSeparatedTokenTerminatedList<CloseParenthesisToken, _>(::parseExpression)
         return AnnotationNode(locationFromStart(start), name, arguments)
     }
 
@@ -413,12 +482,20 @@ class Parser private constructor(
         }
     }
 
+    private inline fun <reified E : Token, T : Node> parseCommaSeparatedTokenTerminatedList(parse: () -> T): List<T> = buildList {
+        if (!skip<E>()) {
+            addAll(parseCommaSeparatedList(parse))
+            expect<E>()
+        }
+    }
+
     private fun next() {
         if (current != null) {
             previousEnd = current!!.location.end
         }
 
         if (tokenStream.hasNext()) {
+            previous = current
             current = tokenStream.next()
             currentStart = current!!.location.start
         } else {
@@ -457,8 +534,16 @@ class Parser private constructor(
         return true
     }
 
+    private inline fun <reified T : Token> check(): Boolean {
+        return current is T
+    }
+
     private fun reportError(message: String, location: Location? = null) {
         diagnostics.reportError(message, location ?: current!!.location)
+    }
+
+    private fun reportInfo(message: String, location: Location? = null) {
+        diagnostics.reportInfo(message, location ?: current!!.location)
     }
 
     private fun reportFatalError(message: String, location: Location? = null): Nothing {

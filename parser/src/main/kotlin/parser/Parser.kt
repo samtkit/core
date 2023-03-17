@@ -471,8 +471,9 @@ class Parser private constructor(
         val start = currentStart
         expect<AtSignToken>()
         val name = parseIdentifier()
-        expect<OpenParenthesisToken>()
-        val arguments = parseCommaSeparatedTokenTerminatedList<CloseParenthesisToken, _>(::parseExpression)
+        val arguments = if (skip<OpenParenthesisToken>()) {
+            parseCommaSeparatedTokenTerminatedList<CloseParenthesisToken, _>(::parseExpression)
+        } else emptyList()
         return AnnotationNode(locationFromStart(start), name, arguments)
     }
 

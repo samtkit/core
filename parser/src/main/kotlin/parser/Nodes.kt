@@ -138,7 +138,6 @@ class ConsumerUsesNode(
     val serviceMethodNames: List<IdentifierNode>,
 ) : Node(location)
 
-
 class AnnotationNode(
     location: Location,
     val name: IdentifierNode,

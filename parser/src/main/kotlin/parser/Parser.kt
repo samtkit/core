@@ -60,14 +60,13 @@ class Parser private constructor(
     }
 
     private fun parseStatement(): StatementNode = when (current) {
-        is ImportToken -> parseImport()
-        is PackageToken -> parsePackageDeclaration()
         is AtSignToken -> {
             val annotations = parseAnnotations()
             when (current) {
                 is RecordToken -> parseRecordDeclaration(annotations)
                 is EnumToken -> parseEnumDeclaration(annotations)
                 is AliasToken -> parseTypeAlias(annotations)
+                is ServiceToken -> parseServiceDeclaration(annotations)
                 else -> reportFatalError(
                     "Expected declaration with annotation support",
                     Location(currentStart, currentStart)
@@ -75,6 +74,8 @@ class Parser private constructor(
             }
         }
 
+        is ImportToken -> parseImport()
+        is PackageToken -> parsePackageDeclaration()
         is RecordToken -> parseRecordDeclaration()
         is EnumToken -> parseEnumDeclaration()
         is AliasToken -> parseTypeAlias()
@@ -195,8 +196,7 @@ class Parser private constructor(
         return TypeAliasNode(locationFromStart(start), name, type, annotations)
     }
 
-    private fun parseServiceDeclaration(): ServiceDeclarationNode {
-        val annotations = parseAnnotations()
+    private fun parseServiceDeclaration(annotations: List<AnnotationNode> = emptyList()): ServiceDeclarationNode {
         val start = currentStart
         expect<ServiceToken>()
         val name = parseIdentifier()

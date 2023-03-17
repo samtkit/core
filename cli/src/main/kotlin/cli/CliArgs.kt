@@ -1,4 +1,4 @@
-package tools.samt.cli
+package cli
 
 import com.beust.jcommander.Parameter
 

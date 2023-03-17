@@ -1,4 +1,4 @@
-package tools.samt.cli
+package cli
 
 import org.junit.jupiter.api.assertDoesNotThrow
 import kotlin.test.Test

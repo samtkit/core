@@ -1,4 +1,4 @@
-package tools.samt.cli
+package cli
 
 import common.DiagnosticConsole
 import common.DiagnosticContext

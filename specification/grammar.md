@@ -23,7 +23,7 @@ Declaration = RecordDeclaration
                             | ProviderDeclaration
                             | ConsumerDeclaration;
 
-RecordDeclaration = { Annotation }, "record", Identifier, ["extends", BundleIdentifier, {",", BundleIdentifier}], "{", { RecordField }, "}";
+RecordDeclaration = { Annotation }, "record", Identifier, ["extends", BundleIdentifier, {",", BundleIdentifier}], ["{", { RecordField }, "}"];
 
 RecordField = { Annotation }, Identifier, ":", Expression;
 

@@ -427,7 +427,7 @@ class Parser private constructor(
             check<OpenBracketToken>() -> return parseArrayNode()
             check<OpenBraceToken>() -> return parseObjectNode()
 
-            check<AsteriskToken>() -> return WildcardNode(locationFromStart(start))
+            skip<AsteriskToken>() -> return WildcardNode(locationFromStart(start))
 
             else -> {
                 reportFatalError("Expected an expression", locationFromStart(start))

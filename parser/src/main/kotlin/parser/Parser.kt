@@ -444,7 +444,7 @@ class Parser private constructor(
             return token
         }
 
-        reportFatalError("Expected ${T::class.java.simpleName}")
+        reportFatalError("Expected ${T::class.java.simpleName} but got ${current?.javaClass?.simpleName ?: "end of file"}")
     }
 
     private inline fun <reified T : Token> skip(): Boolean {

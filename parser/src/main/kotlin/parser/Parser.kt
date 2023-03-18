@@ -250,7 +250,15 @@ class Parser private constructor(
         return if (isOneway) {
             OnewayOperationNode(locationFromStart(start), name, parameters, annotations)
         } else {
-            RequestResponseOperationNode(locationFromStart(start), name, parameters, returnType, raisesList, isAsync, annotations)
+            RequestResponseOperationNode(
+                locationFromStart(start),
+                name,
+                parameters,
+                returnType,
+                raisesList,
+                isAsync,
+                annotations
+            )
         }
     }
 
@@ -287,7 +295,10 @@ class Parser private constructor(
                     transport = parseProviderTransport()
                 }
 
-                else -> reportFatalError("Expected 'implements' or 'transport' keyword", locationFromStart(statementStart))
+                else -> reportFatalError(
+                    "Expected 'implements' or 'transport' keyword",
+                    locationFromStart(statementStart)
+                )
             }
         }
 
@@ -296,7 +307,8 @@ class Parser private constructor(
 
             // The previously reported error would prevent any semantic checks from ever interacting with
             // this dummy node. This might be implemented in a different manner in the future
-            transport = ProviderTransportNode(locationFromStart(start), IdentifierNode(locationFromStart(start), "DUMMY"), null)
+            transport =
+                ProviderTransportNode(locationFromStart(start), IdentifierNode(locationFromStart(start), "DUMMY"), null)
         }
 
         return ProviderDeclarationNode(locationFromStart(start), name, implements, transport)
@@ -306,16 +318,16 @@ class Parser private constructor(
         val start = currentStart
         expect<ImplementsToken>()
         val serviceName = parseBundleIdentifier()
-        var serviceMethodNames: List<IdentifierNode> = emptyList()
+        var serviceOperationNames: List<IdentifierNode> = emptyList()
         if (skip<OpenBraceToken>()) {
-            serviceMethodNames = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
+            serviceOperationNames = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
 
-            if (serviceMethodNames.isEmpty()) {
-                reportError("Expected at least one method name", locationFromStart(start))
+            if (serviceOperationNames.isEmpty()) {
+                reportError("Expected at least one operation name", locationFromStart(start))
             }
         }
 
-        return ProviderImplementsNode(locationFromStart(start), serviceName, serviceMethodNames)
+        return ProviderImplementsNode(locationFromStart(start), serviceName, serviceOperationNames)
     }
 
     private fun parseProviderTransport(): ProviderTransportNode {
@@ -347,25 +359,23 @@ class Parser private constructor(
         val start = currentStart
         expect<UsesToken>()
         val serviceName = parseBundleIdentifier()
-        var serviceMethodNames: List<IdentifierNode> = emptyList()
+        var serviceOperationNames: List<IdentifierNode> = emptyList()
         if (skip<OpenBraceToken>()) {
-            serviceMethodNames = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
+            serviceOperationNames = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
 
-            if (serviceMethodNames.isEmpty()) {
-                reportError("Expected at least one method name", locationFromStart(start))
+            if (serviceOperationNames.isEmpty()) {
+                reportError("Expected at least one operation name", locationFromStart(start))
             }
         }
 
-        return ConsumerUsesNode(locationFromStart(start), serviceName, serviceMethodNames)
+        return ConsumerUsesNode(locationFromStart(start), serviceName, serviceOperationNames)
     }
 
-    private fun parseExpression(): ExpressionNode = parseRangeExpression()
-
-    private fun parseRangeExpression(): ExpressionNode {
+    private fun parseExpression(): ExpressionNode {
         val start = currentStart
         val leftSide = parseCallGenericOptionalExpression()
         if (skip<DoublePeriodToken>()) {
-            val rightSide = parseRangeExpression()
+            val rightSide = parseExpression()
             return RangeExpressionNode(locationFromStart(start), leftSide, rightSide)
         }
 
@@ -377,7 +387,10 @@ class Parser private constructor(
 
         var target = parseLiteral()
 
-        while (true) {
+        // Using a while (true) sometimes ends in an endless cycle, but using
+        // !isEnd can have problems if the very last statement is an expression (e.g. Alias declaration)
+        // This code seems to work for now, but there might be some edge-case that isn't tested yet
+        while (!isEnd) {
             when {
                 skip<OpenParenthesisToken>() -> {
                     val arguments = parseCommaSeparatedTokenTerminatedList<CloseParenthesisToken, _>(::parseExpression)
@@ -390,44 +403,49 @@ class Parser private constructor(
                         reportError("Generic specialization requires at least one argument", locationFromStart(start))
                     }
                     target = GenericSpecializationNode(locationFromStart(start), target, arguments)
+
+                    if (skip<QuestionMarkToken>()) {
+                        target = OptionalDeclarationNode(locationFromStart(start), target)
+                    }
                 }
 
                 skip<QuestionMarkToken>() -> {
                     target = OptionalDeclarationNode(locationFromStart(start), target)
                 }
 
-                else -> return target
+                else -> break
             }
         }
+        return target
     }
 
     private fun parseLiteral(): ExpressionNode {
         val start = currentStart
 
-        when {
+        return when {
             skip<IntegerToken>() -> {
-                return IntegerNode(locationFromStart(start), (previous as IntegerToken).value)
+                IntegerNode(locationFromStart(start), (previous as IntegerToken).value)
             }
 
             skip<FloatToken>() -> {
-                return FloatNode(locationFromStart(start), (previous as FloatToken).value)
+                FloatNode(locationFromStart(start), (previous as FloatToken).value)
             }
 
-            check<IdentifierToken>() -> return parseBundleIdentifier()
-            check<StringToken>() -> return parseString()
-            skip<TrueToken>() -> return BooleanNode(locationFromStart(start), true)
-            skip<FalseToken>() -> return BooleanNode(locationFromStart(start), false)
+            check<IdentifierToken>() -> parseBundleIdentifier()
+            check<StringToken>() -> parseString()
+            skip<TrueToken>() -> BooleanNode(locationFromStart(start), true)
+            skip<FalseToken>() -> BooleanNode(locationFromStart(start), false)
 
             skip<OpenParenthesisToken>() -> {
-                var exp = parseExpression()
+                val exp = parseExpression()
                 expect<CloseParenthesisToken>()
-                return exp
+                exp
             }
 
-            check<OpenBracketToken>() -> return parseArrayNode()
-            check<OpenBraceToken>() -> return parseObjectNode()
+            check<OpenBracketToken>() -> parseArrayNode()
+            check<OpenBraceToken>() -> parseObjectNode()
 
-            skip<AsteriskToken>() -> return WildcardNode(locationFromStart(start))
+            skip<AsteriskToken>() -> WildcardNode(locationFromStart(start))
 
             else -> {
                 reportFatalError("Expected an expression", locationFromStart(start))
@@ -484,11 +502,13 @@ class Parser private constructor(
         }
     }
 
-    private inline fun <reified E : Token, T : Node> parseCommaSeparatedTokenTerminatedList(parse: () -> T): List<T> = buildList {
+    private inline fun <reified E : Token, T : Node> parseCommaSeparatedTokenTerminatedList(parse: () -> T): List<T> {
         if (!skip<E>()) {
-            addAll(parseCommaSeparatedList(parse))
+            val res = parseCommaSeparatedList(parse)
             expect<E>()
+            return res
         }
+        return emptyList()
     }
 
     private fun next() {

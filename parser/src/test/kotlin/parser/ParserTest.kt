@@ -23,8 +23,8 @@ class ParserUnitTest {
         """
         val fileTree = parse(source)
         assertPackage("tools.samt.parser.foo", fileTree.packageDeclaration)
-        assertNodes(fileTree.imports)
-        assertNodes(fileTree.statements)
+        assertEmpty(fileTree.imports)
+        assertEmpty(fileTree.statements)
     }
 
     @Test
@@ -33,11 +33,11 @@ class ParserUnitTest {
             package a
             package b
         """
-        val (fileTree, diagnostics) = parseRecoverableError(source)
+        val (fileTree, diagnostics) = parseWithRecoverableError(source)
         assertEquals("Cannot have multiple package declarations per file", diagnostics.messages.single().message)
         assertPackage("b", fileTree.packageDeclaration)
-        assertNodes(fileTree.imports)
-        assertNodes(fileTree.statements)
+        assertEmpty(fileTree.imports)
+        assertEmpty(fileTree.statements)
     }
 
     @Test
@@ -49,14 +49,9 @@ class ParserUnitTest {
         """
         val fileTree = parse(source)
         assertPackage("emptyRecord", fileTree.packageDeclaration)
-        assertNodes(fileTree.imports)
+        assertEmpty(fileTree.imports)
         assertNodes(fileTree.statements) {
-            assertNext<RecordDeclarationNode> {
-                assertIdentifier("A", it.name)
-                assertNodes(it.annotations)
-                assertNodes(it.extends)
-                assertNodes(it.fields)
-            }
+            record("A")
         }
     }
 
@@ -70,25 +65,381 @@ class ParserUnitTest {
         """
         val fileTree = parse(source)
         assertPackage("emptyRecord", fileTree.packageDeclaration)
-        assertNodes(fileTree.imports)
+        assertEmpty(fileTree.imports)
         assertNodes(fileTree.statements) {
-            assertNext<RecordDeclarationNode> { recordA ->
-                assertIdentifier("A", recordA.name)
-                assertNodes(recordA.annotations)
-                assertNodes(recordA.extends)
-                assertNodes(recordA.fields)
-            }
-            assertNext<RecordDeclarationNode> { recordB ->
-                assertIdentifier("B", recordB.name)
-                assertNodes(recordB.annotations)
-                assertNodes(recordB.extends) {
-                    assertNext<BundleIdentifierNode> {
-                        assertBundleIdentifier("com.test.C", it)
+            record("A")
+            record("B", listOf("com.test.C"))
+        }
+    }
+
+    @Test
+    fun `type aliases`() {
+        val source = """
+            package aliases
+
+            alias A: String? ( foo(1..2.3..3) )
+            alias B: List<A?>?
+            alias C: Map<String, Integer> ( uniqueKeys((false)) )
+        """
+        val fileTree = parse(source)
+        assertPackage("aliases", fileTree.packageDeclaration)
+        assertEmpty(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            alias("A") {
+                callExpression({ optional { bundleIdentifier("String") } }) {
+                    callExpression({ bundleIdentifier("foo") }) {
+                        rangeExpression(
+                            { integer(1) },
+                            { rangeExpression({ float(2.3) }, { integer(3) }) },
+                        )
                     }
                 }
-                assertNodes(recordB.fields)
+            }
+            alias("B") {
+                optional {
+                    genericSpecialization({ bundleIdentifier("List") }) {
+                        optional { bundleIdentifier("A") }
+                    }
+                }
+            }
+            alias("C") {
+                callExpression({
+                    genericSpecialization({ bundleIdentifier("Map") }) {
+                        bundleIdentifier("String")
+                        bundleIdentifier("Integer")
+                    }
+                }) {
+                    callExpression({ bundleIdentifier("uniqueKeys") }) {
+                        boolean(false)
+                    }
+                }
             }
         }
+    }
+
+    @Test
+    fun `illegal generics without arguments`() {
+        val source = """
+            package illegalAliases
+
+            alias A: List<>
+        """
+        val (fileTree, diagnostics) = parseWithRecoverableError(source)
+        assertEquals(
+            "Generic specialization requires at least one argument",
+            diagnostics.messages.single().message
+        )
+        assertPackage("illegalAliases", fileTree.packageDeclaration)
+        assertEmpty(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            alias("A") {
+                genericSpecialization({ bundleIdentifier("List") })
+            }
+        }
+    }
+
+    @Test
+    fun `service with RequestReply operations`() {
+        val source = """
+            package RequestReply
+            service Foo {
+                A(): String raises Foo, Bar
+                B() raises Foo
+                async C(): Integer ( range(1..2) )
+            }
+        """
+        val fileTree = parse(source)
+        assertPackage("RequestReply", fileTree.packageDeclaration)
+        assertEmpty(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            service("Foo") {
+                requestReplyOperation("A", expectedRaises = listOf("Foo", "Bar")) {
+                    bundleIdentifier("String")
+                }
+                requestReplyOperation("B", expectedRaises = listOf("Foo"), hasReturnType = false)
+                requestReplyOperation("C", expectedIsAsync = true) {
+                    callExpression({ bundleIdentifier("Integer") }) {
+                        callExpression({ bundleIdentifier("range") }) {
+                            rangeExpression({ integer(1) }, { integer(2) })
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `service with oneway operations`() {
+        val source = """
+            package ^oneway
+            service Foo {
+                oneway A(id: Id?)
+            }
+        """
+        val fileTree = parse(source)
+        assertPackage("oneway", fileTree.packageDeclaration)
+        assertEmpty(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            service("Foo") {
+                onewayOperation("A") {
+                    parameter("id") { optional { bundleIdentifier("Id") } }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `illegal oneway with return type`() {
+        val source = """
+            package ^oneway
+            service Foo {
+                oneway A(): Foo
+            }
+        """
+        val (fileTree, diagnostics) = parseWithRecoverableError(source)
+        assertEquals(
+            "Oneway operations cannot have a return type",
+            diagnostics.messages.single().message
+        )
+        assertPackage("oneway", fileTree.packageDeclaration)
+        assertEmpty(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            service("Foo") {
+                onewayOperation("A")
+            }
+        }
+    }
+
+    @Test
+    fun `illegal oneway with raises type`() {
+        val source = """
+            package ^oneway
+            service Foo {
+                oneway A() raises Fault
+            }
+        """
+        val (fileTree, diagnostics) = parseWithRecoverableError(source)
+        assertEquals(
+            "Oneway operations cannot raise exceptions",
+            diagnostics.messages.single().message
+        )
+        assertPackage("oneway", fileTree.packageDeclaration)
+        assertEmpty(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            service("Foo") {
+                onewayOperation("A")
+            }
+        }
+    }
+
+    @Test
+    fun `service with multiple parameters`() {
+        val source = """
+            package parameters
+            service Foo {
+                A(
+                    id: Id,
+                    name: String ( size(1..*), encoding("UTF-8") )
+                )
+            }
+        """
+        val fileTree = parse(source)
+        assertPackage("parameters", fileTree.packageDeclaration)
+        assertEmpty(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            service("Foo") {
+                requestReplyOperation("A", hasReturnType = false, expectedParameters = {
+                    parameter("id") { bundleIdentifier("Id") }
+                    parameter("name") {
+                        callExpression({ bundleIdentifier("String") }) {
+                            callExpression({ bundleIdentifier("size") }) {
+                                rangeExpression({ integer(1) }, { wildcard() })
+                            }
+                            callExpression({ bundleIdentifier("encoding") }) {
+                                string("UTF-8")
+                            }
+                        }
+                    }
+                })
+            }
+        }
+    }
+
+    @Test
+    fun `complex record with constraints and annotations`() {
+        val source = """
+            package complexRecord
+
+            record Person {
+                password: String ( size(16..100) )
+                name: String ( size(*..256), pattern("A-Za-z", true) )?
+                age: Integer? ( range(18..*) )
+            }
+        """
+        val fileTree = parse(source)
+        assertPackage("complexRecord", fileTree.packageDeclaration)
+        assertEmpty(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            record("Person") {
+                field("password") {
+                    callExpression({ bundleIdentifier("String") }) {
+                        callExpression({ bundleIdentifier("size") }) {
+                            rangeExpression(
+                                { integer(16) },
+                                { integer(100) }
+                            )
+                        }
+                    }
+                }
+                field("name") {
+                    optional {
+                        callExpression({ bundleIdentifier("String") }) {
+                            callExpression({ bundleIdentifier("size") }) {
+                                rangeExpression(
+                                    { wildcard() },
+                                    { integer(256) }
+                                )
+                            }
+                            callExpression({ bundleIdentifier("pattern") }) {
+                                string("A-Za-z")
+                                boolean(true)
+                            }
+                        }
+                    }
+                }
+                field("age") {
+                    callExpression({ optional { bundleIdentifier("Integer") } }) {
+                        callExpression({ bundleIdentifier("range") }) {
+                            rangeExpression(
+                                { integer(18) },
+                                { wildcard() }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `annotations on all possible constructs`() {
+        val source = """
+            package annotations
+
+            @Password
+            @Encrypted
+            alias Password: String
+
+            @Author("Foo", "Bar")
+            @Description("This is a record")
+            record Person {
+                @Secret
+                password: Password
+            }
+
+            @Version(1, 0, 0)
+            service PersonService {
+                @Get()
+                getPerson(@Id id: Integer): Person
+                @Post([true, false, { foo: "bar" }])
+                oneway postPerson()
+            }
+        """
+        val fileTree = parse(source)
+        assertPackage("annotations", fileTree.packageDeclaration)
+        assertEmpty(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            alias(
+                expectedName = "Password",
+                expectedAnnotations = {
+                    annotation("Password")
+                    annotation("Encrypted")
+                },
+                expectedType = { bundleIdentifier("String") },
+            )
+            record(
+                expectedName = "Person",
+                expectedAnnotations = {
+                    annotation("Author") { string("Foo"); string("Bar") }
+                    annotation("Description") { string("This is a record") }
+                },
+                expectedFields = {
+                    field(
+                        expectedName = "password",
+                        expectedAnnotations = {
+                            annotation("Secret")
+                        },
+                        expectedType = {
+                            bundleIdentifier("Password")
+                        },
+                    )
+                })
+            service(
+                expectedName = "PersonService",
+                expectedAnnotations = {
+                    annotation("Version") {
+                        integer(1); integer(0); integer(0)
+                    }
+                },
+                expectedOperations = {
+                    requestReplyOperation(
+                        expectedName = "getPerson",
+                        expectedAnnotations = {
+                            annotation("Get")
+                        },
+                        expectedParameters = {
+                            parameter(
+                                expectedName = "id",
+                                expectedAnnotations = {
+                                    annotation("Id")
+                                },
+                                expectedType = {
+                                    bundleIdentifier("Integer")
+                                },
+                            )
+                        },
+                        expectedReturnType = {
+                            bundleIdentifier("Person")
+                        },
+                    )
+                    onewayOperation(
+                        expectedName = "postPerson",
+                        expectedAnnotations = {
+                            annotation("Post") {
+                                array {
+                                    boolean(true)
+                                    boolean(false)
+                                    objectLiteral {
+                                        field("foo") {
+                                            string("bar")
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                    )
+                },
+            )
+        }
+    }
+
+    @Test
+    fun `illegal annotations on all possible constructs`() {
+        val source = """
+            @NotAllowed
+            package annotations
+        """
+        val exception = parseWithFatalError(source)
+        assertEquals("Expected declaration with annotation support", exception.message)
+    }
+
+    @Test
+    fun `illegal keyword`() {
+        val source = """
+            import package foo
+        """
+        val exception = parseWithFatalError(source)
+        assertEquals("Expected IdentifierToken but got PackageToken", exception.message)
     }
 
     @Test
@@ -103,20 +454,30 @@ class ParserUnitTest {
         val fileTree = parse(source)
         assertPackage("imports", fileTree.packageDeclaration)
         assertNodes(fileTree.imports) {
-            assertNext<WildcardImportNode> {
-                assertBundleIdentifier("tools.samt", it.name)
-            }
-            assertNext<TypeImportNode> {
-                assertBundleIdentifier("library.foo.bar.Baz", it.name)
-                assertNull(it.alias)
-            }
-            assertNext<TypeImportNode> {
-                assertBundleIdentifier("library.foo.bar.Baz", it.name)
-                assertNotNull(it.alias)
-                assertIdentifier("BazAlias", it.alias!!)
-            }
+            wildcardImport("tools.samt")
+            typeImport("library.foo.bar.Baz")
+            typeImport("library.foo.bar.Baz", "BazAlias")
         }
-        assertNodes(fileTree.statements)
+        assertEmpty(fileTree.statements)
+    }
+
+    @Test
+    fun `illegal wildcard import with alias`() {
+        val source = """
+            import tools.samt.* as Samt
+
+            package badImports
+        """
+        val (fileTree, diagnostics) = parseWithRecoverableError(source)
+        assertEquals(
+            "Wildcard imports cannot have an alias",
+            diagnostics.messages.single().message
+        )
+        assertPackage("badImports", fileTree.packageDeclaration)
+        assertNodes(fileTree.imports) {
+            wildcardImport("tools.samt")
+        }
+        assertEmpty(fileTree.statements)
     }
 
     @Test
@@ -128,36 +489,35 @@ class ParserUnitTest {
 
             import library.foo.bar.Baz
         """
-        val (fileTree, diagnostics) = parseRecoverableError(source)
-        assertEquals("Import statements must be placed before the package declaration", diagnostics.messages.single().message)
+        val (fileTree, diagnostics) = parseWithRecoverableError(source)
+        assertEquals(
+            "Import statements must be placed before the package declaration",
+            diagnostics.messages.single().message
+        )
         assertPackage("badImports", fileTree.packageDeclaration)
         assertNodes(fileTree.imports) {
-            assertNext<WildcardImportNode> {
-                assertBundleIdentifier("tools.samt", it.name)
-            }
-            assertNext<TypeImportNode> {
-                assertBundleIdentifier("library.foo.bar.Baz", it.name)
-                assertNull(it.alias)
-            }
+            wildcardImport("tools.samt")
+            typeImport("library.foo.bar.Baz")
         }
-        assertNodes(fileTree.statements)
+        assertEmpty(fileTree.statements)
     }
 
     @Test
     fun `record must be after package`() {
         val source = """
-            record Foo {}
+            record Foo
 
             package recordBeforePackage
         """
-        val (fileTree, diagnostics) = parseRecoverableError(source)
-        assertEquals("Expected a package declaration before any other statements", diagnostics.messages.single().message)
+        val (fileTree, diagnostics) = parseWithRecoverableError(source)
+        assertEquals(
+            "Expected a package declaration before any other statements",
+            diagnostics.messages.single().message
+        )
         assertPackage("recordBeforePackage", fileTree.packageDeclaration)
-        assertNodes(fileTree.imports)
+        assertEmpty(fileTree.imports)
         assertNodes(fileTree.statements) {
-            assertNext<RecordDeclarationNode> {
-                assertIdentifier("Foo", it.name)
-            }
+            record("Foo")
         }
     }
 
@@ -173,17 +533,9 @@ class ParserUnitTest {
         """
         val fileTree = parse(source)
         assertPackage("enum", fileTree.packageDeclaration)
-        assertNodes(fileTree.imports)
+        assertEmpty(fileTree.imports)
         assertNodes(fileTree.statements) {
-            assertNext<EnumDeclarationNode> { enum ->
-                assertIdentifier("Foo", enum.name)
-                assertNodes(enum.values) {
-                    assertNext<IdentifierNode> { assertIdentifier("A", it) }
-                    assertNext<IdentifierNode> { assertIdentifier("B", it) }
-                    assertNext<IdentifierNode> { assertIdentifier("C", it) }
-                    assertNext<IdentifierNode> { assertIdentifier("D", it) }
-                }
-            }
+            enum("Foo", expectedValues = listOf("A", "B", "C", "D"))
         }
     }
 
@@ -196,7 +548,7 @@ class ParserUnitTest {
         return fileTree
     }
 
-    private fun parseRecoverableError(source: String): Pair<FileNode, DiagnosticConsole> {
+    private fun parseWithRecoverableError(source: String): Pair<FileNode, DiagnosticConsole> {
         val diagnostics = DiagnosticConsole(DiagnosticContext("ParserTest.samt", source))
         val stream = Lexer.scan(source.reader(), diagnostics)
         val fileTree = Parser.parse(stream, diagnostics)
@@ -212,42 +564,5 @@ class ParserUnitTest {
         diagnostics.messages.forEach { println(it) }
         assertTrue(diagnostics.hasErrors(), "Expected errors, but had no errors")
         return ex
-    }
-
-    private fun assertPackage(expectedPackageIdentifier: String, packageDeclaration: PackageDeclarationNode) {
-        assertBundleIdentifier(expectedPackageIdentifier, packageDeclaration.name)
-    }
-
-    data class AssertNodesContext(val nodes: MutableList<Node>)
-
-    private inline fun <reified T : Node> AssertNodesContext.assertNext(block: (node: T) -> Unit) {
-        assertTrue(
-            nodes.isNotEmpty(),
-            "Expected node of type ${T::class.simpleName}, but no more nodes were found"
-        )
-        val node = nodes.removeFirst()
-        assertIs<T>(
-            node,
-            "Expected node of type ${T::class.simpleName}, but got ${node::class.simpleName}"
-        )
-        block(node)
-    }
-
-    private fun assertNodes(nodes: List<Node>, assertBlock: AssertNodesContext.() -> Unit = {}) {
-        val context = AssertNodesContext(nodes.toMutableList())
-        context.assertBlock()
-        assertTrue(context.nodes.isEmpty(), "Not all nodes were asserted")
-    }
-
-    private fun assertIdentifier(expected: String, actual: IdentifierNode) {
-        assertEquals(expected, actual.name)
-    }
-
-    private fun assertBundleIdentifier(expected: String, actual: BundleIdentifierNode) {
-        val expectedParts = expected.split(".")
-        assertEquals(expectedParts.size, actual.components.size)
-        for (i in expectedParts.indices) {
-            assertEquals(expectedParts[i], actual.components[i].name)
-        }
     }
 }

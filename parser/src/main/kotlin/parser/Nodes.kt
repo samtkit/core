@@ -79,7 +79,7 @@ class ServiceDeclarationNode(
 sealed class OperationNode(
     location: Location,
     val name: IdentifierNode,
-    val parameter: List<OperationParameterNode>,
+    val parameters: List<OperationParameterNode>,
     val annotations: List<AnnotationNode>,
 ) : Node(location)
 
@@ -93,19 +93,19 @@ class OperationParameterNode(
 class RequestResponseOperationNode(
     location: Location,
     name: IdentifierNode,
-    arguments: List<OperationParameterNode>,
+    parameters: List<OperationParameterNode>,
     val returnType: ExpressionNode?,
     val raises: List<ExpressionNode>,
     val isAsync: Boolean,
     annotations: List<AnnotationNode>,
-) : OperationNode(location, name, arguments, annotations)
+) : OperationNode(location, name, parameters, annotations)
 
 class OnewayOperationNode(
     location: Location,
     name: IdentifierNode,
-    arguments: List<OperationParameterNode>,
+    parameters: List<OperationParameterNode>,
     annotations: List<AnnotationNode>,
-) : OperationNode(location, name, arguments, annotations)
+) : OperationNode(location, name, parameters, annotations)
 
 class ProviderDeclarationNode(
     location: Location,
@@ -117,7 +117,7 @@ class ProviderDeclarationNode(
 class ProviderImplementsNode(
     location: Location,
     val serviceName: BundleIdentifierNode,
-    val serviceMethodNames: List<IdentifierNode>,
+    val serviceOperationNames: List<IdentifierNode>,
 ) : Node(location)
 
 class ProviderTransportNode(
@@ -135,7 +135,7 @@ class ConsumerDeclarationNode(
 class ConsumerUsesNode(
     location: Location,
     val serviceName: BundleIdentifierNode,
-    val serviceMethodNames: List<IdentifierNode>,
+    val serviceOperationNames: List<IdentifierNode>,
 ) : Node(location)
 
 class AnnotationNode(

@@ -33,7 +33,7 @@ jobs:
         uses: github/codeql-action/init@v2
         with:
           languages: kotlin
-          tools: latest
+          queries: security-and-quality
 
       - uses: actions/setup-java@v3
         with:

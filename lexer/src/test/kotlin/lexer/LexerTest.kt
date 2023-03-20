@@ -245,15 +245,18 @@ SAMT!""", stream.next()
     @Test
     fun `reader without mark support does not fail on number parse`() {
         val source = "1.5 42..128"
-        val stream = Lexer.scan(object : StringReader(source) {
+        val reader = object : StringReader(source) {
             override fun mark(readAheadLimit: Int): Unit = throw IOException()
 
             override fun markSupported(): Boolean = false
-        }, diagnostics).iterator()
+        }
+        val stream = Lexer.scan(reader, diagnostics).iterator()
         assertFloatToken(1.5, stream.next())
         assertIntegerToken(42, stream.next())
         assertIs<DoublePeriodToken>(stream.next())
         assertIntegerToken(128, stream.next())
+        assertFalse(stream.hasNext())
+        assertFalse(diagnostics.hasErrors())
     }
 
     @Test

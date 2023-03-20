@@ -14,7 +14,7 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClass.set("tools.samt.cli.AppKt")
+    mainClass.set("cli.AppKt")
 }
 
 tasks {
@@ -22,7 +22,7 @@ tasks {
         archiveBaseName.set("samt-cli")
         archiveClassifier.set("")
         manifest {
-            attributes("Main-Class" to "tools.samt.cli.AppKt")
+            attributes("Main-Class" to "cli.AppKt")
         }
     }
 }

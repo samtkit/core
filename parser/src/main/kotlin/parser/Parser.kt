@@ -536,7 +536,7 @@ class Parser private constructor(
         if (current is EndOfFileToken) {
             reportFatalError("Expected ${T::class.java.simpleName} but got end of file")
         } else {
-            reportFatalError("Expected ${T::class.java.simpleName} but got ${current!!.javaClass?.simpleName}")
+            reportFatalError("Expected ${T::class.java.simpleName} but got ${current!!.javaClass.simpleName}")
         }
     }
 

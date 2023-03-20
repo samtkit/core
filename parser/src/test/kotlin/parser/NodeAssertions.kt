@@ -91,7 +91,7 @@ inline fun AssertStatementContext.service(
     assertNodes(operations, expectedOperations)
 }
 
-fun AssertAnnotationsContext.annotation(expectedName: String, expectedArguments: AssertExpressionContext.() -> Unit = {}) = next {
+inline fun AssertAnnotationsContext.annotation(expectedName: String, expectedArguments: AssertExpressionContext.() -> Unit = {}) = next {
     assertIdentifier(expectedName, name)
     assertNodes(arguments, expectedArguments)
 }

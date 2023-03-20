@@ -80,6 +80,7 @@ class ParserUnitTest {
             alias A: String? ( foo(1..2.3..3) )
             alias B: List<A?>?
             alias C: Map<String, Integer> ( uniqueKeys((false)) )
+            alias D: List<A??>??<B>
         """
         val fileTree = parse(source)
         assertPackage("aliases", fileTree.packageDeclaration)
@@ -112,6 +113,19 @@ class ParserUnitTest {
                     callExpression({ bundleIdentifier("uniqueKeys") }) {
                         boolean(false)
                     }
+                }
+            }
+            alias("D") {
+                genericSpecialization({
+                    optional {
+                        optional {
+                            genericSpecialization({ bundleIdentifier("List") }) {
+                                optional { optional { bundleIdentifier("A") } }
+                            }
+                        }
+                    }
+                }) {
+                    bundleIdentifier("B")
                 }
             }
         }

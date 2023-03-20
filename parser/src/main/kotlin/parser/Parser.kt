@@ -403,10 +403,6 @@ class Parser private constructor(
                         reportError("Generic specialization requires at least one argument", locationFromStart(start))
                     }
                     target = GenericSpecializationNode(locationFromStart(start), target, arguments)
-
-                    if (skip<QuestionMarkToken>()) {
-                        target = OptionalDeclarationNode(locationFromStart(start), target)
-                    }
                 }
 
                 skip<QuestionMarkToken>() -> {

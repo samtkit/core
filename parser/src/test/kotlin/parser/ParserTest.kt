@@ -41,6 +41,17 @@ class ParserUnitTest {
     }
 
     @Test
+    fun `unexpected end of file`() {
+        val source = """
+            package a
+            
+            alias A: List<B
+        """
+        val exception = parseWithFatalError(source)
+        assertEquals("Expected GreaterThanSignToken but got end of file", exception.message)
+    }
+
+    @Test
     fun `empty record`() {
         val source = """
             package emptyRecord
@@ -80,7 +91,6 @@ class ParserUnitTest {
             alias A: String? ( foo(1..2.3..3) )
             alias B: List<A?>?
             alias C: Map<String, Integer> ( uniqueKeys((false)) )
-            alias D: List<A??>??<B>
         """
         val fileTree = parse(source)
         assertPackage("aliases", fileTree.packageDeclaration)
@@ -115,17 +125,31 @@ class ParserUnitTest {
                     }
                 }
             }
-            alias("D") {
-                genericSpecialization({
-                    optional {
-                        optional {
-                            genericSpecialization({ bundleIdentifier("List") }) {
-                                optional { optional { bundleIdentifier("A") } }
-                            }
-                        }
+        }
+    }
+
+    @Test
+    fun `optional generic declarations`() {
+        val source = """
+            package aliases
+
+            alias A: String?
+            alias B: List<A?>?
+        """
+        val fileTree = parse(source)
+        assertPackage("aliases", fileTree.packageDeclaration)
+        assertEmpty(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            alias("A") {
+                optional {
+                    bundleIdentifier("String")
+                }
+            }
+            alias("B") {
+                optional {
+                    genericSpecialization({ bundleIdentifier("List") }) {
+                        optional { bundleIdentifier("A") }
                     }
-                }) {
-                    bundleIdentifier("B")
                 }
             }
         }

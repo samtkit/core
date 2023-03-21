@@ -49,3 +49,5 @@ data class IdentifierToken(override val location: Location, val value: String) :
 sealed interface NumberToken : Token { val value: Number }
 data class IntegerToken(override val location: Location, override val value: Long) : NumberToken
 data class FloatToken(override val location: Location, override val value: Double) : NumberToken
+
+data class EndOfFileToken(override val location: Location): Token

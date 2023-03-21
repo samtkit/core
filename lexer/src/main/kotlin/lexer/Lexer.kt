@@ -34,6 +34,9 @@ class Lexer private constructor(
             }
             skipBlanks()
         }
+        while (true) {
+           yield(EndOfFileToken(locationFromStart(currentPosition)))
+        }
     }
 
     private fun readToken(): Token? = when {

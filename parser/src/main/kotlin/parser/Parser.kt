@@ -387,9 +387,6 @@ class Parser private constructor(
 
         var target = parseLiteral()
 
-        // Using a while (true) sometimes ends in an endless cycle, but using
-        // !isEnd can have problems if the very last statement is an expression (e.g. Alias declaration)
-        // This code seems to work for now, but there might be some edge-case that isn't tested yet
         while (!isEnd) {
             when {
                 skip<OpenParenthesisToken>() -> {
@@ -512,24 +509,21 @@ class Parser private constructor(
             previousEnd = current!!.location.end
         }
 
-        if (tokenStream.hasNext()) {
-            previous = current
-            current = tokenStream.next()
-            currentStart = current!!.location.start
-        } else {
-            reportFatalError("Unexpected end of file")
-        }
+        previous = current
+        current = tokenStream.next()
+        currentStart = current!!.location.start
     }
 
     private val isEnd: Boolean
-        get() = !tokenStream.hasNext()
+        get() = current is EndOfFileToken
 
     private inline fun <reified T : Token> expectOrNull(): T? {
         val ret = current as? T
 
-        if (ret != null && !isEnd) {
+        if (ret != null) {
             next()
         }
+
         return ret
     }
 
@@ -539,14 +533,18 @@ class Parser private constructor(
             return token
         }
 
-        reportFatalError("Expected ${T::class.java.simpleName} but got ${current?.javaClass?.simpleName ?: "end of file"}")
+        if (current is EndOfFileToken) {
+            reportFatalError("Expected ${T::class.java.simpleName} but got end of file")
+        } else {
+            reportFatalError("Expected ${T::class.java.simpleName} but got ${current!!.javaClass?.simpleName}")
+        }
     }
 
     private inline fun <reified T : Token> skip(): Boolean {
         if (current !is T) {
             return false
         }
-        if (!isEnd) {
+        if (tokenStream.hasNext()) {
             next()
         }
         return true

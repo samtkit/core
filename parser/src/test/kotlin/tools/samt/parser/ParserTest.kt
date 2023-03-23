@@ -43,10 +43,16 @@ class ParserUnitTest {
             FileOffset(18, 1, 8),
         )
 
-        assertEquals(listOf(
-            DiagnosticMessage("Cannot have multiple package declarations per file", secondPackageLocation, DiagnosticSeverity.Error),
-            DiagnosticMessage("Previously declared package here", firstPackageLocation, DiagnosticSeverity.Info),
-        ), diagnostics.messages)
+        assertEquals(
+            listOf(
+                DiagnosticMessage(
+                    "Cannot have multiple package declarations per file",
+                    secondPackageLocation,
+                    DiagnosticSeverity.Error
+                ),
+                DiagnosticMessage("Previously declared package here", firstPackageLocation, DiagnosticSeverity.Info),
+            ), diagnostics.messages
+        )
         assertPackage("b", fileTree.packageDeclaration)
         assertEmpty(fileTree.imports)
         assertEmpty(fileTree.statements)
@@ -629,7 +635,8 @@ class ParserUnitTest {
         assertPackage("provider", fileTree.packageDeclaration)
         assertEmpty(fileTree.imports)
         assertNodes(fileTree.statements) {
-            provider("FooEndpoint",
+            provider(
+                "FooEndpoint",
                 expectedImplements = { implements("FooService", "foo", "foo2"); implements("BarService") },
                 expectedTransport = { transport("HTTP") { objectLiteral { field("port") { integer(8080) } } } },
             )
@@ -654,7 +661,8 @@ class ParserUnitTest {
         assertPackage("illegalProvider", fileTree.packageDeclaration)
         assertEmpty(fileTree.imports)
         assertNodes(fileTree.statements) {
-            provider("BarEndpoint",
+            provider(
+                "BarEndpoint",
                 expectedImplements = { implements("BarService") },
                 expectedTransport = { transport("HTTP", hasConfiguration = false) },
             )
@@ -672,6 +680,29 @@ class ParserUnitTest {
         """
         val error = parseWithFatalError(source)
         assertEquals("Expected 'implements' or 'transport' but found 'record'", error.message)
+    }
+
+    @Test
+    fun `consume multiple services`() {
+        val source = """
+            package consumer
+
+            consume tools.samt.example.FooEndpoint {
+                uses FooService { foo, foo2 }
+                uses BarService
+            }
+        """
+        val fileTree = parse(source)
+        assertPackage("consumer", fileTree.packageDeclaration)
+        assertEmpty(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            consumer(
+                "tools.samt.example.FooEndpoint",
+            ) {
+                uses("FooService", "foo", "foo2")
+                uses("BarService")
+            }
+        }
     }
 
     private fun parse(source: String): FileNode {

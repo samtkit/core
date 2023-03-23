@@ -19,6 +19,7 @@ typealias AssertImportContext = AssertNodesContext<ImportNode>
 typealias AssertOperationContext = AssertNodesContext<OperationNode>
 typealias AssertProviderImplementsContext = AssertNodesContext<ProviderImplementsNode>
 typealias AssertProviderTransportContext = AssertNodesContext<ProviderTransportNode>
+typealias AssertConsumerUsesContext = AssertNodesContext<ConsumerUsesNode>
 typealias AssertRecordFieldContext = AssertNodesContext<RecordFieldNode>
 typealias AssertObjectFieldContext = AssertNodesContext<ObjectFieldNode>
 typealias AssertParameterContext = AssertNodesContext<OperationParameterNode>
@@ -103,6 +104,14 @@ inline fun AssertStatementContext.provider(
     assertNode(transport, expectedTransport)
 }
 
+inline fun AssertStatementContext.consumer(
+    expectedProviderName: String,
+    expectedUses: AssertConsumerUsesContext.() -> Unit = {},
+) = next<ConsumerDeclarationNode> {
+    assertBundleIdentifier(expectedProviderName, providerName)
+    assertNodes(usages, expectedUses)
+}
+
 inline fun AssertAnnotationsContext.annotation(expectedName: String, expectedArguments: AssertExpressionContext.() -> Unit = {}) = next {
     assertIdentifier(expectedName, name)
     assertNodes(arguments, expectedArguments)
@@ -183,6 +192,20 @@ inline fun AssertProviderTransportContext.transport(
         assertNode(configuration!!, expectedConfiguration)
     } else {
         assertNull(configuration, "Expected no configuration, but got one")
+    }
+}
+
+// Consumer
+
+fun AssertConsumerUsesContext.uses(
+    expectedServiceName: String,
+    vararg expectedOperations: String,
+) = next<ConsumerUsesNode> {
+    assertBundleIdentifier(expectedServiceName, serviceName)
+    assertNodes(serviceOperationNames) {
+        for (expectedOperation in expectedOperations) {
+            identifier(expectedOperation)
+        }
     }
 }
 

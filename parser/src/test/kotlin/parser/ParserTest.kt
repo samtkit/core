@@ -1,7 +1,6 @@
 package parser
 
-import common.DiagnosticConsole
-import common.DiagnosticContext
+import common.*
 import lexer.Lexer
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.*
@@ -32,9 +31,22 @@ class ParserUnitTest {
         val source = """
             package a
             package b
-        """
+        """.trimIndent()
         val (fileTree, diagnostics) = parseWithRecoverableError(source)
-        assertEquals("Cannot have multiple package declarations per file", diagnostics.messages.single().message)
+
+        val firstPackageLocation = Location(
+            FileOffset(0, 0, 0),
+            FileOffset(8, 0, 8),
+        )
+        val secondPackageLocation = Location(
+            FileOffset(10, 1, 0),
+            FileOffset(18, 1, 8),
+        )
+
+        assertEquals(listOf(
+            DiagnosticMessage("Cannot have multiple package declarations per file", secondPackageLocation, DiagnosticSeverity.Error),
+            DiagnosticMessage("Previously declared package here", firstPackageLocation, DiagnosticSeverity.Info),
+        ), diagnostics.messages)
         assertPackage("b", fileTree.packageDeclaration)
         assertEmpty(fileTree.imports)
         assertEmpty(fileTree.statements)
@@ -488,18 +500,18 @@ class ParserUnitTest {
             import package foo
         """
         val exception = parseWithFatalError(source)
-        assertEquals("'package' is a reserved keyword and cannot be used as an identifier", exception.message)
+        assertEquals("'package' is a reserved keyword, did you mean to escape it? (e.g. '^package')", exception.message)
     }
 
     @Test
     fun `illegal keyword 2`() {
         val source = """
             package foo
-            
+
             record record A {}
         """
         val exception = parseWithFatalError(source)
-        assertEquals("'record' is a reserved keyword and cannot be used as an identifier", exception.message)
+        assertEquals("'record' is a reserved keyword, did you mean to escape it? (e.g. '^record')", exception.message)
     }
 
     @Test

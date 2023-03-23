@@ -39,6 +39,7 @@ class Parser private constructor(
                 is PackageDeclarationNode -> {
                     if (packageDeclaration != null) {
                         reportError("Cannot have multiple package declarations per file", statement.location)
+                        reportInfo("Previously declared package here", packageDeclaration.location)
                     }
                     packageDeclaration = statement
                 }
@@ -290,7 +291,7 @@ class Parser private constructor(
                 check<TransportToken>() -> {
                     if (transport != null) {
                         reportError("Provider can only have one transport", locationFromStart(statementStart))
-                        reportInfo("Previously declared here", transport.location)
+                        reportInfo("Previously declared transport here", transport.location)
                     }
                     transport = parseProviderTransport()
                 }
@@ -533,15 +534,15 @@ class Parser private constructor(
             return token
         }
 
-        var expectedString = getHumanReadableTokenName(T::class)
-        var gotString = getHumanReadableTokenName(current!!.javaClass.kotlin)
+        val expectedString = getHumanReadableTokenName(T::class)
+        val gotString = getHumanReadableTokenName(current!!.javaClass.kotlin)
 
         if (current is EndOfFileToken) {
             reportFatalError("Expected '${expectedString}' but reached end of file")
         }
 
         if (T::class == IdentifierToken::class && current is StaticToken) {
-            reportFatalError("'${gotString}' is a reserved keyword and cannot be used as an identifier")
+            reportFatalError("'${gotString}' is a reserved keyword, did you mean to escape it? (e.g. '^${gotString}')")
         }
 
         reportFatalError("Expected '${expectedString}' but got '${gotString}'")

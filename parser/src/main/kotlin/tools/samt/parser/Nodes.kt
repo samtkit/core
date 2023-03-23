@@ -4,10 +4,11 @@ import tools.samt.common.Location
 
 sealed class Node(val location: Location)
 
-class ProgramNode(
-    location: Location,
-    val files: List<FileNode>,
-) : Node(location)
+// Support multiple files in the future
+// class ProgramNode(
+//     location: Location,
+//     val files: List<FileNode>,
+// ) : Node(location)
 
 class FileNode(
     location: Location,

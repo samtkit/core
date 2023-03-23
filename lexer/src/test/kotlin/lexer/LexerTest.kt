@@ -2,6 +2,7 @@ package lexer
 
 import common.DiagnosticConsole
 import common.DiagnosticContext
+import common.FileOffset
 import java.io.IOException
 import java.io.StringReader
 import kotlin.test.*
@@ -23,7 +24,7 @@ class LexerTest {
     fun `comment only file`() {
         val source = "// Line Comment \r\n/* Block Comment */\n// Line Comment"
         val stream = readTokenStream(source)
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
     }
 
@@ -35,7 +36,7 @@ class LexerTest {
         assertIdentifierToken("A", stream.next())
         assertIs<OpenBraceToken>(stream.next())
         assertIs<CloseBraceToken>(stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
     }
 
@@ -43,7 +44,7 @@ class LexerTest {
     fun `unclosed block comment`() {
         val source = "/**"
         val stream = readTokenStream(source)
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertTrue(diagnostics.hasErrors())
     }
 
@@ -55,7 +56,7 @@ class LexerTest {
         assertIdentifierToken("A", stream.next())
         assertIs<OpenBraceToken>(stream.next())
         assertIs<CloseBraceToken>(stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
     }
 
@@ -67,7 +68,7 @@ class LexerTest {
         assertIntegerToken(-2147483648, stream.next())
         assertIntegerToken(2147483649, stream.next())
         assertIntegerToken(0, stream.next()) // Invalid numbers get converted to 0
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertTrue(diagnostics.hasErrors())
     }
 
@@ -77,7 +78,7 @@ class LexerTest {
         val stream = readTokenStream(source)
         assertFloatToken(0.3, stream.next())
         assertFloatToken(-0.5, stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
     }
 
@@ -86,7 +87,7 @@ class LexerTest {
         val source = "-.5"
         val stream = readTokenStream(source)
         assertFloatToken(-0.5, stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertTrue(diagnostics.hasErrors())
     }
 
@@ -96,7 +97,7 @@ class LexerTest {
         val stream = readTokenStream(source)
         assertIs<PeriodToken>(stream.next())
         assertIntegerToken(5, stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
     }
 
@@ -105,7 +106,7 @@ class LexerTest {
         val source = "5."
         val stream = readTokenStream(source)
         assertFloatToken(5.0, stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertTrue(diagnostics.hasErrors())
     }
 
@@ -117,7 +118,7 @@ class LexerTest {
         assertIdentifierToken("foo", stream.next())
         assertIs<OpenBraceToken>(stream.next())
         assertIs<CloseBraceToken>(stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertTrue(diagnostics.hasErrors())
     }
 
@@ -126,7 +127,7 @@ class LexerTest {
         val source = """"Hello SAMT!""""
         val stream = readTokenStream(source)
         assertStringToken("Hello SAMT!", stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
     }
 
@@ -141,7 +142,7 @@ Hello "SAMT"
 	Tab indented!
         """.trimIndent().replace("\n", "\r\n"), stream.next()
         )
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
     }
 
@@ -150,7 +151,7 @@ Hello "SAMT"
         val source = """"Dubious \escape""""
         val stream = readTokenStream(source)
         assertStringToken("Dubious scape", stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertTrue(diagnostics.hasErrors())
     }
 
@@ -163,7 +164,7 @@ SAMT!""""
             """Hello
 SAMT!""", stream.next()
         )
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
     }
 
@@ -172,7 +173,7 @@ SAMT!""", stream.next()
         val source = """"Hello"""
         val stream = readTokenStream(source)
         assertStringToken("Hello", stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertTrue(diagnostics.hasErrors())
     }
 
@@ -204,7 +205,7 @@ SAMT!""", stream.next()
         assertFloatToken(1.00, stream.next())
         assertIs<CloseParenthesisToken>(stream.next())
         assertIs<CloseParenthesisToken>(stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
     }
 
@@ -217,7 +218,7 @@ SAMT!""", stream.next()
         assertIdentifierToken("bar", stream.next())
         assertIs<DoublePeriodToken>(stream.next())
         assertIdentifierToken("baz", stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
     }
 
@@ -227,7 +228,7 @@ SAMT!""", stream.next()
         val stream = readTokenStream(source)
         assertIs<RecordToken>(stream.next())
         assertIdentifierToken("record", stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
     }
 
@@ -237,7 +238,7 @@ SAMT!""", stream.next()
         val stream = readTokenStream(source)
         assertIs<RecordToken>(stream.next())
         assertIdentifierToken("foo", stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
         assertTrue(diagnostics.hasWarnings())
     }
@@ -255,7 +256,29 @@ SAMT!""", stream.next()
         assertIntegerToken(42, stream.next())
         assertIs<DoublePeriodToken>(stream.next())
         assertIntegerToken(128, stream.next())
-        assertFalse(stream.hasNext())
+        assertIs<EndOfFileToken>(stream.next())
+        assertFalse(diagnostics.hasErrors())
+    }
+
+    @Test
+    fun `correct location with multiline source`() {
+        val source = """
+            record A {
+                "Hello"
+            }
+        """.trimIndent()
+        val stream = readTokenStream(source)
+        val record = assertIs<RecordToken>(stream.next())
+        assertLocation(FileOffset(0, 0, 0), FileOffset(5, 0, 5), record)
+        val identifierA = assertIs<IdentifierToken>(stream.next())
+        assertLocation(FileOffset(7, 0, 7), FileOffset(7, 0, 7), identifierA)
+        val openBrace = assertIs<OpenBraceToken>(stream.next())
+        assertLocation(FileOffset(9, 0, 9), FileOffset(9, 0, 9), openBrace)
+        val helloString = assertIs<StringToken>(stream.next())
+        assertLocation(FileOffset(15, 1, 4), FileOffset(21, 1, 10), helloString)
+        val closeBrace = assertIs<CloseBraceToken>(stream.next())
+        assertLocation(FileOffset(23, 2, 0), FileOffset(23, 2, 0), closeBrace)
+        assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
     }
 
@@ -357,5 +380,12 @@ SAMT!""", stream.next()
     private fun assertStringToken(value: String, actual: Token) {
         assertIs<StringToken>(actual)
         assertEquals(value, actual.value)
+    }
+
+    private fun assertLocation(start: FileOffset, end: FileOffset, actual: Token) {
+        actual.location.let {
+            assertEquals(start, it.start, "Expected start to be (${start.charIndex} - ${start.row}:${start.col}) but was (${it.start.charIndex} - ${it.start.row}:${it.start.col})")
+            assertEquals(end, it.end, "Expected end to be (${end.charIndex} - ${end.row}:${end.col}) but was (${it.end.charIndex} - ${it.end.row}:${it.end.col})")
+        }
     }
 }

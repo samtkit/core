@@ -22,6 +22,7 @@ class Lexer private constructor(
      * Index of the last read character, 0 based
      */
     private var currentPosition = FileOffset(charIndex = -1, row = 0, col = -1)
+    private var lastPosition = currentPosition
 
     fun readTokenStream(): Sequence<Token> = sequence {
         // Read very first character
@@ -145,10 +146,10 @@ class Lexer private constructor(
     }
 
     private fun readName(caretPassed: Boolean = false): Token {
+        val start = currentPosition
         if (caretPassed) {
             readNext() // Ignore Caret for identifier
         }
-        val start = currentPosition
 
         val name = buildString {
             while (!end && (current.isLetter() || current.isDigit())) {
@@ -263,7 +264,7 @@ class Lexer private constructor(
         return
     }
 
-    private fun locationFromStart(start: FileOffset) = Location(start, currentPosition)
+    private fun locationFromStart(start: FileOffset) = Location(start, lastPosition)
 
     private fun skipBlanks() {
         while (!end && (current == ' ' || current == '\n' || current == '\t' || current == '\r')) {
@@ -278,6 +279,7 @@ class Lexer private constructor(
         } else {
             current = value.toChar()
         }
+        lastPosition = currentPosition
         currentPosition = advancedPosition()
     }
 
@@ -285,7 +287,7 @@ class Lexer private constructor(
         currentPosition.copy(
                 charIndex = currentPosition.charIndex + 1,
                 row = currentPosition.row + 1,
-                col = 0,
+                col = -1,
         )
     } else {
         currentPosition.copy(

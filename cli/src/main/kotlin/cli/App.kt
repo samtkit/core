@@ -20,17 +20,16 @@ fun main(args: Array<String>) {
         repeat(cliArgs.benchmarkRuns) {
             val parseTime = measureNanoTime { parse(cliArgs.files) }
             totalTime += parseTime
-            println("Took ${gugus(parseTime)}ms")
+            println("Took ${format(parseTime)}ms")
         }
 
-        println("Average took ${gugus(totalTime / cliArgs.benchmarkRuns)}ms")
+        println("Average took ${format(totalTime / cliArgs.benchmarkRuns)}ms")
     } else {
         parse(cliArgs.files)
     }
 }
 
-private fun gugus(timeInNs: Long): String {
-    // 0.15ms
+private fun format(timeInNs: Long): String {
     val timeInMs = timeInNs.toDouble() / 1_000_000.0
     return String.format("%.2f", timeInMs)
 

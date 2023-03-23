@@ -1,10 +1,22 @@
 package lexer
 
 import common.Location
+import java.lang.IllegalArgumentException
 
 sealed interface Token {
     val location: Location
 }
+
+data class EndOfFileToken(override val location: Location): Token
+
+sealed interface ValueToken: Token
+
+data class StringToken(override val location: Location, val value: String) : ValueToken
+data class IdentifierToken(override val location: Location, val value: String) : ValueToken
+
+sealed interface NumberToken : ValueToken { val value: Number }
+data class IntegerToken(override val location: Location, override val value: Long) : NumberToken
+data class FloatToken(override val location: Location, override val value: Double) : NumberToken
 
 sealed interface StaticToken: Token
 data class RecordToken(override val location: Location): StaticToken
@@ -26,28 +38,72 @@ data class OnewayToken(override val location: Location): StaticToken
 data class RaisesToken(override val location: Location): StaticToken
 data class TrueToken(override val location: Location): StaticToken
 data class FalseToken(override val location: Location): StaticToken
-data class OpenBraceToken(override val location: Location): StaticToken
-data class CloseBraceToken(override val location: Location): StaticToken
-data class OpenBracketToken(override val location: Location): StaticToken
-data class CloseBracketToken(override val location: Location): StaticToken
-data class OpenParenthesisToken(override val location: Location): StaticToken
-data class CloseParenthesisToken(override val location: Location): StaticToken
-data class CommaToken(override val location: Location): StaticToken
-data class PeriodToken(override val location: Location): StaticToken
-data class DoublePeriodToken(override val location: Location): StaticToken
-data class ColonToken(override val location: Location): StaticToken
-data class AsteriskToken(override val location: Location): StaticToken
-data class AtSignToken(override val location: Location): StaticToken
-data class LessThanSignToken(override val location: Location): StaticToken
-data class GreaterThanSignToken(override val location: Location): StaticToken
-data class QuestionMarkToken(override val location: Location): StaticToken
 
-data class StringToken(override val location: Location, val value: String) : Token
+sealed interface StructureToken: Token
+data class OpenBraceToken(override val location: Location): StructureToken
+data class CloseBraceToken(override val location: Location): StructureToken
+data class OpenBracketToken(override val location: Location): StructureToken
+data class CloseBracketToken(override val location: Location): StructureToken
+data class OpenParenthesisToken(override val location: Location): StructureToken
+data class CloseParenthesisToken(override val location: Location): StructureToken
+data class CommaToken(override val location: Location): StructureToken
+data class PeriodToken(override val location: Location): StructureToken
+data class DoublePeriodToken(override val location: Location): StructureToken
+data class ColonToken(override val location: Location): StructureToken
+data class AsteriskToken(override val location: Location): StructureToken
+data class AtSignToken(override val location: Location): StructureToken
+data class LessThanSignToken(override val location: Location): StructureToken
+data class GreaterThanSignToken(override val location: Location): StructureToken
+data class QuestionMarkToken(override val location: Location): StructureToken
 
-data class IdentifierToken(override val location: Location, val value: String) : Token
+fun <K> getHumanReadableTokenName(key: K): String = when (key) {
+    // Token
+    EndOfFileToken::class -> "EOF"
 
-sealed interface NumberToken : Token { val value: Number }
-data class IntegerToken(override val location: Location, override val value: Long) : NumberToken
-data class FloatToken(override val location: Location, override val value: Double) : NumberToken
+    // ValueToken
+    StringToken::class -> "string"
+    IdentifierToken::class -> "identifier"
+    IntegerToken::class -> "integer"
+    FloatToken::class -> "float"
+    RecordToken::class -> "record"
 
-data class EndOfFileToken(override val location: Location): Token
+    // StaticToken
+    EnumToken::class -> "enum"
+    ServiceToken::class -> "service"
+    AliasToken::class -> "alias"
+    PackageToken::class -> "package"
+    ImportToken::class -> "import"
+    ProvideToken::class -> "provide"
+    ConsumeToken::class -> "consume"
+    TransportToken::class -> "transport"
+    ImplementsToken::class -> "implements"
+    UsesToken::class -> "uses"
+    FaultToken::class -> "fault"
+    ExtendsToken::class -> "extends"
+    AsToken::class -> "as"
+    AsyncToken::class -> "async"
+    OnewayToken::class -> "oneway"
+    RaisesToken::class -> "raises"
+    TrueToken::class -> "true"
+    FalseToken::class -> "false"
+
+    // StructureToken
+    OpenBraceToken::class -> "{"
+    CloseBraceToken::class -> "}"
+    OpenBracketToken::class -> "["
+    CloseBracketToken::class -> "]"
+    OpenParenthesisToken::class -> "("
+    CloseParenthesisToken::class -> ")"
+    CommaToken::class -> ","
+    PeriodToken::class -> "."
+    DoublePeriodToken::class -> ".."
+    ColonToken::class -> ":"
+    AsteriskToken::class -> "*"
+    AtSignToken::class -> "@"
+    LessThanSignToken::class -> "<"
+    GreaterThanSignToken::class -> ">"
+    QuestionMarkToken::class -> "?"
+
+    // Bug: Missing entry for token type
+    else -> throw IllegalArgumentException("Missing entry for token type in getHumanReadableTokenName lookup table")
+}

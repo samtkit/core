@@ -533,11 +533,18 @@ class Parser private constructor(
             return token
         }
 
+        var expectedString = getHumanReadableTokenName(T::class)
+        var gotString = getHumanReadableTokenName(current!!.javaClass.kotlin)
+
         if (current is EndOfFileToken) {
-            reportFatalError("Expected ${T::class.java.simpleName} but got end of file")
-        } else {
-            reportFatalError("Expected ${T::class.java.simpleName} but got ${current!!.javaClass.simpleName}")
+            reportFatalError("Expected '${expectedString}' but reached end of file")
         }
+
+        if (T::class == IdentifierToken::class && current is StaticToken) {
+            reportFatalError("'${gotString}' is a reserved keyword and cannot be used as an identifier")
+        }
+
+        reportFatalError("Expected '${expectedString}' but got '${gotString}'")
     }
 
     private inline fun <reified T : Token> skip(): Boolean {

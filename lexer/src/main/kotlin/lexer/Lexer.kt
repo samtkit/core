@@ -48,19 +48,19 @@ class Lexer private constructor(
             '/' -> skipComment()
             '.' -> readDot()
             '^' -> readName(caretPassed = true)
-            '{' -> readStaticToken { OpenBraceToken(it) }
-            '}' -> readStaticToken { CloseBraceToken(it) }
-            '[' -> readStaticToken { OpenBracketToken(it) }
-            ']' -> readStaticToken { CloseBracketToken(it) }
-            '(' -> readStaticToken { OpenParenthesisToken(it) }
-            ')' -> readStaticToken { CloseParenthesisToken(it) }
-            ',' -> readStaticToken { CommaToken(it) }
-            ':' -> readStaticToken { ColonToken(it) }
-            '*' -> readStaticToken { AsteriskToken(it) }
-            '@' -> readStaticToken { AtSignToken(it) }
-            '<' -> readStaticToken { LessThanSignToken(it) }
-            '>' -> readStaticToken { GreaterThanSignToken(it) }
-            '?' -> readStaticToken { QuestionMarkToken(it) }
+            '{' -> readStructureToken { OpenBraceToken(it) }
+            '}' -> readStructureToken { CloseBraceToken(it) }
+            '[' -> readStructureToken { OpenBracketToken(it) }
+            ']' -> readStructureToken { CloseBracketToken(it) }
+            '(' -> readStructureToken { OpenParenthesisToken(it) }
+            ')' -> readStructureToken { CloseParenthesisToken(it) }
+            ',' -> readStructureToken { CommaToken(it) }
+            ':' -> readStructureToken { ColonToken(it) }
+            '*' -> readStructureToken { AsteriskToken(it) }
+            '@' -> readStructureToken { AtSignToken(it) }
+            '<' -> readStructureToken { LessThanSignToken(it) }
+            '>' -> readStructureToken { GreaterThanSignToken(it) }
+            '?' -> readStructureToken { QuestionMarkToken(it) }
             else -> {
                 val start = currentPosition
                 readNext() // Skip unrecognized character
@@ -71,7 +71,7 @@ class Lexer private constructor(
         }
     }
 
-    private inline fun <reified T: StaticToken> readStaticToken(factory: (location: Location) -> T): StaticToken {
+    private inline fun <reified T: StructureToken> readStructureToken(factory: (location: Location) -> T): StructureToken {
         val start = currentPosition
         readNext()
         return factory(locationFromStart(start))

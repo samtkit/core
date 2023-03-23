@@ -48,7 +48,18 @@ class ParserUnitTest {
             alias A: List<B
         """
         val exception = parseWithFatalError(source)
-        assertEquals("Expected GreaterThanSignToken but got end of file", exception.message)
+        assertEquals("Expected '>' but reached end of file", exception.message)
+    }
+
+    @Test
+    fun `unexpected structure token`() {
+        val source = """
+            package a
+            
+            alias A: List<B}
+        """
+        val exception = parseWithFatalError(source)
+        assertEquals("Expected '>' but got '}'", exception.message)
     }
 
     @Test
@@ -477,7 +488,18 @@ class ParserUnitTest {
             import package foo
         """
         val exception = parseWithFatalError(source)
-        assertEquals("Expected IdentifierToken but got PackageToken", exception.message)
+        assertEquals("'package' is a reserved keyword and cannot be used as an identifier", exception.message)
+    }
+
+    @Test
+    fun `illegal keyword 2`() {
+        val source = """
+            package foo
+            
+            record record A {}
+        """
+        val exception = parseWithFatalError(source)
+        assertEquals("'record' is a reserved keyword and cannot be used as an identifier", exception.message)
     }
 
     @Test

@@ -1,7 +1,7 @@
 package lexer
 
 import common.Location
-import java.lang.IllegalArgumentException
+import kotlin.reflect.KClass
 
 sealed interface Token {
     val location: Location
@@ -56,7 +56,7 @@ data class LessThanSignToken(override val location: Location): StructureToken
 data class GreaterThanSignToken(override val location: Location): StructureToken
 data class QuestionMarkToken(override val location: Location): StructureToken
 
-fun <K> getHumanReadableTokenName(key: K): String = when (key) {
+fun getHumanReadableTokenName(key: KClass<out Token>): String = when (key) {
     // Token
     EndOfFileToken::class -> "EOF"
 
@@ -105,5 +105,5 @@ fun <K> getHumanReadableTokenName(key: K): String = when (key) {
     QuestionMarkToken::class -> "?"
 
     // Bug: Missing entry for token type
-    else -> throw IllegalArgumentException("Missing entry for token type in getHumanReadableTokenName lookup table")
+    else -> throw IllegalArgumentException("Missing entry for token type '${key.simpleName}' in getHumanReadableTokenName lookup table")
 }

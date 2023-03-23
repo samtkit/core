@@ -238,15 +238,14 @@ class Lexer private constructor(
         return null
     }
 
-    private fun skipLineComment(): Token? {
+    private fun skipLineComment() {
         readNext() // skip second slash
         while (!end && current != '\n') {
             readNext()
         }
-        return null
     }
 
-    private fun skipCommentBlock(): Token? {
+    private fun skipCommentBlock() {
         val start = currentPosition.copy(charIndex = currentPosition.charIndex - 1, col = currentPosition.col - 1)
         while (!end) {
             readNext()
@@ -254,14 +253,14 @@ class Lexer private constructor(
                 readNext()
                 if (!end && current == '/') {
                     readNext()
-                    return null
+                    return
                 }
             }
         }
         diagnostics.reportError(
                 "Opened block comment was not closed when reaching end of file", locationFromStart(start)
         )
-        return null
+        return
     }
 
     private fun locationFromStart(start: FileOffset) = Location(start, currentPosition)

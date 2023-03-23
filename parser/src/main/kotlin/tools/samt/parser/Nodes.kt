@@ -123,7 +123,7 @@ class ProviderImplementsNode(
 class ProviderTransportNode(
     location: Location,
     val protocolName: IdentifierNode,
-    val config: ObjectNode?,
+    val configuration: ObjectNode?,
 ) : Node(location)
 
 class ConsumerDeclarationNode(

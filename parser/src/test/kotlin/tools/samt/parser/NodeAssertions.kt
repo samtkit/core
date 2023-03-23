@@ -17,6 +17,8 @@ typealias AssertExpressionContext = AssertNodesContext<ExpressionNode>
 typealias AssertAnnotationsContext = AssertNodesContext<AnnotationNode>
 typealias AssertImportContext = AssertNodesContext<ImportNode>
 typealias AssertOperationContext = AssertNodesContext<OperationNode>
+typealias AssertProviderImplementsContext = AssertNodesContext<ProviderImplementsNode>
+typealias AssertProviderTransportContext = AssertNodesContext<ProviderTransportNode>
 typealias AssertRecordFieldContext = AssertNodesContext<RecordFieldNode>
 typealias AssertObjectFieldContext = AssertNodesContext<ObjectFieldNode>
 typealias AssertParameterContext = AssertNodesContext<OperationParameterNode>
@@ -91,6 +93,16 @@ inline fun AssertStatementContext.service(
     assertNodes(operations, expectedOperations)
 }
 
+inline fun AssertStatementContext.provider(
+    expectedName: String,
+    expectedImplements: AssertProviderImplementsContext.() -> Unit = {},
+    expectedTransport: AssertProviderTransportContext.() -> Unit = {},
+) = next<ProviderDeclarationNode> {
+    assertIdentifier(expectedName, name)
+    assertNodes(implements, expectedImplements)
+    assertNode(transport, expectedTransport)
+}
+
 inline fun AssertAnnotationsContext.annotation(expectedName: String, expectedArguments: AssertExpressionContext.() -> Unit = {}) = next {
     assertIdentifier(expectedName, name)
     assertNodes(arguments, expectedArguments)
@@ -144,6 +156,34 @@ inline fun AssertParameterContext.parameter(
     assertIdentifier(expectedName, name)
     assertNodes(annotations, expectedAnnotations)
     assertNode(type, expectedType)
+}
+
+// Provider
+
+fun AssertProviderImplementsContext.implements(
+    expectedServiceName: String,
+    vararg expectedOperationNames: String,
+) = next<ProviderImplementsNode> {
+    assertBundleIdentifier(expectedServiceName, serviceName)
+    assertNodes(serviceOperationNames) {
+        for (serviceOperationName in expectedOperationNames) {
+            identifier(serviceOperationName)
+        }
+    }
+}
+
+inline fun AssertProviderTransportContext.transport(
+    expectedProtocolName: String,
+    hasConfiguration: Boolean = true,
+    expectedConfiguration: AssertExpressionContext.() -> Unit = {},
+) = next<ProviderTransportNode> {
+    assertIdentifier(expectedProtocolName, protocolName)
+    if (hasConfiguration) {
+        assertNotNull(configuration, "Expected configuration, but got none")
+        assertNode(configuration!!, expectedConfiguration)
+    } else {
+        assertNull(configuration, "Expected no configuration, but got one")
+    }
 }
 
 // Imports

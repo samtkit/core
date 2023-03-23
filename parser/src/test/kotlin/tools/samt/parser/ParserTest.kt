@@ -611,6 +611,69 @@ class ParserUnitTest {
         }
     }
 
+    @Test
+    fun `provider can implement multiple services`() {
+        val source = """
+            package ^provider
+
+            provide FooEndpoint {
+                implements FooService { foo, foo2 }
+                implements BarService
+
+                transport HTTP {
+                    port: 8080
+                }
+            }
+        """
+        val fileTree = parse(source)
+        assertPackage("provider", fileTree.packageDeclaration)
+        assertEmpty(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            provider("FooEndpoint",
+                expectedImplements = { implements("FooService", "foo", "foo2"); implements("BarService") },
+                expectedTransport = { transport("HTTP") { objectLiteral { field("port") { integer(8080) } } } },
+            )
+        }
+    }
+
+    @Test
+    fun `provider implementation without operations is invalid`() {
+        val source = """
+            package illegalProvider
+
+            provide BarEndpoint {
+                implements BarService { }
+                transport HTTP
+            }
+        """
+        val (fileTree, diagnostics) = parseWithRecoverableError(source)
+        assertEquals(
+            "Expected at least one operation name in the implements clause",
+            diagnostics.messages.single().message
+        )
+        assertPackage("illegalProvider", fileTree.packageDeclaration)
+        assertEmpty(fileTree.imports)
+        assertNodes(fileTree.statements) {
+            provider("BarEndpoint",
+                expectedImplements = { implements("BarService") },
+                expectedTransport = { transport("HTTP", hasConfiguration = false) },
+            )
+        }
+    }
+
+    @Test
+    fun `provider given illegal statement`() {
+        val source = """
+            package illegalProvider
+
+            provide FooEndpoint {
+                record Foo {}
+            }
+        """
+        val error = parseWithFatalError(source)
+        assertEquals("Expected 'implements' or 'transport' but found 'record'", error.message)
+    }
+
     private fun parse(source: String): FileNode {
         val diagnostics = DiagnosticConsole(DiagnosticContext("ParserTest.samt", source))
         val stream = Lexer.scan(source.reader(), diagnostics)

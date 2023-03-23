@@ -70,7 +70,7 @@ class Parser private constructor(
                 is ServiceToken -> parseServiceDeclaration(annotations)
                 else -> reportFatalError(
                     "Expected declaration with annotation support",
-                    Location(currentStart, currentStart)
+                    current!!.location
                 )
             }
         }
@@ -297,8 +297,8 @@ class Parser private constructor(
                 }
 
                 else -> reportFatalError(
-                    "Expected 'implements' or 'transport' keyword",
-                    locationFromStart(statementStart)
+                    "Expected 'implements' or 'transport' but found '${getHumanReadableTokenName(current!!.javaClass.kotlin)}'",
+                    current!!.location
                 )
             }
         }
@@ -324,7 +324,7 @@ class Parser private constructor(
             serviceOperationNames = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
 
             if (serviceOperationNames.isEmpty()) {
-                reportError("Expected at least one operation name", locationFromStart(start))
+                reportError("Expected at least one operation name in the implements clause", locationFromStart(start))
             }
         }
 
@@ -365,7 +365,7 @@ class Parser private constructor(
             serviceOperationNames = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
 
             if (serviceOperationNames.isEmpty()) {
-                reportError("Expected at least one operation name", locationFromStart(start))
+                reportError("Expected at least one operation name in the uses clause", locationFromStart(start))
             }
         }
 

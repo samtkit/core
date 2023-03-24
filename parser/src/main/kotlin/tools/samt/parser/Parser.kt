@@ -179,12 +179,7 @@ class Parser private constructor(
         expect<EnumToken>()
         val name = parseIdentifier()
         expect<OpenBraceToken>()
-        val values = buildList {
-            while (!skip<CloseBraceToken>()) {
-                add(parseIdentifier())
-            }
-        }
-
+        val values = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
         return EnumDeclarationNode(locationFromStart(start), name, values, annotations)
     }
 

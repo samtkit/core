@@ -80,24 +80,6 @@ class ParserUnitTest {
                 record("Foo")
             }
         }
-
-        @Test
-        fun `simple enum must be after package`() {
-            val source = """
-                package ^enum
-
-                enum Foo {
-                    A B C
-                    D
-                }
-            """
-            val fileTree = parse(source)
-            assertPackage("enum", fileTree.packageDeclaration)
-            assertEmpty(fileTree.imports)
-            assertNodes(fileTree.statements) {
-                enum("Foo", expectedValues = listOf("A", "B", "C", "D"))
-            }
-        }
     }
 
     @Nested
@@ -343,6 +325,25 @@ class ParserUnitTest {
                 alias("A") {
                     genericSpecialization({ bundleIdentifier("List") })
                 }
+            }
+        }
+
+        @Test
+        fun `enum declaration`() {
+            val source = """
+                package ^enum
+
+                enum Foo {
+                    A, B,
+                    C,
+                    D
+                }
+            """
+            val fileTree = parse(source)
+            assertPackage("enum", fileTree.packageDeclaration)
+            assertEmpty(fileTree.imports)
+            assertNodes(fileTree.statements) {
+                enum("Foo", expectedValues = listOf("A", "B", "C", "D"))
             }
         }
     }

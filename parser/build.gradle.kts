@@ -4,5 +4,5 @@ plugins {
 
 dependencies {
     implementation(project(":common"))
-    testImplementation(kotlin("reflect"))
+    implementation(project(":lexer"))
 }

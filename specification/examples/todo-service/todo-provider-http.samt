@@ -3,10 +3,11 @@ import tools.samt.examples.todo.TodoManager
 package tools.samt.examples.todo
 
 provide TodoEndpointHTTP {
-    implements TodoManager, TodoListManager
+    implements TodoManager
+    implements TodoListManager
 
     transport HTTP {
-        serialization: "JSON"
+        serialization: "JSON",
         operations: {
             TodoManager: {
                  createTodo: "POST /todo",
@@ -30,11 +31,11 @@ provide TodoEndpointHTTP {
         },
         faults: {
             NotFoundFault: {
-                code: 404
+                code: 404,
                 message: "Todo not found"
             },
             MissingPermissionsFault: {
-                code: 403
+                code: 403,
                 message: "Missing permissions"
             }
         }

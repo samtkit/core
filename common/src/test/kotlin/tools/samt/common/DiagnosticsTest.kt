@@ -1,4 +1,4 @@
-package common
+package tools.samt.common
 
 import kotlin.test.*
 
@@ -7,11 +7,11 @@ class DiagnosticsTest {
 
     private val dummyStart = FileOffset(charIndex = 0, row = 0, col = 0)
     private val dummyEnd = FileOffset(charIndex = 1, row = 0, col = 1)
-    private val dummyLocation = Location("dummy.samt", dummyStart, dummyEnd)
+    private val dummyLocation = Location(dummyStart, dummyEnd)
 
     @BeforeTest
     fun setup() {
-        diagnostics = DiagnosticConsole()
+        diagnostics = DiagnosticConsole(DiagnosticContext("DiagnosticsTest.samt", "source"))
     }
 
     @AfterTest

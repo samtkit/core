@@ -32,7 +32,6 @@ data class ConsumeToken(override val location: Location): StaticToken
 data class TransportToken(override val location: Location): StaticToken
 data class ImplementsToken(override val location: Location): StaticToken
 data class UsesToken(override val location: Location): StaticToken
-data class FaultToken(override val location: Location): StaticToken
 data class ExtendsToken(override val location: Location): StaticToken
 data class AsToken(override val location: Location): StaticToken
 data class AsyncToken(override val location: Location): StaticToken
@@ -80,7 +79,6 @@ fun getHumanReadableTokenName(key: KClass<out Token>): String = when (key) {
     TransportToken::class -> "transport"
     ImplementsToken::class -> "implements"
     UsesToken::class -> "uses"
-    FaultToken::class -> "fault"
     ExtendsToken::class -> "extends"
     AsToken::class -> "as"
     AsyncToken::class -> "async"

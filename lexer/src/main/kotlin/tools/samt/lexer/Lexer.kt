@@ -309,7 +309,6 @@ class Lexer private constructor(
                 "transport" to { TransportToken(it) },
                 "implements" to { ImplementsToken(it) },
                 "uses" to { UsesToken(it) },
-                "fault" to { FaultToken(it) },
                 "extends" to { ExtendsToken(it) },
                 "as" to { AsToken(it) },
                 "async" to { AsyncToken(it) },

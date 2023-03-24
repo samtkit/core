@@ -576,6 +576,41 @@ class ParserUnitTest {
         }
 
         @Test
+        fun `provider missing a transport declaration`() {
+            val source = """
+                package illegalProvider
+
+                provide FooEndpoint {
+                
+                }
+            """
+            val (fileTree, diagnostics) = parseWithRecoverableError(source)
+            assertEquals(
+                "Provider is missing a transport declaration",
+                diagnostics.messages.single().message
+            )
+        }
+
+        @Test
+        fun `provider given multiple transport declarations`() {
+            val source = """
+                package illegalProvider
+
+                provide FooEndpoint {
+                    transport http
+                    transport rest
+                }
+            """
+            val (fileTree, diagnostics) = parseWithRecoverableError(source)
+            assertEquals(
+                listOf(
+                    "Provider can only have one transport declaration",
+                    "Previously declared here"
+                ), diagnostics.messages.map { it.message }
+            )
+        }
+
+        @Test
         fun `provider implementation without operations is invalid`() {
             val source = """
                 package illegalProvider

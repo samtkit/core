@@ -284,11 +284,12 @@ class Parser private constructor(
                 }
 
                 check<TransportToken>() -> {
-                    if (transport != null) {
-                        reportError("Provider can only have one transport", locationFromStart(statementStart))
-                        reportInfo("Previously declared transport here", transport.location)
-                    }
+                    val previousDeclaration = transport
                     transport = parseProviderTransport()
+                    if (previousDeclaration is ProviderTransportNode) {
+                        reportError("Provider can only have one transport declaration", transport.location)
+                        reportInfo("Previously declared here", previousDeclaration.location)
+                    }
                 }
 
                 else -> reportFatalError(
@@ -299,7 +300,7 @@ class Parser private constructor(
         }
 
         if (transport == null) {
-            reportError("Provider must have a transport", locationFromStart(start))
+            reportError("Provider is missing a transport declaration", locationFromStart(start))
 
             // The previously reported error would prevent any semantic checks from ever interacting with
             // this dummy node. This might be implemented in a different manner in the future

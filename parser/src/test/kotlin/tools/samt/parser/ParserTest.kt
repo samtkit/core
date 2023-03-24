@@ -661,6 +661,22 @@ class ParserUnitTest {
                 }
             }
         }
+
+        @Test
+        fun `uses clause with no operations`() {
+            val source = """
+                package illegalProvider
+
+                consume Foo {
+                    uses Bar {}
+                }
+            """
+            val (fileTree, diagnostics) = parseWithRecoverableError(source)
+            assertEquals(
+                "Expected at least one operation name in the uses clause",
+                diagnostics.messages.single().message
+            )
+        }
     }
 
     @Nested

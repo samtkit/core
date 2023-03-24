@@ -277,7 +277,6 @@ class Parser private constructor(
         var transport: ProviderTransportNode? = null
 
         while (!skip<CloseBraceToken>()) {
-            val statementStart = currentStart
             when {
                 check<ImplementsToken>() -> {
                     implements.add(parseProviderImplements())

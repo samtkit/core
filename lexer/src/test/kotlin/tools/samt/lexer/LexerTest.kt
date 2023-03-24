@@ -296,7 +296,6 @@ SAMT!""", stream.next()
             transport
             implements
             uses
-            fault
             extends
             as
             async
@@ -333,7 +332,6 @@ SAMT!""", stream.next()
         assertIs<TransportToken>(stream.next())
         assertIs<ImplementsToken>(stream.next())
         assertIs<UsesToken>(stream.next())
-        assertIs<FaultToken>(stream.next())
         assertIs<ExtendsToken>(stream.next())
         assertIs<AsToken>(stream.next())
         assertIs<AsyncToken>(stream.next())

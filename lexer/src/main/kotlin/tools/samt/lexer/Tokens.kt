@@ -5,6 +5,8 @@ import kotlin.reflect.KClass
 
 sealed interface Token {
     val location: Location
+
+    fun getHumanReadableName() = getHumanReadableTokenName(this.javaClass.kotlin)
 }
 
 data class EndOfFileToken(override val location: Location): Token

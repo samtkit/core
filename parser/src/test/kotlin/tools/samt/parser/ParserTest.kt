@@ -505,8 +505,8 @@ class ParserUnitTest {
         @Test
         fun `illegal keyword`() {
             val source = """
-            import package foo
-        """
+                import package foo
+            """
             val exception = parseWithFatalError(source)
             assertEquals("'package' is a reserved keyword, did you mean to escape it? (e.g. '^package')", exception.message)
         }
@@ -514,12 +514,23 @@ class ParserUnitTest {
         @Test
         fun `illegal keyword 2`() {
             val source = """
-            package foo
+                package foo
 
-            record record A {}
-        """
+                record record A {}
+            """
             val exception = parseWithFatalError(source)
             assertEquals("'record' is a reserved keyword, did you mean to escape it? (e.g. '^record')", exception.message)
+        }
+
+        @Test
+        fun `unexpected declaration token`() {
+            val source = """
+                package foo
+
+                uses Foo {}
+            """
+            val exception = parseWithFatalError(source)
+            assertEquals("Expected some sort of a declaration", exception.message)
         }
     }
 

@@ -532,6 +532,18 @@ class ParserUnitTest {
             val exception = parseWithFatalError(source)
             assertEquals("Expected some sort of a declaration", exception.message)
         }
+
+        @Test
+        fun `unexpected keyword used as expression`() {
+            val source = """
+                package a
+                
+                @Foo(record)
+                record A {}
+            """
+            val exception = parseWithFatalError(source)
+            assertEquals("Expected an expression", exception.message)
+        }
     }
 
     @Nested

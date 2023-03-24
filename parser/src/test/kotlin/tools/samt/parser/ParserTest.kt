@@ -627,6 +627,16 @@ class ParserUnitTest {
                 @Password
                 @Encrypted
                 alias Password: String
+                
+                @Foo
+                @Bar
+                @Baz
+                enum Foo {
+                    A,
+                    B,
+                    C,
+                    D
+                }
 
                 @Author("Foo", "Bar")
                 @Description("This is a record")
@@ -654,6 +664,15 @@ class ParserUnitTest {
                         annotation("Encrypted")
                     },
                     expectedType = { bundleIdentifier("String") },
+                )
+                enum(
+                    expectedName = "Foo",
+                    expectedAnnotations = {
+                        annotation("Foo")
+                        annotation("Bar")
+                        annotation("Baz")
+                    },
+                    expectedValues = listOf("A", "B", "C", "D")
                 )
                 record(
                     expectedName = "Person",

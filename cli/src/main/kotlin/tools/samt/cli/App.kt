@@ -25,7 +25,7 @@ fun main(args: Array<String>) {
 
         println("Average took ${format(totalTime / cliArgs.benchmarkRuns)}ms")
     } else {
-        parse(cliArgs.files)
+        parse(cliArgs.files, cliArgs.dumpAst)
     }
 }
 

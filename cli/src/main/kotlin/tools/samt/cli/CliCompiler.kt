@@ -3,11 +3,12 @@ package tools.samt.cli
 import tools.samt.common.DiagnosticConsole
 import tools.samt.common.DiagnosticContext
 import tools.samt.lexer.Lexer
+import tools.samt.parser.FileNode
 import tools.samt.parser.Parser
 import tools.samt.parser.ParserException
 import java.io.File
 
-fun parse(files: List<String>) {
+fun parse(files: List<String>, dumpAST: Boolean = false) {
     for (it in files) {
         val file = File(it)
         if (!file.exists()) {
@@ -41,7 +42,10 @@ fun parse(files: List<String>) {
         }
 
         diagnostics.printToConsole()
-        println(fileNode)
+
+        if (dumpAST) {
+            println(fileNode)
+        }
     }
 }
 

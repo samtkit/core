@@ -2,7 +2,11 @@ package tools.samt.parser
 
 import tools.samt.common.Location
 
-sealed class Node(val location: Location)
+abstract class Node(val location: Location) {
+    override fun toString(): String {
+        return ASTPrinter.dump(this)
+    }
+}
 
 // Support multiple files in the future
 // class ProgramNode(

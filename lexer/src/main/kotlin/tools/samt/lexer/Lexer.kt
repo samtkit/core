@@ -287,7 +287,7 @@ class Lexer private constructor(
         currentPosition.copy(
                 charIndex = currentPosition.charIndex + 1,
                 row = currentPosition.row + 1,
-                col = -1,
+                col = 0,
         )
     } else {
         currentPosition.copy(

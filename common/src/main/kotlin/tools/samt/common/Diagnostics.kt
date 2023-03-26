@@ -27,9 +27,7 @@ class DiagnosticConsole(private val diagnosticContext: DiagnosticContext) {
     fun hasWarnings(): Boolean = mutableMessages.any { it.severity == DiagnosticSeverity.Warning }
 
     override fun toString() = buildString {
-        if (messages.isEmpty()) {
-            append("${diagnosticContext.sourcePath}: No errors or warnings")
-        } else {
+        if (messages.isNotEmpty()) {
             appendLine("${diagnosticContext.sourcePath}:")
             for (message in messages) {
                 append(message.severity)

@@ -33,18 +33,22 @@ class ParserUnitTest {
         @Test
         fun `multiple package declarations`() {
             val source = """
+                import a.b.c
+                
                 package a
                 package b
+                
+                record A {}
             """.trimIndent()
             val (fileTree, diagnostics) = parseWithRecoverableError(source)
 
             val firstPackageLocation = Location(
-                FileOffset(0, 0, 0),
-                FileOffset(8, 0, 8),
+                FileOffset(14, 2, 0),
+                FileOffset(23, 2, 9),
             )
             val secondPackageLocation = Location(
-                FileOffset(10, 1, 0),
-                FileOffset(18, 1, 8),
+                FileOffset(24, 3, 0),
+                FileOffset(33, 3, 9),
             )
 
             assertEquals(
@@ -58,8 +62,6 @@ class ParserUnitTest {
                 ), diagnostics.messages
             )
             assertPackage("b", fileTree.packageDeclaration)
-            assertEmpty(fileTree.imports)
-            assertEmpty(fileTree.statements)
         }
 
         @Test

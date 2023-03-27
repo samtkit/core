@@ -4,7 +4,9 @@ enum class DiagnosticSeverity {
     Error, Warning, Info
 }
 
-data class DiagnosticMessage(val message: String, val location: Location?, val severity: DiagnosticSeverity)
+data class DiagnosticMessage(val message: String, val location: Location?, val severity: DiagnosticSeverity) {
+    override fun toString() = "$severity:$location: $message"
+}
 
 data class DiagnosticContext(
     val sourcePath: String,

@@ -57,149 +57,149 @@ class ASTPrinter private constructor() {
         else -> null
     }
 
-    private inline fun iterateChildren(node: Node, body: (Node) -> Unit) {
+    private inline fun iterateChildren(node: Node, block: (Node) -> Unit) {
         when (node) {
             is FileNode -> {
-                node.imports.forEach(body)
-                body(node.packageDeclaration)
-                node.statements.forEach(body)
+                node.imports.forEach(block)
+                block(node.packageDeclaration)
+                node.statements.forEach(block)
             }
 
             is TypeImportNode -> {
-                body(node.name)
+                block(node.name)
                 if (node.alias != null) {
-                    body(node.alias)
+                    block(node.alias)
                 }
             }
 
             is WildcardImportNode -> {
-                body(node.name)
+                block(node.name)
             }
 
             is PackageDeclarationNode -> {
-                body(node.name)
+                block(node.name)
             }
 
             is RecordDeclarationNode -> {
-                body(node.name)
-                node.extends.forEach(body)
-                node.fields.forEach(body)
-                node.annotations.forEach(body)
+                block(node.name)
+                node.extends.forEach(block)
+                node.fields.forEach(block)
+                node.annotations.forEach(block)
             }
 
             is RecordFieldNode -> {
-                body(node.name)
-                body(node.type)
-                node.annotations.forEach(body)
+                block(node.name)
+                block(node.type)
+                node.annotations.forEach(block)
             }
 
             is EnumDeclarationNode -> {
-                body(node.name)
-                node.values.forEach(body)
-                node.annotations.forEach(body)
+                block(node.name)
+                node.values.forEach(block)
+                node.annotations.forEach(block)
             }
 
             is TypeAliasNode -> {
-                body(node.name)
-                body(node.type)
-                node.annotations.forEach(body)
+                block(node.name)
+                block(node.type)
+                node.annotations.forEach(block)
             }
 
             is ServiceDeclarationNode -> {
-                body(node.name)
-                node.operations.forEach(body)
-                node.annotations.forEach(body)
+                block(node.name)
+                node.operations.forEach(block)
+                node.annotations.forEach(block)
             }
 
             is OperationParameterNode -> {
-                body(node.name)
-                body(node.type)
-                node.annotations.forEach(body)
+                block(node.name)
+                block(node.type)
+                node.annotations.forEach(block)
             }
 
             is RequestResponseOperationNode -> {
-                body(node.name)
-                node.parameters.forEach(body)
+                block(node.name)
+                node.parameters.forEach(block)
                 if (node.returnType != null) {
-                    body(node.returnType)
+                    block(node.returnType)
                 }
-                node.raises.forEach(body)
-                node.annotations.forEach(body)
+                node.raises.forEach(block)
+                node.annotations.forEach(block)
             }
 
             is OnewayOperationNode -> {
-                body(node.name)
-                node.parameters.forEach(body)
-                node.annotations.forEach(body)
+                block(node.name)
+                node.parameters.forEach(block)
+                node.annotations.forEach(block)
             }
 
             is ProviderDeclarationNode -> {
-                body(node.name)
-                node.implements.forEach(body)
-                body(node.transport)
+                block(node.name)
+                node.implements.forEach(block)
+                block(node.transport)
             }
 
             is ProviderImplementsNode -> {
-                body(node.serviceName)
-                node.serviceOperationNames.forEach(body)
+                block(node.serviceName)
+                node.serviceOperationNames.forEach(block)
             }
 
             is ProviderTransportNode -> {
-                body(node.protocolName)
+                block(node.protocolName)
                 if (node.configuration != null) {
-                    body(node.configuration)
+                    block(node.configuration)
                 }
             }
 
             is ConsumerDeclarationNode -> {
-                body(node.providerName)
-                node.usages.forEach(body)
+                block(node.providerName)
+                node.usages.forEach(block)
             }
 
             is ConsumerUsesNode -> {
-                body(node.serviceName)
-                node.serviceOperationNames.forEach(body)
+                block(node.serviceName)
+                node.serviceOperationNames.forEach(block)
             }
 
             is AnnotationNode -> {
-                body(node.name)
-                node.arguments.forEach(body)
+                block(node.name)
+                node.arguments.forEach(block)
             }
 
             is CallExpressionNode -> {
-                body(node.base)
-                node.arguments.forEach(body)
+                block(node.base)
+                node.arguments.forEach(block)
             }
 
             is GenericSpecializationNode -> {
-                body(node.base)
-                node.arguments.forEach(body)
+                block(node.base)
+                node.arguments.forEach(block)
             }
 
             is OptionalDeclarationNode -> {
-                body(node.base)
+                block(node.base)
             }
 
             is RangeExpressionNode -> {
-                body(node.left)
-                body(node.right)
+                block(node.left)
+                block(node.right)
             }
 
             is ObjectNode -> {
-                node.fields.forEach(body)
+                node.fields.forEach(block)
             }
 
             is ObjectFieldNode -> {
-                body(node.name)
-                body(node.value)
+                block(node.name)
+                block(node.value)
             }
 
             is ArrayNode -> {
-                node.values.forEach(body)
+                node.values.forEach(block)
             }
 
             is BundleIdentifierNode -> {
-                node.components.forEach(body)
+                node.components.forEach(block)
             }
 
             else -> {}

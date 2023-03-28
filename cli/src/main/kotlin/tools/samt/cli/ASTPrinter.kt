@@ -1,15 +1,26 @@
-package tools.samt.parser
+package tools.samt.cli
+
+import tools.samt.parser.*
+
+import com.github.ajalt.mordant.rendering.TextColors.*
+import com.github.ajalt.mordant.rendering.TextStyles.*
 
 class ASTPrinter private constructor() {
     private fun dump(node: Node): String = buildString {
-        append(node.javaClass.simpleName)
+        val topLevelStyle = (red + bold + underline)
+        val expressionStyle = (blue + bold)
+
+        when (node) {
+            is ExpressionNode -> append(expressionStyle(node.javaClass.simpleName))
+            else -> append(topLevelStyle(node.javaClass.simpleName))
+        }
 
         val info = dumpInfo(node)
         if (info != null) {
             append(" $info")
         }
 
-        append(" <${node.location}>")
+        append(gray(" <${node.location}>"))
         append(System.lineSeparator())
 
         val childDumps: List<String> = buildList {
@@ -24,13 +35,13 @@ class ASTPrinter private constructor() {
                 if (!line.isEmpty()) {
                     if (childIndex != childDumps.lastIndex) {
                         if (firstLine) {
-                            append("├─$line")
+                            append("${white("├─")}$line")
                         } else {
-                            append("│ $line")
+                            append("${white("│ ")}$line")
                         }
                     } else {
                         if (firstLine) {
-                            append("└─$line")
+                            append("${white("└─")}$line")
                         } else {
                             append("  $line")
                         }
@@ -47,13 +58,14 @@ class ASTPrinter private constructor() {
     }
 
     private fun dumpInfo(node: Node): String? = when (node) {
-        is RequestResponseOperationNode -> if (node.isAsync) "async" else null
-        is IdentifierNode -> node.name
-        is ImportBundleIdentifierNode -> if (node.isWildcard) "wildcard" else null
-        is IntegerNode -> node.value.toString()
-        is FloatNode -> node.value.toString()
-        is BooleanNode -> node.value.toString()
-        is StringNode -> "\"${node.value}\""
+        is FileNode -> gray(node.filePath)
+        is RequestResponseOperationNode -> if (node.isAsync) red("async") else null
+        is IdentifierNode -> yellow(node.name)
+        is ImportBundleIdentifierNode -> if (node.isWildcard) red("wildcard") else null
+        is IntegerNode -> blue(node.value.toString())
+        is FloatNode -> magenta(node.value.toString())
+        is BooleanNode -> if (node.value) green("true") else red("false")
+        is StringNode -> red("\"${node.value}\"")
         else -> null
     }
 
@@ -68,7 +80,7 @@ class ASTPrinter private constructor() {
             is TypeImportNode -> {
                 block(node.name)
                 if (node.alias != null) {
-                    block(node.alias)
+                    block(node.alias!!)
                 }
             }
 
@@ -121,7 +133,7 @@ class ASTPrinter private constructor() {
                 block(node.name)
                 node.parameters.forEach(block)
                 if (node.returnType != null) {
-                    block(node.returnType)
+                    block(node.returnType!!)
                 }
                 node.raises.forEach(block)
                 node.annotations.forEach(block)
@@ -147,7 +159,7 @@ class ASTPrinter private constructor() {
             is ProviderTransportNode -> {
                 block(node.protocolName)
                 if (node.configuration != null) {
-                    block(node.configuration)
+                    block(node.configuration!!)
                 }
             }
 
@@ -207,7 +219,7 @@ class ASTPrinter private constructor() {
     }
 
     companion object {
-        fun dump(node: Node): String {
+        fun dump(node: FileNode): String {
             return ASTPrinter().dump(node)
         }
     }

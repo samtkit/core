@@ -1,4 +1,7 @@
 #!/bin/sh
 
-./gradlew cli:shadowJar
-java -jar cli/build/libs/samt-cli.jar "$@"
+if ./gradlew cli:shadowJar;
+then
+  java -jar cli/build/libs/samt-cli.jar "$@"
+fi
+

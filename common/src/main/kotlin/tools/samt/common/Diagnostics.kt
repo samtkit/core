@@ -27,6 +27,7 @@ class DiagnosticConsole(private val diagnosticContext: DiagnosticContext) {
 
     fun hasErrors(): Boolean = mutableMessages.any { it.severity == DiagnosticSeverity.Error }
     fun hasWarnings(): Boolean = mutableMessages.any { it.severity == DiagnosticSeverity.Warning }
+    fun hasMessages(): Boolean = mutableMessages.isNotEmpty()
 
     override fun toString() = buildString {
         if (messages.isNotEmpty()) {

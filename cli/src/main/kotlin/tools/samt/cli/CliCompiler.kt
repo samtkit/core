@@ -8,19 +8,19 @@ import tools.samt.parser.Parser
 import tools.samt.parser.ParserException
 import java.io.File
 
-fun parse(files: List<String>, dumpAST: Boolean = false) {
-    for (it in files) {
-        val file = File(it)
+fun parse(filePaths: List<String>): List<FileNode> = buildList {
+    for (filePath in filePaths) {
+        val file = File(filePath)
         if (!file.exists()) {
-            println("File '$it' does not exist")
+            println("File '$filePath' does not exist")
             continue
         }
         if (!file.canRead()) {
-            println("File '$it' cannot be read, bad file permissions?")
+            println("File '$filePath' cannot be read, bad file permissions?")
             continue
         }
         if (file.extension != "samt") {
-            println("File '$it' must end in .samt")
+            println("File '$filePath' must end in .samt")
             continue
         }
 
@@ -35,17 +35,17 @@ fun parse(files: List<String>, dumpAST: Boolean = false) {
         }
 
         val fileNode = try {
-            Parser.parse(tokenStream, diagnostics)
+            Parser.parse(filePath, tokenStream, diagnostics)
         } catch (e: ParserException) {
             diagnostics.printToConsole()
             continue
         }
 
-        diagnostics.printToConsole()
-
-        if (dumpAST) {
-            println(fileNode)
+        if (diagnostics.hasMessages()) {
+            println(diagnostics)
         }
+
+        add(fileNode)
     }
 }
 

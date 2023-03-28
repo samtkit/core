@@ -839,27 +839,30 @@ class ParserUnitTest {
     }
 
     private fun parse(source: String): FileNode {
-        val diagnostics = DiagnosticConsole(DiagnosticContext("ParserTest.samt", source))
+        val filePath = "ParserTest.samt"
+        val diagnostics = DiagnosticConsole(DiagnosticContext(filePath, source))
         val stream = Lexer.scan(source.reader(), diagnostics)
-        val fileTree = Parser.parse(stream, diagnostics)
+        val fileTree = Parser.parse(filePath, stream, diagnostics)
         diagnostics.messages.forEach { println(it) }
         assertFalse(diagnostics.hasErrors(), "Expected no errors, but had errors")
         return fileTree
     }
 
     private fun parseWithRecoverableError(source: String): Pair<FileNode, DiagnosticConsole> {
-        val diagnostics = DiagnosticConsole(DiagnosticContext("ParserTest.samt", source))
+        val filePath = "ParserTest.samt"
+        val diagnostics = DiagnosticConsole(DiagnosticContext(filePath, source))
         val stream = Lexer.scan(source.reader(), diagnostics)
-        val fileTree = Parser.parse(stream, diagnostics)
+        val fileTree = Parser.parse(filePath, stream, diagnostics)
         diagnostics.messages.forEach { println(it) }
         assertTrue(diagnostics.hasErrors(), "Expected errors, but had no errors")
         return Pair(fileTree, diagnostics)
     }
 
     private fun parseWithFatalError(source: String): ParserException {
-        val diagnostics = DiagnosticConsole(DiagnosticContext("ParserTest.samt", source))
+        val filePath = "ParserTest.samt"
+        val diagnostics = DiagnosticConsole(DiagnosticContext(filePath, source))
         val stream = Lexer.scan(source.reader(), diagnostics)
-        val ex = assertThrows<ParserException> { Parser.parse(stream, diagnostics) }
+        val ex = assertThrows<ParserException> { Parser.parse(filePath, stream, diagnostics) }
         diagnostics.messages.forEach { println(it) }
         assertTrue(diagnostics.hasErrors(), "Expected errors, but had no errors")
         return ex

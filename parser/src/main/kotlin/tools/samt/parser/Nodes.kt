@@ -2,11 +2,7 @@ package tools.samt.parser
 
 import tools.samt.common.Location
 
-sealed class Node(val location: Location) {
-    override fun toString(): String {
-        return ASTPrinter.dump(this)
-    }
-}
+sealed class Node(val location: Location)
 
 // Support multiple files in the future
 // class ProgramNode(
@@ -16,6 +12,7 @@ sealed class Node(val location: Location) {
 
 class FileNode(
     location: Location,
+    val filePath: String,
     val imports: List<ImportNode>,
     val packageDeclaration: PackageDeclarationNode,
     val statements: List<StatementNode>,

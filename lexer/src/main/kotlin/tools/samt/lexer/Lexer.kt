@@ -18,11 +18,15 @@ class Lexer private constructor(
         this.reader = if (reader.markSupported()) reader else BufferedReader(reader)
     }
 
-    // the starting position of the current token window
-    // gets reset after each token is read
+    /**
+     * the starting position of the current token window
+     * gets reset after each token is read
+     * */
     private var windowStartPosition = FileOffset(charIndex = -1, row = 0, col = -1)
 
-    // the current position of the lexer
+    /**
+     * the current position of the lexer
+     * */
     private var currentPosition = FileOffset(charIndex = -1, row = 0, col = -1)
 
     fun readTokenStream(): Sequence<Token> = sequence {

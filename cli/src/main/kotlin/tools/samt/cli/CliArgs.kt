@@ -12,7 +12,7 @@ class CliArgs {
     @Parameter(names = ["--benchmark-runs"], description = "Parse files multiple times and measure execution time", help = true)
     var benchmarkRuns: Int = 100
 
-    @Parameter(names = ["--dumpast"], description = "Dump a visual representation of the AST", help = true)
+    @Parameter(names = ["--dump-ast"], description = "Dump a visual representation of the AST", help = true)
     var dumpAst: Boolean = false
 
     @Parameter(description = "Files")

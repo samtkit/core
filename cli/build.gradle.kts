@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":common"))
     implementation(project(":lexer"))
     implementation(project(":parser"))
+    implementation(project(":semantic"))
 }
 
 application {

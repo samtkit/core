@@ -3,6 +3,7 @@ include(":common")
 include(":cli")
 include(":lexer")
 include(":parser")
+include(":semantic")
 
 dependencyResolutionManagement {
     versionCatalogs {

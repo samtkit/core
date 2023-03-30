@@ -146,6 +146,37 @@ class SemanticCheckerTest {
     }
 
     @Nested
+    inner class UniqueProviderImplementsOperations {
+        @Test
+        fun `provider implements statement cannot list same operation multiple times`() {
+            val source = """
+                package color
+
+                provide ColorEndpoint {
+                    implements ColorService { get, set, get }
+                    transport HTTP
+                }
+            """.trimIndent()
+            parseAndCheck(source, ::UniqueProviderImplementsOperationsCheck, listOf("Error: Operation 'get' is already implemented"))
+        }
+    }
+
+    @Nested
+    inner class UniqueConsumerUsesOperations {
+        @Test
+        fun `provider implements statement cannot list same operation multiple times`() {
+            val source = """
+                package color
+
+                consume ColorEndpoint {
+                    uses ColorService { get, set, get }
+                }
+            """.trimIndent()
+            parseAndCheck(source, ::UniqueConsumerUsesOperationsCheck, listOf("Error: Operation 'get' is already used"))
+        }
+    }
+
+    @Nested
     inner class ValidTypeExpression {
         @Test
         fun `cannot have nested optional type`() {

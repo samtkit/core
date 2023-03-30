@@ -15,6 +15,8 @@ class SemanticChecker private constructor(private val fileNode: FileNode, diagno
         UniqueServiceOperationsCheck(diagnostics),
         NotImplementedFeaturesCheck(diagnostics),
         ValidTypeExpressionCheck(diagnostics),
+        UniqueProviderImplementsOperationsCheck(diagnostics),
+        UniqueConsumerUsesOperationsCheck(diagnostics),
     )
 
     fun checkFile() {

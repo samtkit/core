@@ -32,7 +32,7 @@ class ASTPrinter private constructor() {
         childDumps.forEachIndexed { childIndex, child ->
             var firstLine = true
             child.lineSequence().forEach { line ->
-                if (!line.isEmpty()) {
+                if (line.isNotEmpty()) {
                     if (childIndex != childDumps.lastIndex) {
                         if (firstLine) {
                             append("${white("├─")}$line")
@@ -214,7 +214,12 @@ class ASTPrinter private constructor() {
                 node.components.forEach(block)
             }
 
-            else -> {}
+            is WildcardNode,
+            is IdentifierNode,
+            is IntegerNode,
+            is FloatNode,
+            is BooleanNode,
+            is StringNode -> Unit
         }
     }
 

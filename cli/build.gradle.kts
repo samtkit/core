@@ -7,7 +7,7 @@ plugins {
 
 dependencies {
     implementation(libs.jCommander)
-    implementation("com.github.ajalt.mordant:mordant:2.0.0-beta12")
+    implementation(libs.mordant)
     implementation(project(":common"))
     implementation(project(":lexer"))
     implementation(project(":parser"))

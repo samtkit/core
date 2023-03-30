@@ -83,7 +83,7 @@ class Parser private constructor(
         is ServiceToken -> parseServiceDeclaration()
         is ProvideToken -> parseProviderDeclaration()
         is ConsumeToken -> parseConsumerDeclaration()
-        else -> reportFatalError("Expected some sort of a declaration", Location(currentStart))
+        else -> reportFatalError("Expected some sort of a declaration but got '${current!!.getHumanReadableName()}'", Location(currentStart))
     }
 
     private fun parseImport(): ImportNode {

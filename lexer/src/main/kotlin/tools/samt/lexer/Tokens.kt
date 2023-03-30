@@ -56,7 +56,12 @@ data class GreaterThanSignToken(override val location: Location): StructureToken
 data class QuestionMarkToken(override val location: Location): StructureToken
 
 inline fun <reified T : Token> getHumanReadableName() = getHumanReadableTokenName(T::class)
-fun Token.getHumanReadableName() = getHumanReadableTokenName(this::class)
+fun Token.getHumanReadableName() = when(this) {
+    is NumberToken -> value.toString()
+    is IdentifierToken -> value
+    is StringToken -> "\"$value\""
+    else -> getHumanReadableTokenName(this::class)
+}
 
 fun getHumanReadableTokenName(key: KClass<out Token>): String = when (key) {
     // Token

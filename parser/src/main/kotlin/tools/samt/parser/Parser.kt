@@ -83,7 +83,7 @@ class Parser private constructor(
         is ServiceToken -> parseServiceDeclaration()
         is ProvideToken -> parseProviderDeclaration()
         is ConsumeToken -> parseConsumerDeclaration()
-        else -> reportFatalError("Expected some sort of a declaration", Location(currentStart))
+        else -> reportFatalError("Expected some sort of a declaration but got '${current!!.getHumanReadableName()}'", Location(currentStart))
     }
 
     private fun parseImport(): ImportNode {
@@ -292,7 +292,7 @@ class Parser private constructor(
                 }
 
                 else -> reportFatalError(
-                    "Expected 'implements' or 'transport' but found '${getHumanReadableTokenName(current!!.javaClass.kotlin)}'",
+                    "Expected 'implements' or 'transport' but found '${current!!.getHumanReadableName()}'",
                     current!!.location
                 )
             }
@@ -529,8 +529,8 @@ class Parser private constructor(
             return token
         }
 
-        val expectedString = getHumanReadableTokenName(T::class)
-        val gotString = getHumanReadableTokenName(current!!.javaClass.kotlin)
+        val expectedString = getHumanReadableName<T>()
+        val gotString = current!!.getHumanReadableName()
 
         if (current is EndOfFileToken) {
             reportFatalError("Expected '${expectedString}' but reached end of file")

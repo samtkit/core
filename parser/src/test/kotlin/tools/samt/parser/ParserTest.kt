@@ -484,7 +484,7 @@ class ParserUnitTest {
         fun `unexpected end of file`() {
             val source = """
                 package a
-                
+
                 alias A: List<B
             """
             val exception = parseWithFatalError(source)
@@ -495,11 +495,22 @@ class ParserUnitTest {
         fun `unexpected structure token`() {
             val source = """
                 package a
-                
+
                 alias A: List<B}
             """
             val exception = parseWithFatalError(source)
             assertEquals("Expected '>' but got '}'", exception.message)
+        }
+
+        @Test
+        fun `unexpected number literal`() {
+            val source = """
+                package a
+
+                alias A 42.0
+            """
+            val exception = parseWithFatalError(source)
+            assertEquals("Expected ':' but got '42.0'", exception.message)
         }
 
         @Test
@@ -530,7 +541,7 @@ class ParserUnitTest {
                 uses Foo {}
             """
             val exception = parseWithFatalError(source)
-            assertEquals("Expected some sort of a declaration", exception.message)
+            assertEquals("Expected some sort of a declaration but got 'uses'", exception.message)
         }
 
         @Test
@@ -596,7 +607,7 @@ class ParserUnitTest {
                 
                 }
             """
-            val (fileTree, diagnostics) = parseWithRecoverableError(source)
+            val (_, diagnostics) = parseWithRecoverableError(source)
             assertEquals(
                 "Provider is missing a transport declaration",
                 diagnostics.messages.single().message
@@ -613,7 +624,7 @@ class ParserUnitTest {
                     transport rest
                 }
             """
-            val (fileTree, diagnostics) = parseWithRecoverableError(source)
+            val (_, diagnostics) = parseWithRecoverableError(source)
             assertEquals(
                 listOf(
                     "Provider can only have one transport declaration",
@@ -683,7 +694,7 @@ class ParserUnitTest {
                     uses Bar {}
                 }
             """
-            val (fileTree, diagnostics) = parseWithRecoverableError(source)
+            val (_, diagnostics) = parseWithRecoverableError(source)
             assertEquals(
                 "Expected at least one operation name in the uses clause",
                 diagnostics.messages.single().message

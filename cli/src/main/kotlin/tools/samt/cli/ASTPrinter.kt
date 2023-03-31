@@ -66,7 +66,11 @@ class ASTPrinter private constructor() {
         is IntegerNode -> blue(node.value.toString())
         is FloatNode -> magenta(node.value.toString())
         is BooleanNode -> if (node.value) green("true") else red("false")
-        is StringNode -> red("\"${node.value}\"")
+
+        // highlight each line in the string individually
+        is StringNode -> red("\"") + node.value.lineSequence().map {
+            red(it)
+        }.joinToString(System.lineSeparator()) + red("\"")
         else -> null
     }
 

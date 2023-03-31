@@ -61,7 +61,8 @@ class ASTPrinter private constructor() {
         is FileNode -> gray(node.filePath)
         is RequestResponseOperationNode -> if (node.isAsync) red("async") else null
         is IdentifierNode -> yellow(node.name)
-        is ImportBundleIdentifierNode -> if (node.isWildcard) red("wildcard") else null
+        is ImportBundleIdentifierNode -> yellow(node.name) + if (node.isWildcard) yellow(".*") else ""
+        is BundleIdentifierNode -> yellow(node.name)
         is IntegerNode -> blue(node.value.toString())
         is FloatNode -> magenta(node.value.toString())
         is BooleanNode -> if (node.value) green("true") else red("false")

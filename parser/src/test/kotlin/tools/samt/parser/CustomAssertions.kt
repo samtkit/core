@@ -8,11 +8,7 @@ fun assertIdentifier(expected: String?, actual: IdentifierNode?) {
 }
 
 fun assertBundleIdentifier(expected: String, actual: BundleIdentifierNode) {
-    val expectedParts = expected.split(".")
-    assertEquals(expectedParts.size, actual.components.size)
-    for (i in expectedParts.indices) {
-        assertEquals(expectedParts[i], actual.components[i].name)
-    }
+    assertEquals(expected, actual.name)
 }
 
 fun assertPackage(expectedPackageIdentifier: String, packageDeclaration: PackageDeclarationNode) {

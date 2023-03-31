@@ -6,6 +6,7 @@ import tools.samt.common.Location
 import tools.samt.lexer.*
 
 class Parser private constructor(
+    private val filePath: String,
     tokenStream: Sequence<Token>,
     private val diagnostics: DiagnosticConsole,
 ) {
@@ -57,7 +58,7 @@ class Parser private constructor(
             reportFatalError("Files must have at least one package declaration")
         }
 
-        return FileNode(locationFromStart(start), imports, packageDeclaration, statements)
+        return FileNode(locationFromStart(start), filePath, imports, packageDeclaration, statements)
     }
 
     private fun parseStatement(): StatementNode = when (current) {
@@ -573,8 +574,8 @@ class Parser private constructor(
     private fun locationFromStart(start: FileOffset) = Location(start, previousEnd)
 
     companion object {
-        fun parse(tokenStream: Sequence<Token>, diagnostics: DiagnosticConsole): FileNode {
-            return Parser(tokenStream, diagnostics).parseFile()
+        fun parse(filePath: String, tokenStream: Sequence<Token>, diagnostics: DiagnosticConsole): FileNode {
+            return Parser(filePath, tokenStream, diagnostics).parseFile()
         }
     }
 }

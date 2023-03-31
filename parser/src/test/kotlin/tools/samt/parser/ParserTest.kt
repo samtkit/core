@@ -33,18 +33,22 @@ class ParserUnitTest {
         @Test
         fun `multiple package declarations`() {
             val source = """
+                import a.b.c
+                
                 package a
                 package b
+                
+                record A {}
             """.trimIndent()
             val (fileTree, diagnostics) = parseWithRecoverableError(source)
 
             val firstPackageLocation = Location(
-                FileOffset(0, 0, 0),
-                FileOffset(8, 0, 8),
+                FileOffset(14, 2, 0),
+                FileOffset(23, 2, 9),
             )
             val secondPackageLocation = Location(
-                FileOffset(10, 1, 0),
-                FileOffset(18, 1, 8),
+                FileOffset(24, 3, 0),
+                FileOffset(33, 3, 9),
             )
 
             assertEquals(
@@ -58,8 +62,6 @@ class ParserUnitTest {
                 ), diagnostics.messages
             )
             assertPackage("b", fileTree.packageDeclaration)
-            assertEmpty(fileTree.imports)
-            assertEmpty(fileTree.statements)
         }
 
         @Test
@@ -837,27 +839,30 @@ class ParserUnitTest {
     }
 
     private fun parse(source: String): FileNode {
-        val diagnostics = DiagnosticConsole(DiagnosticContext("ParserTest.samt", source))
+        val filePath = "ParserTest.samt"
+        val diagnostics = DiagnosticConsole(DiagnosticContext(filePath, source))
         val stream = Lexer.scan(source.reader(), diagnostics)
-        val fileTree = Parser.parse(stream, diagnostics)
+        val fileTree = Parser.parse(filePath, stream, diagnostics)
         diagnostics.messages.forEach { println(it) }
         assertFalse(diagnostics.hasErrors(), "Expected no errors, but had errors")
         return fileTree
     }
 
     private fun parseWithRecoverableError(source: String): Pair<FileNode, DiagnosticConsole> {
-        val diagnostics = DiagnosticConsole(DiagnosticContext("ParserTest.samt", source))
+        val filePath = "ParserTest.samt"
+        val diagnostics = DiagnosticConsole(DiagnosticContext(filePath, source))
         val stream = Lexer.scan(source.reader(), diagnostics)
-        val fileTree = Parser.parse(stream, diagnostics)
+        val fileTree = Parser.parse(filePath, stream, diagnostics)
         diagnostics.messages.forEach { println(it) }
         assertTrue(diagnostics.hasErrors(), "Expected errors, but had no errors")
         return Pair(fileTree, diagnostics)
     }
 
     private fun parseWithFatalError(source: String): ParserException {
-        val diagnostics = DiagnosticConsole(DiagnosticContext("ParserTest.samt", source))
+        val filePath = "ParserTest.samt"
+        val diagnostics = DiagnosticConsole(DiagnosticContext(filePath, source))
         val stream = Lexer.scan(source.reader(), diagnostics)
-        val ex = assertThrows<ParserException> { Parser.parse(stream, diagnostics) }
+        val ex = assertThrows<ParserException> { Parser.parse(filePath, stream, diagnostics) }
         diagnostics.messages.forEach { println(it) }
         assertTrue(diagnostics.hasErrors(), "Expected errors, but had no errors")
         return ex

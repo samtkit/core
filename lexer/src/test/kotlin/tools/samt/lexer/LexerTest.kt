@@ -263,21 +263,23 @@ SAMT!""", stream.next()
     @Test
     fun `correct location with multiline source`() {
         val source = """
-            record A {
-                "Hello"
-            }
+            record
+             A
+              {
+               "Hello"
+                }
         """.trimIndent()
         val stream = readTokenStream(source)
         val record = assertIs<RecordToken>(stream.next())
-        assertLocation(FileOffset(0, 0, 0), FileOffset(5, 0, 5), record)
+        assertLocation(FileOffset(0, 0, 0), FileOffset(6, 0, 6), record)
         val identifierA = assertIs<IdentifierToken>(stream.next())
-        assertLocation(FileOffset(7, 0, 7), FileOffset(7, 0, 7), identifierA)
+        assertLocation(FileOffset(8, 1, 1), FileOffset(9, 1, 2), identifierA)
         val openBrace = assertIs<OpenBraceToken>(stream.next())
-        assertLocation(FileOffset(9, 0, 9), FileOffset(9, 0, 9), openBrace)
+        assertLocation(FileOffset(12, 2, 2), FileOffset(13, 2, 3), openBrace)
         val helloString = assertIs<StringToken>(stream.next())
-        assertLocation(FileOffset(15, 1, 4), FileOffset(21, 1, 10), helloString)
+        assertLocation(FileOffset(17, 3, 3), FileOffset(24, 3, 10), helloString)
         val closeBrace = assertIs<CloseBraceToken>(stream.next())
-        assertLocation(FileOffset(23, 2, 0), FileOffset(23, 2, 0), closeBrace)
+        assertLocation(FileOffset(29, 4, 4), FileOffset(30, 4, 5), closeBrace)
         assertIs<EndOfFileToken>(stream.next())
         assertFalse(diagnostics.hasErrors())
     }

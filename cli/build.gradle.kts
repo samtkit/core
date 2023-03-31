@@ -7,6 +7,7 @@ plugins {
 
 dependencies {
     implementation(libs.jCommander)
+    implementation(libs.mordant)
     implementation(project(":common"))
     implementation(project(":lexer"))
     implementation(project(":parser"))

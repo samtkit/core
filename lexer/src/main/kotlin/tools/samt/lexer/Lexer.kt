@@ -19,24 +19,30 @@ class Lexer private constructor(
     }
 
     /**
-     * Index of the last read character, 0 based
-     */
+     * the starting position of the current token window
+     * gets reset after each token is read
+     * */
+    private var windowStartPosition = FileOffset(charIndex = -1, row = 0, col = -1)
+
+    /**
+     * the current position of the lexer
+     * */
     private var currentPosition = FileOffset(charIndex = -1, row = 0, col = -1)
-    private var lastPosition = currentPosition
 
     fun readTokenStream(): Sequence<Token> = sequence {
-        // Read very first character
-        readNext()
+        readNext() // read initial character
         skipBlanks()
+        resetStartPosition()
         while (!end) {
             val token = readToken()
             if (token != null) {
                 yield(token)
             }
             skipBlanks()
+            resetStartPosition()
         }
         while (true) {
-           yield(EndOfFileToken(locationFromStart(currentPosition)))
+           yield(EndOfFileToken(windowLocation()))
         }
     }
 
@@ -63,24 +69,21 @@ class Lexer private constructor(
             '>' -> readStructureToken { GreaterThanSignToken(it) }
             '?' -> readStructureToken { QuestionMarkToken(it) }
             else -> {
-                val start = currentPosition
                 readNext() // Skip unrecognized character
-                val errorLocation = locationFromStart(start)
-                diagnostics.reportError("Unrecognized character: $current", errorLocation)
+                val errorLocation = windowLocation()
+                val codeAsHex = current.code.toString(16)
+                diagnostics.reportError("Unrecognized character: $current (0x$codeAsHex)", errorLocation)
                 null
             }
         }
     }
 
     private inline fun <reified T: StructureToken> readStructureToken(factory: (location: Location) -> T): StructureToken {
-        val start = currentPosition
         readNext()
-        return factory(locationFromStart(start))
+        return factory(windowLocation())
     }
 
     private fun readNumber(isNegative: Boolean = false): NumberToken {
-        val start = currentPosition
-
         var hasDecimalPoint = false
         val numberAsString = buildString {
             fun readDigits(): Boolean {
@@ -99,7 +102,7 @@ class Lexer private constructor(
             }
             val hasWholeDigits = readDigits()
             if (!hasWholeDigits) {
-                diagnostics.reportError("Number is missing whole part (0.5 is valid, .5 is not)", locationFromStart(start))
+                diagnostics.reportError("Number is missing whole part (0.5 is valid, .5 is not)", windowLocation())
                 append('0')
             }
 
@@ -123,13 +126,13 @@ class Lexer private constructor(
                 val hasFractionalDigits = readDigits()
 
                 if (!hasFractionalDigits) {
-                    diagnostics.reportError("Number is missing fractional part (0.0 is valid, 0. is not)", locationFromStart(start))
+                    diagnostics.reportError("Number is missing fractional part (0.0 is valid, 0. is not)", windowLocation())
                     append('0')
                 }
             }
         }
 
-        val location = locationFromStart(start)
+        val location = windowLocation()
         return if (hasDecimalPoint) {
             val doubleValue = numberAsString.toDoubleOrNull()
             if (doubleValue == null) {
@@ -146,7 +149,6 @@ class Lexer private constructor(
     }
 
     private fun readName(caretPassed: Boolean = false): Token {
-        val start = currentPosition
         if (caretPassed) {
             readNext() // Ignore Caret for identifier
         }
@@ -158,8 +160,7 @@ class Lexer private constructor(
             }
         }
 
-        val location = locationFromStart(start)
-
+        val location = windowLocation()
         val parsedKeyword = KEYWORDS[name]
 
         return when {
@@ -176,7 +177,6 @@ class Lexer private constructor(
 
     private fun readString(): StringToken {
         assert(current == '"')
-        val start = currentPosition
         readNext() // skip leading double quote
         val readString = buildString {
             while (!end && current != '"') {
@@ -192,7 +192,7 @@ class Lexer private constructor(
                         '"' -> append('"')
                         else -> {
                             diagnostics.reportError(
-                                    "Invalid escape sequence: $current", locationFromStart(start)
+                                    "Invalid escape sequence: $current", windowLocation()
                             )
                         }
                     }
@@ -206,25 +206,24 @@ class Lexer private constructor(
         if (end) {
             diagnostics.reportError(
                     "String was not closed when reaching end of file",
-                    locationFromStart(start),
+                    windowLocation(),
             )
-            return StringToken(locationFromStart(start), readString)
+            return StringToken(windowLocation(), readString)
         }
         readNext() // skip trailing double quote
-        return StringToken(locationFromStart(start), readString)
+        return StringToken(windowLocation(), readString)
     }
 
     private fun readDot(): Token {
-        val start = currentPosition
         readNext()
         if (!end) {
             if (current == '.') {
                 readNext()
-                return DoublePeriodToken(locationFromStart(start))
+                return DoublePeriodToken(windowLocation())
             }
         }
 
-        return PeriodToken(locationFromStart(start))
+        return PeriodToken(windowLocation())
     }
 
     private fun skipComment(): Token? {
@@ -247,7 +246,6 @@ class Lexer private constructor(
     }
 
     private fun skipCommentBlock() {
-        val start = currentPosition.copy(charIndex = currentPosition.charIndex - 1, col = currentPosition.col - 1)
         while (!end) {
             readNext()
             if (!end && current == '*') {
@@ -259,12 +257,12 @@ class Lexer private constructor(
             }
         }
         diagnostics.reportError(
-                "Opened block comment was not closed when reaching end of file", locationFromStart(start)
+                "Opened block comment was not closed when reaching end of file", windowLocation()
         )
         return
     }
 
-    private fun locationFromStart(start: FileOffset) = Location(start, lastPosition)
+    private fun windowLocation() = Location(windowStartPosition, currentPosition)
 
     private fun skipBlanks() {
         while (!end && (current == ' ' || current == '\n' || current == '\t' || current == '\r')) {
@@ -272,27 +270,39 @@ class Lexer private constructor(
         }
     }
 
+    private fun resetStartPosition() {
+        windowStartPosition = currentPosition.copy()
+    }
+
     private fun readNext() {
+        val previousWasNewline = current == '\n'
+
         val value = reader.read()
         if (value < 0) {
             end = true
         } else {
             current = value.toChar()
         }
-        lastPosition = currentPosition
-        currentPosition = advancedPosition()
+
+        if (previousWasNewline) {
+            incrementRow()
+        } else {
+            incrementColumn()
+        }
     }
 
-    private fun advancedPosition() = if (current == '\n') {
-        currentPosition.copy(
-                charIndex = currentPosition.charIndex + 1,
-                row = currentPosition.row + 1,
-                col = -1,
+    private fun incrementColumn() {
+        currentPosition = currentPosition.copy(
+            charIndex = currentPosition.charIndex + 1,
+            col = currentPosition.col + 1
         )
-    } else {
-        currentPosition.copy(
-                charIndex = currentPosition.charIndex + 1,
-                col = currentPosition.col + 1,
+    }
+
+    private fun incrementRow() {
+        currentPosition = currentPosition.copy(
+            charIndex = currentPosition.charIndex + 1,
+            row = currentPosition.row + 1,
+            col = 0
         )
     }
 

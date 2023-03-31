@@ -15,6 +15,10 @@ record GreetResponse {
   message: String(pattern("a-z"))
 
   @Description("The precise time at which the response was generated")
+  @Description("foo bar
+    This is some very long comment
+    which describes the service.
+  baz")
   timestamp: DateTime
 }
 

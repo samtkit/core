@@ -12,6 +12,7 @@ sealed class Node(val location: Location)
 
 class FileNode(
     location: Location,
+    val filePath: String,
     val imports: List<ImportNode>,
     val packageDeclaration: PackageDeclarationNode,
     val statements: List<StatementNode>,
@@ -200,7 +201,10 @@ class IdentifierNode(
 open class BundleIdentifierNode(
     location: Location,
     val components: List<IdentifierNode>,
-) : ExpressionNode(location)
+) : ExpressionNode(location) {
+    val name: String
+        get() = components.joinToString(".") { it.name }
+}
 
 class ImportBundleIdentifierNode(
     location: Location,

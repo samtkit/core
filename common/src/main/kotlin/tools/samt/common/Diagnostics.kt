@@ -4,7 +4,9 @@ enum class DiagnosticSeverity {
     Error, Warning, Info
 }
 
-data class DiagnosticMessage(val message: String, val location: Location?, val severity: DiagnosticSeverity)
+data class DiagnosticMessage(val message: String, val location: Location?, val severity: DiagnosticSeverity) {
+    override fun toString() = "$severity:$location: $message"
+}
 
 data class DiagnosticContext(
     val sourcePath: String,
@@ -25,11 +27,10 @@ class DiagnosticConsole(private val diagnosticContext: DiagnosticContext) {
 
     fun hasErrors(): Boolean = mutableMessages.any { it.severity == DiagnosticSeverity.Error }
     fun hasWarnings(): Boolean = mutableMessages.any { it.severity == DiagnosticSeverity.Warning }
+    fun hasMessages(): Boolean = mutableMessages.isNotEmpty()
 
     override fun toString() = buildString {
-        if (messages.isEmpty()) {
-            append("${diagnosticContext.sourcePath}: No errors or warnings")
-        } else {
+        if (messages.isNotEmpty()) {
             appendLine("${diagnosticContext.sourcePath}:")
             for (message in messages) {
                 append(message.severity)

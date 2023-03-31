@@ -1,7 +1,11 @@
 package tools.samt.cli
 
 import com.beust.jcommander.JCommander
+import tools.samt.parser.FileNode
 import kotlin.system.measureNanoTime
+
+import com.github.ajalt.mordant.rendering.TextStyles.*
+import com.github.ajalt.mordant.terminal.Terminal
 
 fun main(args: Array<String>) {
     val cliArgs = CliArgs()
@@ -15,17 +19,29 @@ fun main(args: Array<String>) {
         return
     }
 
+    val t = Terminal()
+
+    var fileNodes: List<FileNode>? = null
     if (cliArgs.benchmark) {
         var totalTime = 0L
         repeat(cliArgs.benchmarkRuns) {
-            val parseTime = measureNanoTime { parse(cliArgs.files) }
+            val parseTime = measureNanoTime {
+                fileNodes = parse(cliArgs.files)
+            }
             totalTime += parseTime
-            println("Took ${format(parseTime)}ms")
         }
 
-        println("Average took ${format(totalTime / cliArgs.benchmarkRuns)}ms")
+        t.println("Average parse step took ${underline(format(totalTime / cliArgs.benchmarkRuns))}ms")
     } else {
-        parse(cliArgs.files)
+        fileNodes = parse(cliArgs.files)
+    }
+
+    require(fileNodes != null)
+
+    if (cliArgs.dumpAst) {
+        fileNodes!!.forEach { fileNode ->
+            t.print(ASTPrinter.dump(fileNode))
+        }
     }
 }
 

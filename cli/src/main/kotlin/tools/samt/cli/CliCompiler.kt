@@ -27,25 +27,28 @@ fun parse(filePaths: List<String>): List<FileNode> = buildList {
         val source = file.readText()
         val diagnostics = DiagnosticConsole(DiagnosticContext(file.canonicalPath, source))
 
-        val tokenStream = Lexer.scan(source.reader(), diagnostics)
+        var parsedFileNode = parseSource(file.canonicalPath, source, diagnostics)
 
         if (diagnostics.hasErrors()) {
             diagnostics.printToConsole()
             continue
         }
 
-        val fileNode = try {
-            Parser.parse(filePath, tokenStream, diagnostics)
-        } catch (e: ParserException) {
-            diagnostics.printToConsole()
-            continue
-        }
+        add(parsedFileNode!!)
+    }
+}
 
-        if (diagnostics.hasMessages()) {
-            println(diagnostics)
-        }
+fun parseSource(filePath: String, fileSource: String, diagnostics: DiagnosticConsole): FileNode? {
+    val tokenStream = Lexer.scan(fileSource.reader(), diagnostics)
 
-        add(fileNode)
+    if (diagnostics.hasErrors()) {
+        return null
+    }
+
+    return try {
+        Parser.parse(filePath, tokenStream, diagnostics)
+    } catch (e: ParserException) {
+        null
     }
 }
 

@@ -2,10 +2,8 @@ package tools.samt.cli
 
 import com.beust.jcommander.JCommander
 import tools.samt.parser.FileNode
-import tools.samt.cli.ASTPrinter
 import kotlin.system.measureNanoTime
 
-import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.*
 import com.github.ajalt.mordant.terminal.Terminal
 

@@ -6,7 +6,7 @@ include(":parser")
 
 dependencyResolutionManagement {
     versionCatalogs {
-        val shadow = "8.1.0"
+        val shadow = "8.1.1"
         val jCommander = "1.82"
         val mordant = "2.0.0-beta12"
         val kover = "0.6.1"

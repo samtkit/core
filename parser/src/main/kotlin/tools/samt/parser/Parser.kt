@@ -6,11 +6,10 @@ import tools.samt.common.Location
 import tools.samt.lexer.*
 
 class Parser private constructor(
-    filePath: String,
+    private val filePath: String,
     tokenStream: Sequence<Token>,
     private val diagnostics: DiagnosticConsole,
 ) {
-    private val filePath = filePath
     private val tokenStream: Iterator<Token> = tokenStream.iterator()
 
     private var current: Token? = null

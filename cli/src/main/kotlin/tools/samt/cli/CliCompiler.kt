@@ -27,11 +27,14 @@ fun parse(filePaths: List<String>): List<FileNode> = buildList {
         val source = file.readText()
         val diagnostics = DiagnosticConsole(DiagnosticContext(file.canonicalPath, source))
 
-        var parsedFileNode = parseSource(file.canonicalPath, source, diagnostics)
+        val parsedFileNode = parseSource(file.canonicalPath, source, diagnostics)
 
-        if (diagnostics.hasErrors()) {
+        if (diagnostics.hasMessages()) {
             diagnostics.printToConsole()
-            continue
+
+            if (diagnostics.hasErrors()) {
+                continue
+            }
         }
 
         add(parsedFileNode!!)

@@ -302,6 +302,55 @@ class SemanticCheckerTest {
         }
     }
 
+    @Nested
+    inner class ValidAnnotationParameterExpression {
+        @Test
+        fun `can use literal types as annotation arguments`() {
+            val source = """
+                package annotated
+
+                @Foo(42)
+                record Annotated {
+                    @Bar("a", 1.5, false)
+                    value: Any
+                }
+
+                @Secret("password")
+                service AnnotatedService {
+                    @Important(true)
+                    foo(@Logged arg: Any): Any
+                }
+            """.trimIndent()
+            parseAndCheck(source, ::ValidAnnotationParameterExpressionCheck, emptyList())
+        }
+
+        @Test
+        fun `cannot use complex types in annotations`() {
+            val source = """
+                package annotated
+
+                @Foo({ a: "a", b: "b" })
+                record Annotated {
+                    @Bar(true, false, constant)
+                    value: Any
+                }
+
+                @Secret([true, false])
+                service AnnotatedService {
+                    @Important(null)
+                    foo(@Logged(*) arg: Any): Any
+                }
+            """.trimIndent()
+            parseAndCheck(source, ::ValidAnnotationParameterExpressionCheck, listOf(
+                "Error: Invalid annotation argument",
+                "Error: Invalid annotation argument",
+                "Error: Invalid annotation argument",
+                "Error: Invalid annotation argument",
+                "Error: Invalid annotation argument",
+            ))
+        }
+    }
+
     @Test
     fun `semantic checker passes for valid file`() {
         val source = """

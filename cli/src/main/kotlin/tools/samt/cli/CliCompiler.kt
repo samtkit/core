@@ -48,6 +48,7 @@ fun parseSource(filePath: String, fileSource: String, diagnostics: DiagnosticCon
     return try {
         Parser.parse(filePath, tokenStream, diagnostics)
     } catch (e: ParserException) {
+        // error message is added to the diagnostic console, so it can be ignored here
         null
     }
 }

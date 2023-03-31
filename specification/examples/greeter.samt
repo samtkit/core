@@ -23,10 +23,10 @@ record GreetResponse {
 }
 
 @Author("Leonard Schütz")
-@Description("foo bar
+@Description("
   This is some very long comment
   which describes the service.
-baz")
+")
 service GreetService {
   greet(request: GreetRequest): GreetResponse
 }

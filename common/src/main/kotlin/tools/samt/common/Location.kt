@@ -9,7 +9,7 @@ data class FileOffset(val charIndex: Int, val row: Int, val col: Int) {
  * */
 data class Location(
     val start: FileOffset,
-    val end: FileOffset = start
+    val end: FileOffset = start,
 ) {
     init {
         require(start.row <= end.row) { "Location end row (${end.row}) cannot be before start row ${start.row}" }

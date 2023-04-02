@@ -1,8 +1,6 @@
 package tools.samt.lexer
 
-import tools.samt.common.DiagnosticConsole
-import tools.samt.common.FileOffset
-import tools.samt.common.Location
+import tools.samt.common.*
 import java.io.BufferedReader
 import java.io.Reader
 
@@ -102,7 +100,8 @@ class Lexer private constructor(
             }
             val hasWholeDigits = readDigits()
             if (!hasWholeDigits) {
-                diagnostics.reportError("Number is missing whole part (0.5 is valid, .5 is not)", windowLocation())
+                diagnostics.reportError("Number is missing whole part", windowLocation())
+                    .explanation("0.5 is valid, .5 is not")
                 append('0')
             }
 
@@ -126,7 +125,8 @@ class Lexer private constructor(
                 val hasFractionalDigits = readDigits()
 
                 if (!hasFractionalDigits) {
-                    diagnostics.reportError("Number is missing fractional part (0.0 is valid, 0. is not)", windowLocation())
+                    diagnostics.reportError("Number is missing fractional part", windowLocation())
+                        .explanation("5.0 is valid, 5. is not")
                     append('0')
                 }
             }
@@ -192,8 +192,10 @@ class Lexer private constructor(
                         '"' -> append('"')
                         else -> {
                             diagnostics.reportError(
-                                    "Invalid escape sequence: $current", windowLocation()
+                                "Invalid escape sequence: $current", windowLocation()
                             )
+                                .explanation("Valid escape sequences are: \\t, \\r, \\n, \\b, \\\\, \\\"")
+                                .suggestion("$current")
                         }
                     }
                     readNext()
@@ -205,8 +207,8 @@ class Lexer private constructor(
         }
         if (end) {
             diagnostics.reportError(
-                    "String was not closed when reaching end of file",
-                    windowLocation(),
+                "String was not closed when reaching end of file, did you forget a \"?",
+                windowLocation(),
             )
             return StringToken(windowLocation(), readString)
         }
@@ -257,12 +259,13 @@ class Lexer private constructor(
             }
         }
         diagnostics.reportError(
-                "Opened block comment was not closed when reaching end of file", windowLocation()
+            "Opened block comment was not closed when reaching end of file, did you forget to close it?",
+            windowLocation()
         )
         return
     }
 
-    private fun windowLocation() = Location(windowStartPosition, currentPosition)
+    private fun windowLocation() = Location(diagnostics.context, windowStartPosition, currentPosition)
 
     private fun skipBlanks() {
         while (!end && (current == ' ' || current == '\n' || current == '\t' || current == '\r')) {

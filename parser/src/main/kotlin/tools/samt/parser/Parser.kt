@@ -1,8 +1,6 @@
 package tools.samt.parser
 
-import tools.samt.common.DiagnosticConsole
-import tools.samt.common.FileOffset
-import tools.samt.common.Location
+import tools.samt.common.*
 import tools.samt.lexer.*
 
 class Parser private constructor(
@@ -32,7 +30,7 @@ class Parser private constructor(
                         reportError(
                             "Import statements must be placed before the package declaration",
                             statement.location
-                        )
+                        ).seeAlso(packageDeclaration.location)
                     }
                     imports.add(statement)
                 }
@@ -40,7 +38,7 @@ class Parser private constructor(
                 is PackageDeclarationNode -> {
                     if (packageDeclaration != null) {
                         reportError("Cannot have multiple package declarations per file", statement.location)
-                        reportInfo("Previously declared package here", packageDeclaration.location)
+                            .previousDefinedAt(packageDeclaration.location)
                     }
                     packageDeclaration = statement
                 }
@@ -84,7 +82,10 @@ class Parser private constructor(
         is ServiceToken -> parseServiceDeclaration()
         is ProvideToken -> parseProviderDeclaration()
         is ConsumeToken -> parseConsumerDeclaration()
-        else -> reportFatalError("Expected some sort of a declaration but got '${current!!.getHumanReadableName()}'", Location(currentStart))
+        else -> reportFatalError(
+            "Expected some sort of a declaration but got '${current!!.getHumanReadableName()}'",
+            current!!.location
+        )
     }
 
     private fun parseImport(): ImportNode {
@@ -102,6 +103,7 @@ class Parser private constructor(
         return if (importBundleIdentifier.isWildcard) {
             if (alias != null) {
                 reportError("Wildcard imports cannot have an alias", locationFromStart(startOfAlias))
+                    .suggestion("import ${importBundleIdentifier.name}.*")
             }
             WildcardImportNode(locationFromStart(start), importBundleIdentifier)
         } else {
@@ -288,7 +290,7 @@ class Parser private constructor(
                     transport = parseProviderTransport()
                     if (previousDeclaration is ProviderTransportNode) {
                         reportError("Provider can only have one transport declaration", transport.location)
-                        reportInfo("Previously declared here", previousDeclaration.location)
+                            .previousDefinedAt(previousDeclaration.location)
                     }
                 }
 
@@ -321,6 +323,7 @@ class Parser private constructor(
 
             if (serviceOperationNames.isEmpty()) {
                 reportError("Expected at least one operation name in the implements clause", locationFromStart(start))
+                    .explanation("A valid implements clause looks like 'implements ServiceName { operation1, operation2 }'")
             }
         }
 
@@ -362,6 +365,7 @@ class Parser private constructor(
 
             if (serviceOperationNames.isEmpty()) {
                 reportError("Expected at least one operation name in the uses clause", locationFromStart(start))
+                    .explanation("A valid uses clause looks like 'uses ServiceName { operation1, operation2 }'")
             }
         }
 
@@ -395,6 +399,7 @@ class Parser private constructor(
                     val arguments = parseCommaSeparatedTokenTerminatedList<GreaterThanSignToken, _>(::parseExpression)
                     if (arguments.isEmpty()) {
                         reportError("Generic specialization requires at least one argument", locationFromStart(start))
+                            .explanation("A valid generic specialization looks like 'List<String>' or 'Map<String, Int>'")
                     }
                     target = GenericSpecializationNode(locationFromStart(start), target, arguments)
                 }
@@ -512,7 +517,7 @@ class Parser private constructor(
     }
 
     private val isEnd: Boolean
-        get() = current is EndOfFileToken
+        get() = check<EndOfFileToken>()
 
     private inline fun <reified T : Token> expectOrNull(): T? {
         val ret = current as? T
@@ -533,12 +538,14 @@ class Parser private constructor(
         val expectedString = getHumanReadableName<T>()
         val gotString = current!!.getHumanReadableName()
 
-        if (current is EndOfFileToken) {
+        if (isEnd) {
             reportFatalError("Expected '${expectedString}' but reached end of file")
         }
 
-        if (T::class == IdentifierToken::class && current is StaticToken) {
-            reportFatalError("'${gotString}' is a reserved keyword, did you mean to escape it? (e.g. '^${gotString}')")
+        if (T::class == IdentifierToken::class && check<StaticToken>()) {
+            reportFatalError("'${gotString}' is a reserved keyword, did you mean to escape it?") {
+                suggestion("^${gotString}")
+            }
         }
 
         reportFatalError("Expected '${expectedString}' but got '${gotString}'")
@@ -558,20 +565,19 @@ class Parser private constructor(
         return current is T
     }
 
-    private fun reportError(message: String, location: Location? = null) {
+    private fun reportError(message: String, location: Location? = null) =
         diagnostics.reportError(message, location ?: current!!.location)
-    }
 
-    private fun reportInfo(message: String, location: Location? = null) {
-        diagnostics.reportInfo(message, location ?: current!!.location)
-    }
-
-    private fun reportFatalError(message: String, location: Location? = null): Nothing {
-        diagnostics.reportError(message, location)
+    private fun reportFatalError(
+        message: String,
+        location: Location? = null,
+        additions: DiagnosticMessage.() -> Unit = {},
+    ): Nothing {
+        diagnostics.reportError(message, location).additions()
         throw ParserException(message)
     }
 
-    private fun locationFromStart(start: FileOffset) = Location(start, previousEnd)
+    private fun locationFromStart(start: FileOffset) = Location(diagnostics.context, start, previousEnd)
 
     companion object {
         fun parse(filePath: String, tokenStream: Sequence<Token>, diagnostics: DiagnosticConsole): FileNode {

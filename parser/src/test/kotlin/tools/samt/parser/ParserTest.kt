@@ -1,10 +1,16 @@
 package tools.samt.parser
 
 import org.junit.jupiter.api.Nested
-import tools.samt.lexer.Lexer
 import org.junit.jupiter.api.assertThrows
-import tools.samt.common.*
-import kotlin.test.*
+import tools.samt.common.DiagnosticConsole
+import tools.samt.common.DiagnosticContext
+import tools.samt.common.FileOffset
+import tools.samt.common.Location
+import tools.samt.lexer.Lexer
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class ParserUnitTest {
 
@@ -42,24 +48,22 @@ class ParserUnitTest {
             """.trimIndent()
             val (fileTree, diagnostics) = parseWithRecoverableError(source)
 
+            val dummyContext = DiagnosticContext("DiagnosticsTest.samt", "source")
+
             val firstPackageLocation = Location(
+                dummyContext,
                 FileOffset(14, 2, 0),
                 FileOffset(23, 2, 9),
             )
             val secondPackageLocation = Location(
+                dummyContext,
                 FileOffset(24, 3, 0),
                 FileOffset(33, 3, 9),
             )
 
             assertEquals(
-                listOf(
-                    DiagnosticMessage(
-                        "Cannot have multiple package declarations per file",
-                        secondPackageLocation,
-                        DiagnosticSeverity.Error
-                    ),
-                    DiagnosticMessage("Previously declared package here", firstPackageLocation, DiagnosticSeverity.Info),
-                ), diagnostics.messages
+                "Error<$secondPackageLocation>: Cannot have multiple package declarations per file (PreviouslyDefined(location=$firstPackageLocation))",
+                diagnostics.messages.single().toString()
             )
             assertPackage("b", fileTree.packageDeclaration)
         }
@@ -521,7 +525,10 @@ class ParserUnitTest {
                 import package foo
             """
             val exception = parseWithFatalError(source)
-            assertEquals("'package' is a reserved keyword, did you mean to escape it? (e.g. '^package')", exception.message)
+            assertEquals(
+                "'package' is a reserved keyword, did you mean to escape it?",
+                exception.message
+            )
         }
 
         @Test
@@ -532,7 +539,10 @@ class ParserUnitTest {
                 record record A {}
             """
             val exception = parseWithFatalError(source)
-            assertEquals("'record' is a reserved keyword, did you mean to escape it? (e.g. '^record')", exception.message)
+            assertEquals(
+                "'record' is a reserved keyword, did you mean to escape it?",
+                exception.message
+            )
         }
 
         @Test
@@ -629,8 +639,7 @@ class ParserUnitTest {
             val (_, diagnostics) = parseWithRecoverableError(source)
             assertEquals(
                 listOf(
-                    "Provider can only have one transport declaration",
-                    "Previously declared here"
+                    "Provider can only have one transport declaration"
                 ), diagnostics.messages.map { it.message }
             )
         }

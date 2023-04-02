@@ -36,24 +36,28 @@ class DiagnosticMessage(
             append(")")
         }
     }
+
+    fun previousDefinedAt(location: Location): DiagnosticMessage = also {
+        additions.add(PreviouslyDefined(location))
+    }
+
+    fun explanation(example: String): DiagnosticMessage = also {
+        additions.add(Explanation(example))
+    }
+
+    fun suggestion(newValue: String): DiagnosticMessage = also {
+        additions.add(Suggestion(newValue))
+    }
+
+    fun seeAlso(location: Location): DiagnosticMessage = also {
+        additions.add(SeeAlso(location))
+    }
 }
 
 data class DiagnosticContext(
     val sourcePath: String,
     val source: String,
 )
-
-fun DiagnosticMessage.previousDefinedAt(location: Location): DiagnosticMessage =
-    also { additions.add(PreviouslyDefined(location)) }
-
-fun DiagnosticMessage.explanation(example: String): DiagnosticMessage =
-    also { additions.add(Explanation(example)) }
-
-fun DiagnosticMessage.suggestion(newValue: String): DiagnosticMessage =
-    also { additions.add(Suggestion(newValue)) }
-
-fun DiagnosticMessage.seeAlso(location: Location): DiagnosticMessage =
-    also { additions.add(SeeAlso(location)) }
 
 class DiagnosticConsole(val context: DiagnosticContext) {
     private val mutableMessages: MutableList<DiagnosticMessage> = ArrayList()

@@ -21,7 +21,7 @@ class ASTPrinter private constructor() {
         }
 
         append(gray(" <${node.location}>"))
-        append(System.lineSeparator())
+        appendLine()
 
         val childDumps: List<String> = buildList {
             iterateChildren(node) { child ->
@@ -47,14 +47,14 @@ class ASTPrinter private constructor() {
                         }
                     }
 
-                    append(System.lineSeparator())
+                    appendLine()
                 }
 
                 firstLine = false
             }
         }
 
-        append(System.lineSeparator())
+        appendLine()
     }
 
     private fun dumpInfo(node: Node): String? = when (node) {

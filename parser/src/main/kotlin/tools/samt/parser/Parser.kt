@@ -196,28 +196,12 @@ class Parser private constructor(
         return RecordFieldNode(locationFromStart(start), name, type, annotations)
     }
 
-    // FIXME: remove debug code
     private fun parseEnumDeclaration(annotations: List<AnnotationNode> = emptyList()): EnumDeclarationNode {
         val start = currentStart
-        val enumToken = expect<EnumToken>()
+        expect<EnumToken>()
         val name = parseIdentifier()
         expect<OpenBraceToken>()
         val values = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
-
-        diagnostic.warn {
-            message("Highlight test of enum '${name.name}'")
-
-            highlight("the 'enum' keyword", enumToken.location)
-            highlight("the name of the enum", name.location)
-
-            for (value in values) {
-                highlight("enum value '${value.name}'", value.location)
-            }
-
-            help("This is a help annotation")
-            info("This is a info annotation")
-        }
-
         return EnumDeclarationNode(locationFromStart(start), name, values, annotations)
     }
 

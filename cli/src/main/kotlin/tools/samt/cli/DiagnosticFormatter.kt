@@ -193,16 +193,16 @@ class DiagnosticFormatter(
 
             val lastHighlightLastRow = highlights.last().location.end.row
             val lastContextRow = rowContextUpperBound(lastHighlightLastRow, source)
-            if (index == groupList.lastIndex) {
-                // print trailing context lines
-                for (row in (lastHighlightLastRow + 1)..lastContextRow) {
-                    appendLine(formatNonHighlightedSourceRow(row, source))
-                }
-            } else {
+            if (index != groupList.lastIndex) {
                 // print intermediate context lines
                 val nextHighlightFirstRow = groupList[index + 1].first
                 val actualLastContextRow = minOf(lastContextRow, nextHighlightFirstRow - 1)
                 for (row in (lastHighlightLastRow + 1)..actualLastContextRow) {
+                    appendLine(formatNonHighlightedSourceRow(row, source))
+                }
+            } else {
+                // print trailing context lines
+                for (row in (lastHighlightLastRow + 1)..lastContextRow) {
                     appendLine(formatNonHighlightedSourceRow(row, source))
                 }
             }

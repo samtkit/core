@@ -20,7 +20,7 @@ data class DiagnosticHighlight(
     val message: String?,
     val location: Location,
     val annotations: List<DiagnosticAnnotation>,
-    val highlightBeginningOnly: Boolean
+    val highlightBeginningOnly: Boolean,
 )
 
 data class SourceFile(

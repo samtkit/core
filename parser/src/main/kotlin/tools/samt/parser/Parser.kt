@@ -30,11 +30,11 @@ class Parser private constructor(
                         diagnostic.error {
                             message("Unexpected import statement")
 
-                            highlight("Move this import statement before the package declaration", statement.location) {
+                            highlight("must occur before package declaration", statement.location) {
                                 info("Import targets are resolved in the global scope, while anything written after the package declaration is scoped to the package")
                             }
 
-                            highlight("Import statements are not allowed after this declaration", packageDeclaration!!.location)
+                            highlight("no imports allowed after this point", packageDeclaration!!.location)
                         }
 
                     }
@@ -45,8 +45,8 @@ class Parser private constructor(
                     if (packageDeclaration != null) {
                         diagnostic.error {
                             message("Too many package declarations")
-                            highlight("Extraneous package declaration", statement.location)
-                            highlight("Initial package declaration", packageDeclaration!!.location)
+                            highlight("extraneous package declaration", statement.location)
+                            highlight("initial package declaration", packageDeclaration!!.location)
                         }
 
                     }
@@ -54,15 +54,6 @@ class Parser private constructor(
                 }
 
                 else -> {
-                    if (packageDeclaration == null) {
-                        diagnostic.error {
-                            message("Missing package declaration")
-                            highlight("Unexpected statement", statement.location) {
-                                highlightBeginningOnly()
-                            }
-                        }
-
-                    }
                     statements.add(statement)
                 }
             }
@@ -126,6 +117,7 @@ class Parser private constructor(
         val importBundleIdentifier = parseImportBundleIdentifier()
         var alias: IdentifierNode? = null
 
+        val startBeforeAs = currentStart
         if (skip<AsToken>()) {
             alias = parseIdentifier()
         }
@@ -134,11 +126,7 @@ class Parser private constructor(
             if (alias != null) {
                 diagnostic.error {
                     message("Malformed import statement")
-
-                    highlight("Wildcard import cannot declare an alias", locationFromStart(start)) {
-                        help("You can import the underlying package and alias it to a different name")
-                        help("  `import $importBundleIdentifier as $alias`")
-                    }
+                    highlight("wildcard import cannot declare an alias", locationFromStart(startBeforeAs))
                 }
 
             }
@@ -335,11 +323,11 @@ class Parser private constructor(
                         diagnostic.error {
                             message("Too many transport declarations for provider '${name.name}'")
 
-                            highlight("Extraneous declaration", transport!!.location) {
+                            highlight("extraneous declaration", transport!!.location) {
                                 highlightBeginningOnly()
                             }
 
-                            highlight("Previous declaration", previousDeclaration.location) {
+                            highlight("previous declaration", previousDeclaration.location) {
                                 highlightBeginningOnly()
                             }
                         }
@@ -644,11 +632,17 @@ class Parser private constructor(
             return IdentifierToken(staticToken.location, gotString) as T
         }
 
-        diagnostic.fatal {
-            message("Unexpected token '${gotString}'")
-            highlight(current!!.location) {
-                suggestChange(expectedString)
-                help("Did you mean to write '${expectedString}'?")
+        if (T::class == StaticToken::class || T::class == StructureToken::class) {
+            diagnostic.fatal {
+                message("Unexpected token '${gotString}', expected '${expectedString}'")
+                highlight(current!!.location) {
+                    suggestChange(expectedString)
+                }
+            }
+        } else {
+            diagnostic.fatal {
+                message("Unexpected token '${gotString}', expected a token of type '${expectedString}'")
+                highlight(current!!.location)
             }
         }
     }

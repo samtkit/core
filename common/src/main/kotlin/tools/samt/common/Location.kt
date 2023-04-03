@@ -14,7 +14,12 @@ data class Location(
 ) {
     init {
         require(start.row <= end.row) { "Location end row (${end.row}) cannot be before start row ${start.row}" }
+        require(end.row <= context.source.sourceLines.lastIndex) {
+            "Location end row (${end.row}) cannot be after last source file row ${context.source.sourceLines.lastIndex}"
+        }
     }
+
+    fun isMultiLine(): Boolean = start.row != end.row
 
     override fun toString(): String = start.toString()
 }

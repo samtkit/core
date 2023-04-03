@@ -47,7 +47,7 @@ class DiagnosticFormatter(
         DiagnosticSeverity.Info -> blue
     }
 
-    private fun formatTextForSeverity(text: String, severity: DiagnosticSeverity, withBackground: Boolean): String {
+    private fun formatTextForSeverity(text: String, severity: DiagnosticSeverity, withBackground: Boolean = false): String {
         if (withBackground) {
             return (severityForegroundColor(severity) on severityBackgroundColor(severity))(text)
         } else {
@@ -56,9 +56,9 @@ class DiagnosticFormatter(
     }
 
     private fun formatSeverityIndicator(severity: DiagnosticSeverity): String = when (severity) {
-        DiagnosticSeverity.Error -> formatTextForSeverity("ERROR:", severity, withBackground = false)
-        DiagnosticSeverity.Warning -> formatTextForSeverity("WARNING:", severity, withBackground = false)
-        DiagnosticSeverity.Info -> formatTextForSeverity("INFO:", severity, withBackground = false)
+        DiagnosticSeverity.Error -> formatTextForSeverity("ERROR:", severity)
+        DiagnosticSeverity.Warning -> formatTextForSeverity("WARNING:", severity)
+        DiagnosticSeverity.Info -> formatTextForSeverity("INFO:", severity)
     }
 
     private fun formatFilePathRelativeToWorkingDirectory(filePath: String): String {
@@ -102,6 +102,12 @@ class DiagnosticFormatter(
         if (message.highlights.isNotEmpty()) {
             append(formatMessageHighlights(message))
         }
+
+        // print highlight annotations
+        if (message.annotations.isNotEmpty()) {
+            appendLine()
+            appendLine(formatHighlightAnnotations(message.annotations))
+        }
     }
 
     private fun formatMessageHighlights(message: DiagnosticMessage): String = buildString {
@@ -109,15 +115,15 @@ class DiagnosticFormatter(
         require(highlights.isNotEmpty())
 
         // group highlights by source file
-        val mainSourceFilePath = highlights.first().location.context.source.absolutePath
+        val mainSourceFileAbsolutePath = highlights.first().location.context.source.absolutePath
         val highlightsBySourceFile = highlights.groupBy { it.location.context.source.absolutePath }
 
         // print the highlights for the main source file
-        val mainSourceFileHighlights = highlightsBySourceFile[mainSourceFilePath]!!
+        val mainSourceFileHighlights = highlightsBySourceFile[mainSourceFileAbsolutePath]!!
         append(formatSingleFileHighlights(mainSourceFileHighlights, message.severity))
 
         // print remaining highlights for other source files
-        val remainingHighlights = highlightsBySourceFile.filterKeys { it != mainSourceFilePath }
+        val remainingHighlights = highlightsBySourceFile.filterKeys { it != mainSourceFileAbsolutePath }
         for ((_, highlights) in remainingHighlights) {
             append(formatSingleFileHighlights(highlights, message.severity))
         }
@@ -126,145 +132,183 @@ class DiagnosticFormatter(
     private fun formatSingleFileHighlights(highlights: List<DiagnosticHighlight>, severity: DiagnosticSeverity): String = buildString {
         require(highlights.isNotEmpty())
 
-        // Case: Single highlight per file
-        if (highlights.size == 1) {
-            val highlight = highlights.first()
-            append(formatSingleHighlight(highlight, severity))
-            return@buildString
-        }
+        // split highlights into non overlapping groups
+        // attempt to make the groups as big as possible
+        //
+        // this assures us that each highlight in the group is either on a different line or
+        // if they are on the same line, they are not overlapping
+        val nonOverlappingGroups = mutableListOf<MutableList<DiagnosticHighlight>>()
+        sourceHighlightLoop@ for (highlight in highlights) {
 
-        // collect all the highlights into groups of highlights whose context areas overlap with each other
-        val overlappingHighlightGroups = mutableListOf<List<DiagnosticHighlight>>()
-        var currentGroup = mutableListOf<DiagnosticHighlight>()
-        overlappingHighlightGroups.add(currentGroup)
-        for (highlight in highlights) {
-            if (currentGroup.isEmpty()) {
-                currentGroup.add(highlight)
-                continue
+            // check if the highlight fits into any existing groups
+            groupLoop@ for (group in nonOverlappingGroups) {
+
+                // compare with each highlight in the group to see if they overlap
+                for (otherHighlight in group) {
+                    if (highlight.overlaps(otherHighlight)) {
+                        continue@groupLoop
+                    }
+                }
+
+                // no conflicts were found, add the highlight to this group
+                group.add(highlight)
+                continue@sourceHighlightLoop
             }
 
-            val lastHighlight = currentGroup.last()
-            if (!highlight.contextOverlapsWith(lastHighlight)) {
-                currentGroup = mutableListOf()
-                overlappingHighlightGroups.add(currentGroup)
-            }
-
-            currentGroup.add(highlight)
+            // could not find a group to fit this highlight in, create a new group
+            nonOverlappingGroups.add(mutableListOf(highlight))
         }
 
-        // print the groups of overlapping highlights
-        overlappingHighlightGroups.forEachIndexed { index, group ->
-            if (group.size == 1) {
-                append(formatSingleHighlight(group.first(), severity))
+        // print each highlight group
+        for (group in nonOverlappingGroups) {
+            append(formatSingleFileHighlightGroup(group, severity))
+        }
+    }
+
+    private fun formatSingleFileHighlightGroup(highlights: List<DiagnosticHighlight>, severity: DiagnosticSeverity): String = buildString {
+        require(highlights.isNotEmpty())
+
+        val source = highlights.first().location.context.source
+
+        // group highlights by their line number
+        val highlightsByLineNumber = highlights.groupBy { it.location.start.row }.toSortedMap()
+        val groupList = highlightsByLineNumber.keys.toList().zip(highlightsByLineNumber.values.toList())
+
+        groupList.forEachIndexed { index, (rowIndex, highlights) ->
+
+            // print preceding context lines
+            if (index == 0) {
+                val contextStartRow = rowContextLowerBound(rowIndex)
+                for (row in contextStartRow until rowIndex) {
+                    appendLine(formatNonHighlightedSourceRow(row, source))
+                }
+            }
+
+            // print highlights in the group
+            if (highlights.size == 1 && highlights.single().location.isMultiLine()) {
+                append(formatMultipleLineSingleHighlight(highlights.single(), severity))
             } else {
-                append(formatMultipleOverlappingHighlights(group, severity))
+                append(formatSingleLineHighlights(highlights, severity))
             }
 
-            if (index != overlappingHighlightGroups.lastIndex) {
-                appendLine("  ... ")
+            val lastHighlightLastRow = highlights.last().location.end.row
+            val lastContextRow = rowContextUpperBound(lastHighlightLastRow, source)
+            if (index == groupList.lastIndex) {
+                // print trailing context lines
+                for (row in (lastHighlightLastRow + 1)..lastContextRow) {
+                    appendLine(formatNonHighlightedSourceRow(row, source))
+                }
+            } else {
+                // print intermediate context lines
+                val nextHighlightFirstRow = groupList[index + 1].first
+                val actualLastContextRow = minOf(lastContextRow, nextHighlightFirstRow - 1)
+                for (row in (lastHighlightLastRow + 1)..actualLastContextRow) {
+                    appendLine(formatNonHighlightedSourceRow(row, source))
+                }
             }
         }
-
-        // For all cases:
-        // - Draw sequence of '^' characters under the highlighted text
-        // - Pad messages with one empty line above or below depending on which side of the source line the message is printed
-        // - Draw fancy arrows pointing to the highlighted text
-        // - Print the message associated with each highlight
-        // - Print annotations associated with each highlight
     }
 
-    private fun formatSingleHighlight(highlight: DiagnosticHighlight, severity: DiagnosticSeverity): String = buildString {
-        val location = highlight.location
+    private fun formatSingleLineHighlights(highlights: List<DiagnosticHighlight>, severity: DiagnosticSeverity): String = buildString {
+        val location = highlights.first().location
+        val rowIndex = location.start.row
+        val sourceLine = location.context.source.sourceLines[rowIndex]
+        require(highlights.all { !it.location.isMultiLine() })
+        require(highlights.all { it.location.start.row == rowIndex })
 
-        val contentStartRow = location.start.row
-        val contextStartRow = rowContextLowerBound(contentStartRow)
-        val contentEndRow = location.end.row
-        val contextEndRow = rowContextUpperBound(contentEndRow, location.context.source)
+        appendLine(formatNonHighlightedEmptySection())
+        append(formatHighlightedLineNumberSection(rowIndex, severity))
 
-        // print above context lines
-        for (row in contextStartRow until contentStartRow) {
-            appendLine(formatNonHighlightedSourceRow(row, location.context.source))
+        // print each character of the source line and highlight it if it is part of a highlight
+        for (colIndex in sourceLine.indices) {
+            val char = sourceLine[colIndex]
+            val highlight = highlights.firstOrNull { it.location.containsRowColumn(rowIndex, colIndex) }
+            if (highlight != null) {
+                append(formatTextForSeverity(char.toString(), severity, withBackground = true))
+            } else {
+                append(char)
+            }
         }
+        appendLine()
 
-        if (location.isMultiLine()) {
-            appendLine(formatSingleMultilineHighlight(highlight, severity))
-        } else {
-            val highlightSourceCodeItself = !highlight.highlightBeginningOnly
-            val startCol = location.start.col
-            val endCol = location.end.col
-
-            // print line number section
-            append(formatHighlightedLineNumberSection(contentStartRow, severity))
-
-            val row = location.context.source.sourceLines[contentStartRow]
-            val precedingSpan = row.substring(0, startCol)
-            val highlightedSpan = row.substring(startCol, endCol)
-            val trailingSpan = row.substring(endCol)
-
-            append(precedingSpan)
-            append(formatTextForSeverity(highlightedSpan, severity, withBackground = false))
-            append(trailingSpan)
-            appendLine()
-
-            // print highlight carets and the optional highlight message
-            append(formatNonHighlightedEmptySection())
-            append(formatSingleLineHighlightCarets(startCol, highlightedSpan.length, severity, withMessageAttachment = highlight.message != null))
-            if (highlight.message != null) {
+        // draw the highlight carets for each highlight section
+        append(formatNonHighlightedEmptySection())
+        for (colIndex in sourceLine.indices) {
+            val char = sourceLine[colIndex]
+            val highlight = highlights.firstOrNull { it.location.containsRowColumn(rowIndex, colIndex) }
+            if (highlight != null) {
+                append(formatTextForSeverity("^", severity))
+            } else {
                 append(" ")
-                append(formatTextForSeverity(highlight.message!!, severity, withBackground = false))
             }
-            appendLine()
+        }
+        appendLine()
+
+        // iteratively draw the message arrow lines and message texts
+        val highlightsRemainingStack = highlights.toMutableList()
+        while (highlightsRemainingStack.isNotEmpty()) {
+            repeat(2) {
+                append(formatNonHighlightedEmptySection())
+                for (colIndex in sourceLine.indices) {
+                    val highlight = highlightsRemainingStack.lastOrNull { it.location.end.col == colIndex + 1 }
+                    if (highlight != null) {
+                        if (highlight == highlightsRemainingStack.last() && it == 1) {
+                            append(formatTextForSeverity(highlight.message!!, severity))
+                        } else {
+                            append(formatTextForSeverity("|", severity))
+                        }
+                    } else {
+                        append(" ")
+                    }
+                }
+                appendLine()
+
+                if (it == 1) {
+                    highlightsRemainingStack.removeLast()
+                }
+            }
         }
 
-        if (highlight.highlightBeginningOnly || !location.isMultiLine()) {
-            // case: highlight only the beginning of the location
-
-            // case: single line highlight
-            //   - print highlight carets and highlight message
-
-        } else {
-            require(location.isMultiLine()) { "sanity check" }
-
-            // case: multi-line highlight
-            //   - highlight line numbers and add arrows in line number columns
-            //   - print highlight message
-        }
-
-        // print below context lines
-        for (row in (contentEndRow + 1) until (contextEndRow + 1)) {
-            appendLine(formatNonHighlightedSourceRow(row, location.context.source))
-        }
-
-        // print highlight annotations
-        if (highlight.annotations.isNotEmpty()) {
-            appendLine(formatHighlightAnnotations(highlight.annotations))
-        }
+        appendLine(formatNonHighlightedEmptySection())
     }
 
-    private fun formatSingleMultilineHighlight(highlight: DiagnosticHighlight, severity: DiagnosticSeverity): String = buildString {
-        // TODO: implement
-        append("TODO: formatSingleMultilineHighlight")
-    }
+    private fun formatMultipleLineSingleHighlight(highlight: DiagnosticHighlight, severity: DiagnosticSeverity): String = buildString {
+        val location = highlight.location
+        require(location.isMultiLine())
 
-    private fun formatMultipleOverlappingHighlights(highlights: List<DiagnosticHighlight>, severity: DiagnosticSeverity): String = buildString {
-        appendLine(red("TODO: multiple overlapping highlights"))
+        val startRowIndex = location.start.row
+        val endRowIndex = location.end.row
 
-        // Cases:
-        // 4. Two single-line highlights on the same source line
-        //  - print one message above and the other below
-        //
-        // 5. More than two single-line highlights on the same source line
-        //  - print all messages below with long extending arrows leading from the message to the highlight area
-        //
-        // 6. Multi-line highlight overlaps with single single-line highlight
-        //  - give up
-        //
-        // 7. Multiple overlapping multi-line highlights overlap multiple overlapping single-line highlights
-        //  - give up
-        //
-        // 8. Overlapping highlights both have annotations
-        //  - ???
-        //
+        // print initial row
+        val firstRow = location.context.source.sourceLines[startRowIndex]
+        val firstRowNonHighlightedPortion = firstRow.substring(0, location.start.col)
+        val firstRowHighlightedPortion = firstRow.substring(location.start.col)
+        append(formatHighlightedMultilineLineNumberSection(startRowIndex, severity))
+        append(gray(firstRowNonHighlightedPortion))
+        appendLine(formatTextForSeverity(firstRowHighlightedPortion, severity, withBackground = true))
+
+        // print intermediate rows
+        for (rowIndex in (startRowIndex + 1)..(endRowIndex - 1)) {
+            append(formatHighlightedMultilineLineNumberSection(rowIndex, severity))
+            val sourceRow = location.context.source.sourceLines[rowIndex]
+            appendLine(formatTextForSeverity(sourceRow, severity, withBackground = true))
+        }
+
+        // print final row
+        val lastRow = location.context.source.sourceLines[endRowIndex]
+        val lastRowHighlightedPortion = lastRow.substring(0, location.end.col)
+        val lastRowNonHighlightedPortion = lastRow.substring(location.end.col)
+        append(formatHighlightedMultilineLineNumberSection(endRowIndex, severity))
+        append(formatTextForSeverity(lastRowHighlightedPortion, severity, withBackground = true))
+        appendLine(gray(lastRowNonHighlightedPortion))
+
+        // print optional highlight message
+        if (highlight.message != null) {
+            appendLine(formatHighlightedMultilineEmptySection(severity))
+            append(formatTextForSeverity("+--------- ", severity))
+            appendLine(formatTextForSeverity(highlight.message!!, severity))
+            appendLine(formatNonHighlightedEmptySection())
+        }
     }
 
     private fun formatHighlightAnnotations(annotations: List<DiagnosticAnnotation>): String = buildString {
@@ -272,25 +316,17 @@ class DiagnosticFormatter(
 
         for (annotation in annotations) {
             when (annotation) {
-                is DiagnosticAnnotationChangeSuggestion -> {
-                    // ignore this since it is handled by the LSP only,
-                    // not relevant for the diagnostic formatter
-                    //
-                    // ideally the code generating the diagnostic message has added a DiagnosticAnnotationHelp
-                    // annotation that contains a human-readable version of the change suggestion
-                    continue
-                }
                 is DiagnosticAnnotationHelp -> {
-                    append("      = ")
-                    append(yellow("help:"))
+                    append("        = ")
+                    append(green("help:"))
                     append(" ")
-                    appendLine(formatHighlightAnnotationsMessage(annotation.message, indentStart = 14))
+                    appendLine(formatHighlightAnnotationsMessage(annotation.message, indentStart = 16))
                 }
                 is DiagnosticAnnotationInformation -> {
-                    append("      = ")
+                    append("        = ")
                     append(blue("info:"))
                     append(" ")
-                    appendLine(formatHighlightAnnotationsMessage(annotation.message, indentStart = 14))
+                    appendLine(formatHighlightAnnotationsMessage(annotation.message, indentStart = 16))
                 }
             }
         }
@@ -333,34 +369,35 @@ class DiagnosticFormatter(
     }
 
     private fun formatNonHighlightedEmptySection(): String = buildString {
-        append("      ┃ ")
+        append("        ┃ ")
     }
 
     private fun formatHighlightedLineNumberSection(row: Int, severity: DiagnosticSeverity): String = buildString {
-        append(" ")
-        append(formatTextForSeverity((row + 1).toString().padStart(4), severity, withBackground = false))
+        append("   ")
+        append(formatTextForSeverity((row + 1).toString().padStart(4), severity))
+        append(" ┃ ")
+    }
+
+    private fun formatHighlightedMultilineLineNumberSection(row: Int, severity: DiagnosticSeverity): String = buildString {
+        append(formatTextForSeverity("|> ", severity))
+        append(formatTextForSeverity((row + 1).toString().padStart(4), severity))
+        append(" ┃ ")
+    }
+
+    private fun formatHighlightedMultilineEmptySection(severity: DiagnosticSeverity): String = buildString {
+        append(formatTextForSeverity("|      ", severity))
         append(" ┃ ")
     }
 
     private fun formatNonHighlightedSourceRow(row: Int, source: SourceFile): String = buildString {
-        append(formatNonHighlightedEmptySection())
+        append("   ")
+        append(gray((row + 1).toString().padStart(4)))
+        append(" ┃ ")
         append(gray(source.sourceLines[row]))
     }
 
-    private fun formatSingleLineHighlightCarets(colStart: Int, length: Int, severity: DiagnosticSeverity, withMessageAttachment: Boolean): String = buildString {
-        require(length > 0)
-
-        append(" ".repeat(colStart))
-
-        if (length == 1) {
-            append(formatTextForSeverity("^", severity, withBackground = false))
-        } else {
-            append(formatTextForSeverity("^".repeat(length), severity, withBackground = false))
-        }
-    }
-
     companion object {
-        private const val CONTEXT_ROW_COUNT = 3
+        private const val CONTEXT_ROW_COUNT = 5
 
         fun format(controller: DiagnosticController): String {
             val formatter = DiagnosticFormatter(controller)
@@ -371,19 +408,36 @@ class DiagnosticFormatter(
         private fun rowContextUpperBound(row: Int, sourceFile: SourceFile): Int = minOf(sourceFile.sourceLines.lastIndex, row + CONTEXT_ROW_COUNT)
     }
 
-    private fun DiagnosticHighlight.contentOverlapsWith(other: DiagnosticHighlight): Boolean {
+    private fun DiagnosticHighlight.overlaps(other: DiagnosticHighlight): Boolean {
+        if (location.isMultiLine() || other.location.isMultiLine()) {
+            return contentRowsOverlapWith(other)
+        }
+
+        require(!(location.isMultiLine() || other.location.isMultiLine()))
+
+        if (location.start.row != other.location.start.row) {
+            return false
+        }
+
+        return contentColumnsOverlapWith(other)
+    }
+
+    private fun DiagnosticHighlight.contentColumnsOverlapWith(other: DiagnosticHighlight): Boolean {
+        require(!location.isMultiLine() && !other.location.isMultiLine())
+        require(location.start.row == other.location.start.row)
+
+        val ownStart = location.start.col
+        val ownEnd = location.end.col
+        val otherStart = other.location.start.col
+        val otherEnd = other.location.end.col
+        return (otherStart >= ownStart && otherStart <= ownEnd) || (otherEnd >= ownStart && otherEnd <= ownEnd)
+    }
+
+    private fun DiagnosticHighlight.contentRowsOverlapWith(other: DiagnosticHighlight): Boolean {
         val ownStart = location.start.row
         val ownEnd = location.end.row
         val otherStart = other.location.start.row
         val otherEnd = other.location.end.row
-        return (otherStart >= ownStart && otherStart <= ownEnd) || (otherEnd >= ownStart && otherEnd <= ownEnd)
-    }
-
-    private fun DiagnosticHighlight.contextOverlapsWith(other: DiagnosticHighlight): Boolean {
-        val ownStart = rowContextLowerBound(location.start.row)
-        val ownEnd = rowContextUpperBound(location.end.row, location.context.source)
-        val otherStart = rowContextLowerBound(other.location.start.row)
-        val otherEnd = rowContextUpperBound(other.location.end.row, other.location.context.source)
         return (otherStart >= ownStart && otherStart <= ownEnd) || (otherEnd >= ownStart && otherEnd <= ownEnd)
     }
 }

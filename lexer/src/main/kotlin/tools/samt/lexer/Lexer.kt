@@ -73,9 +73,8 @@ class Lexer private constructor(
 
                 diagnostic.error {
                     message("Unrecognized character: '$current'")
-                    highlight("hex: 0x$codeAsHex", errorLocation) {
-                        info("The source file must be valid UTF-8")
-                    }
+                    highlight("hex: 0x$codeAsHex", errorLocation)
+                    info("The source file must be valid UTF-8")
                 }
 
                 null
@@ -109,9 +108,8 @@ class Lexer private constructor(
             if (!hasWholeDigits) {
                 diagnostic.error {
                     message("Invalid number formatting")
-                    highlight("missing whole part", windowLocation()) {
-                        info("0.5 is valid, .5 is not")
-                    }
+                    highlight("missing whole part", windowLocation())
+                    info("0.5 is valid, .5 is not")
                 }
 
                 append('0')
@@ -139,9 +137,8 @@ class Lexer private constructor(
                 if (!hasFractionalDigits) {
                     diagnostic.error {
                         message("Invalid number formatting")
-                        highlight("missing fractional part", windowLocation()) {
-                            info("5.0 is valid, 5. is not")
-                        }
+                        highlight("missing fractional part", windowLocation())
+                        info("5.0 is valid, 5. is not")
                     }
 
                     append('0')
@@ -164,11 +161,10 @@ class Lexer private constructor(
             if (longValue == null) {
                 diagnostic.error {
                     message("Could not parse whole number")
-                    highlight(location) {
-                        help("Whole numbers must fit in a 64-bit signed integer")
-                        info("The maximum value is ${Long.MAX_VALUE}")
-                        info("The minimum value is ${Long.MIN_VALUE}")
-                    }
+                    highlight(location)
+                    help("Whole numbers must fit in a 64-bit signed integer")
+                    info("The maximum value is ${Long.MAX_VALUE}")
+                    info("The minimum value is ${Long.MIN_VALUE}")
                 }
 
                 IntegerToken(location, 0)
@@ -197,10 +193,9 @@ class Lexer private constructor(
             caretPassed -> {
                 diagnostic.warn {
                     message("Identifier unnecessarily escaped")
-                    highlight(location) {
-                        help("Identifiers must only be escaped if they are valid keywords")
-                        info("The following words are keywords: ${KEYWORDS.keys.joinToString(", ")}")
-                    }
+                    highlight(location)
+                    help("Identifiers must only be escaped if they are valid keywords")
+                    info("The following words are keywords: ${KEYWORDS.keys.joinToString(", ")}")
                 }
 
                 IdentifierToken(location, name)
@@ -227,12 +222,9 @@ class Lexer private constructor(
                         else -> {
                             diagnostic.error {
                                 message("Invalid escape sequence: '\\$current'")
-                                highlight(windowLocation()) {
-                                    info("Valid escape sequences are: \\t, \\r, \\n, \\b, \\\\, \\\"")
-
-                                    // FIXME: Only highlight the invalid escape sequence, not the whole string
-                                    suggestChange("$current")
-                                }
+                                // FIXME: Only highlight the invalid escape sequence, not the whole string
+                                highlight(windowLocation(), suggestChange = current.toString())
+                                info("Valid escape sequences are: \\t, \\r, \\n, \\b, \\\\, \\\"")
                             }
                         }
                     }
@@ -246,10 +238,8 @@ class Lexer private constructor(
         if (end) {
             diagnostic.error {
                 message("Unclosed string literal")
-                highlight(windowLocation()) {
-                    highlightBeginningOnly()
-                    help("String literals must be closed with a double quote (\")")
-                }
+                highlight(windowLocation(), highlightBeginningOnly = true)
+                help("String literals must be closed with a double quote (\")")
             }
 
             return StringToken(windowLocation(), readString)
@@ -302,10 +292,8 @@ class Lexer private constructor(
         }
         diagnostic.error {
             message("Unclosed block comment")
-            highlight(windowLocation()) {
-                highlightBeginningOnly()
-                help("Block comments must be closed with a */")
-            }
+            highlight(windowLocation(), highlightBeginningOnly = true)
+            help("Block comments must be closed with a */")
         }
 
         return

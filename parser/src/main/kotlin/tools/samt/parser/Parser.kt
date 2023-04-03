@@ -29,12 +29,9 @@ class Parser private constructor(
                     if (packageDeclaration != null) {
                         diagnostic.error {
                             message("Unexpected import statement")
-
-                            highlight("must occur before package declaration", statement.location) {
-                                info("Import targets are resolved in the global scope, while anything written after the package declaration is scoped to the package")
-                            }
-
+                            highlight("must occur before package declaration", statement.location)
                             highlight("no imports allowed after this point", packageDeclaration!!.location)
+                            info("Import targets are resolved in the global scope, while anything written after the package declaration is scoped to the package")
                         }
 
                     }
@@ -80,10 +77,8 @@ class Parser private constructor(
                 else -> {
                     diagnostic.error {
                         message("Statement does not support annotations")
-                        highlight(current!!.location) {
-                            highlightBeginningOnly()
-                            help("Annotations can be attached to: record, enum, alias, service")
-                        }
+                        highlight(current!!.location, highlightBeginningOnly = true)
+                        help("Annotations can be attached to: record, enum, alias, service")
                     }
 
                     // skip the annotation and try to parse the statement again
@@ -104,9 +99,8 @@ class Parser private constructor(
         is ConsumeToken -> parseConsumerDeclaration()
         else -> diagnostic.fatal {
             message("Unexpected token '${current!!.getHumanReadableName()}', expected a statement")
-            highlight(current!!.location) {
-                help("Valid statements start with: import, package, record, enum, alias, service, provide, consume")
-            }
+            highlight(current!!.location)
+            info("Valid statements start with: import, package, record, enum, alias, service, provide, consume")
         }
     }
 
@@ -202,12 +196,28 @@ class Parser private constructor(
         return RecordFieldNode(locationFromStart(start), name, type, annotations)
     }
 
+    // FIXME: remove debug code
     private fun parseEnumDeclaration(annotations: List<AnnotationNode> = emptyList()): EnumDeclarationNode {
         val start = currentStart
-        expect<EnumToken>()
+        val enumToken = expect<EnumToken>()
         val name = parseIdentifier()
         expect<OpenBraceToken>()
         val values = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
+
+        diagnostic.warn {
+            message("Highlight test of enum '${name.name}'")
+
+            highlight("the 'enum' keyword", enumToken.location)
+            highlight("the name of the enum", name.location)
+
+            for (value in values) {
+                highlight("enum value '${value.name}'", value.location)
+            }
+
+            help("This is a help annotation")
+            info("This is a info annotation")
+        }
+
         return EnumDeclarationNode(locationFromStart(start), name, values, annotations)
     }
 
@@ -322,24 +332,16 @@ class Parser private constructor(
                     if (previousDeclaration is ProviderTransportNode) {
                         diagnostic.error {
                             message("Too many transport declarations for provider '${name.name}'")
-
-                            highlight("extraneous declaration", transport!!.location) {
-                                highlightBeginningOnly()
-                            }
-
-                            highlight("previous declaration", previousDeclaration.location) {
-                                highlightBeginningOnly()
-                            }
+                            highlight("extraneous declaration", transport!!.location, highlightBeginningOnly = true)
+                            highlight("previous declaration", previousDeclaration.location, highlightBeginningOnly = true)
                         }
 
                     }
                 }
 
                 else -> diagnostic.fatal {
-                    message("Unexpected token '${current!!.getHumanReadableName()}'")
-                    highlight(current!!.location) {
-                        help("Expected 'implements' or 'transport'")
-                    }
+                    message("Unexpected token '${current!!.getHumanReadableName()}', expected 'implements' or 'transport'")
+                    highlight(current!!.location)
                 }
             }
         }
@@ -347,9 +349,7 @@ class Parser private constructor(
         if (transport == null) {
             diagnostic.error {
                 message("Provider is missing a transport declaration")
-                highlight(locationFromStart(start)) {
-                    highlightBeginningOnly()
-                }
+                highlight(locationFromStart(start), highlightBeginningOnly = true)
             }
 
             // The previously reported error would prevent any semantic checks from ever interacting with
@@ -372,11 +372,9 @@ class Parser private constructor(
             if (serviceOperationNames.isEmpty()) {
                 diagnostic.error {
                     message("Expected at least one operation name in the implements clause")
-
-                    highlight(locationFromStart(start)) {
-                        info("A valid implements clause looks like 'implements ServiceName { operation1, operation2 }'")
-                        info("If you want to implement all operations, you can omit the braces and the operation names")
-                    }
+                    highlight(locationFromStart(start))
+                    info("A valid implements clause looks like 'implements ServiceName { operation1, operation2 }'")
+                    help("If you want to implement all operations, you can omit the braces and the operation names")
                 }
             }
         }
@@ -420,11 +418,9 @@ class Parser private constructor(
             if (serviceOperationNames.isEmpty()) {
                 diagnostic.error {
                     message("Expected at least one operation name in the uses clause")
-
-                    highlight(locationFromStart(start)) {
-                        info("A valid uses clause looks like 'uses ServiceName { operation1, operation2 }'")
-                        info("If you want to use all operations, you can omit the braces and the operation names")
-                    }
+                    highlight(locationFromStart(start))
+                    info("A valid uses clause looks like 'uses ServiceName { operation1, operation2 }'")
+                    help("If you want to use all operations, you can omit the braces and the operation names")
                 }
             }
         }
@@ -461,10 +457,8 @@ class Parser private constructor(
                     if (arguments.isEmpty()) {
                         diagnostic.error {
                             message("Generic specialization requires at least one argument")
-
-                            highlight(locationFromStart(currentOperationStart)) {
-                                info("A valid generic specialization looks like 'List<String>' or 'Map<String, Int>'")
-                            }
+                            highlight(locationFromStart(currentOperationStart))
+                            info("A valid generic specialization looks like 'List<String>' or 'Map<String, Int>'")
                         }
 
                     }
@@ -611,19 +605,15 @@ class Parser private constructor(
         if (isEnd) {
             diagnostic.fatal {
                 message("Expected '${expectedString}' but reached end of file")
-                highlight(current!!.location) {
-                    highlightBeginningOnly()
-                }
+                highlight(current!!.location, highlightBeginningOnly = true)
             }
         }
 
         if (T::class == IdentifierToken::class && check<StaticToken>()) {
             diagnostic.error {
                 message("Unescaped identifier '${gotString}'")
-                highlight("reserved keyword", current!!.location) {
-                    suggestChange("^${gotString}")
-                    info("The following words are keywords: ${Lexer.KEYWORDS.keys.joinToString(", ")}")
-                }
+                highlight("reserved keyword", current!!.location, suggestChange = "^${gotString}")
+                info("The following words are keywords: ${Lexer.KEYWORDS.keys.joinToString(", ")}")
             }
 
             // we can continue parsing the file treating the static token as an identifier
@@ -635,9 +625,7 @@ class Parser private constructor(
         if (T::class == StaticToken::class || T::class == StructureToken::class) {
             diagnostic.fatal {
                 message("Unexpected token '${gotString}', expected '${expectedString}'")
-                highlight(current!!.location) {
-                    suggestChange(expectedString)
-                }
+                highlight(current!!.location, suggestChange = expectedString)
             }
         } else {
             diagnostic.fatal {

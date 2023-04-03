@@ -8,7 +8,12 @@ data class DiagnosticMessage(
     val severity: DiagnosticSeverity,
     val message: String,
     val highlights: List<DiagnosticHighlight>,
+    val annotations: List<DiagnosticAnnotation>,
 )
+
+sealed interface DiagnosticAnnotation
+class DiagnosticAnnotationHelp(val message: String): DiagnosticAnnotation
+class DiagnosticAnnotationInformation(val message: String): DiagnosticAnnotation
 
 // messages that do not belong to a specific source file
 data class DiagnosticContextlessMessage(
@@ -19,8 +24,7 @@ data class DiagnosticContextlessMessage(
 data class DiagnosticHighlight(
     val message: String?,
     val location: Location,
-    val annotations: List<DiagnosticAnnotation>,
-    val highlightBeginningOnly: Boolean,
+    val changeSuggestion: String?,
 )
 
 data class SourceFile(
@@ -28,11 +32,6 @@ data class SourceFile(
     val content: String,            // the content of the source file as a string
     val sourceLines: List<String>,  // each line of the source file
 )
-
-sealed interface DiagnosticAnnotation
-class DiagnosticAnnotationChangeSuggestion(val replacement: String): DiagnosticAnnotation
-class DiagnosticAnnotationHelp(val message: String): DiagnosticAnnotation
-class DiagnosticAnnotationInformation(val message: String): DiagnosticAnnotation
 
 class DiagnosticException(message: String) : RuntimeException(message)
 
@@ -96,61 +95,48 @@ class DiagnosticContext(
     fun hasInfos(): Boolean = messages.any { it.severity == DiagnosticSeverity.Info }
 }
 
-class DiagnosticHighlightBuilder(
-    val message: String?,
-    val location: Location,
-) {
-    val annotations: MutableList<DiagnosticAnnotation> = mutableListOf()
-    var highlightBeginningOnly: Boolean = false
-
-    fun highlightBeginningOnly() {
-        require(!highlightBeginningOnly)
-        highlightBeginningOnly = true
-    }
-
-    fun suggestChange(replacement: String) {
-        annotations.add(DiagnosticAnnotationChangeSuggestion(replacement))
-    }
-
-    fun help(message: String) {
-        annotations.add(DiagnosticAnnotationHelp(message))
-    }
-
-    fun info(message: String) {
-        annotations.add(DiagnosticAnnotationInformation(message))
-    }
-
-    fun build(): DiagnosticHighlight {
-        return DiagnosticHighlight(message, location, annotations, highlightBeginningOnly)
-    }
-}
-
 class DiagnosticMessageBuilder(
     val severity: DiagnosticSeverity,
 ) {
     var message: String? = null
     val highlights: MutableList<DiagnosticHighlight> = mutableListOf()
+    val annotations: MutableList<DiagnosticAnnotation> = mutableListOf()
 
     fun message(message: String) {
         require(this.message == null)
         this.message = message
     }
 
-    fun highlight(location: Location, block: DiagnosticHighlightBuilder.() -> Unit = {}) {
-        val builder = DiagnosticHighlightBuilder(null, location)
-        builder.block()
-        highlights.add(builder.build())
+    fun highlight(
+        location: Location,
+        suggestChange: String? = null,
+        highlightBeginningOnly: Boolean = false,
+    ) {
+        val finalLocation = if (highlightBeginningOnly) location.copy(end = location.start) else location
+        highlights.add(DiagnosticHighlight(null, finalLocation, suggestChange))
     }
 
-    fun highlight(message: String, location: Location, block: DiagnosticHighlightBuilder.() -> Unit = {}) {
-        val builder = DiagnosticHighlightBuilder(message, location)
-        builder.block()
-        highlights.add(builder.build())
+    fun highlight(
+        message: String,
+        location: Location,
+        suggestChange: String? = null,
+        highlightBeginningOnly: Boolean = false,
+    ) {
+        val finalLocation = if (highlightBeginningOnly) location.copy(end = location.start) else location
+        highlights.add(DiagnosticHighlight(message, finalLocation, suggestChange))
+    }
+
+    fun info(message: String) {
+        annotations.add(DiagnosticAnnotationInformation(message))
+    }
+
+    fun help(message: String) {
+        annotations.add(DiagnosticAnnotationHelp(message))
     }
 
     fun build(): DiagnosticMessage {
         requireNotNull(message)
-        highlights.sortBy { it.location.start.row }
-        return DiagnosticMessage(severity, message!!, highlights)
+        highlights.sortWith(compareBy({ it.location.start.row }, { it.location.start.col }))
+        return DiagnosticMessage(severity, message!!, highlights, annotations)
     }
 }

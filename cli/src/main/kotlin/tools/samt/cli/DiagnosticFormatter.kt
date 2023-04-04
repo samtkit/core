@@ -2,6 +2,7 @@ package tools.samt.cli
 
 import com.github.ajalt.mordant.rendering.TextColors
 import com.github.ajalt.mordant.rendering.TextColors.*
+import com.github.ajalt.mordant.rendering.TextStyles.*
 import com.github.ajalt.mordant.terminal.Terminal
 import tools.samt.common.*
 
@@ -47,18 +48,24 @@ class DiagnosticFormatter(
         DiagnosticSeverity.Info -> blue
     }
 
-    private fun formatTextForSeverity(text: String, severity: DiagnosticSeverity, withBackground: Boolean = false): String {
-        return if (withBackground) {
+    private fun formatTextForSeverity(text: String, severity: DiagnosticSeverity, withBackground: Boolean = false, withBold: Boolean = false): String {
+        val colorFormatted = if (withBackground) {
             (severityForegroundColor(severity) on severityBackgroundColor(severity))(text)
         } else {
             (severityBackgroundColor(severity))(text)
         }
+
+        return if (withBold) {
+            bold(colorFormatted)
+        } else {
+            colorFormatted
+        }
     }
 
     private fun formatSeverityIndicator(severity: DiagnosticSeverity): String = when (severity) {
-        DiagnosticSeverity.Error -> formatTextForSeverity("ERROR:", severity)
-        DiagnosticSeverity.Warning -> formatTextForSeverity("WARNING:", severity)
-        DiagnosticSeverity.Info -> formatTextForSeverity("INFO:", severity)
+        DiagnosticSeverity.Error -> formatTextForSeverity("ERROR:", severity, withBold = true)
+        DiagnosticSeverity.Warning -> formatTextForSeverity("WARNING:", severity, withBold = true)
+        DiagnosticSeverity.Info -> formatTextForSeverity("INFO:", severity, withBold = true)
     }
 
     private fun formatFilePathRelativeToWorkingDirectory(filePath: String): String {
@@ -216,7 +223,6 @@ class DiagnosticFormatter(
         require(highlights.all { !it.location.isMultiLine() })
         require(highlights.all { it.location.start.row == rowIndex })
 
-        appendLine(formatNonHighlightedEmptySection())
         append(formatHighlightedLineNumberSection(rowIndex, severity))
 
         // print each character of the source line and highlight it if it is part of a highlight
@@ -341,7 +347,7 @@ class DiagnosticFormatter(
     }
 
     private fun formatHighlightAnnotationsMessage(message: String, indentStart: Int): String = buildString {
-        val maxLineLength = terminalWidth / 2
+        val maxLineLength = (terminalWidth / 3) * 2
 
         // message fits into terminal width
         if (message.length <= maxLineLength) {
@@ -382,13 +388,13 @@ class DiagnosticFormatter(
 
     private fun formatHighlightedLineNumberSection(row: Int, severity: DiagnosticSeverity): String = buildString {
         append("   ")
-        append(formatTextForSeverity((row + 1).toString().padStart(4), severity))
+        append(formatTextForSeverity((row + 1).toString().padStart(4), severity, withBold = true))
         append(" ┃ ")
     }
 
     private fun formatHighlightedMultilineLineNumberSection(row: Int, severity: DiagnosticSeverity): String = buildString {
         append(formatTextForSeverity("|> ", severity))
-        append(formatTextForSeverity((row + 1).toString().padStart(4), severity))
+        append(formatTextForSeverity((row + 1).toString().padStart(4), severity, withBold = true))
         append(" ┃ ")
     }
 

@@ -185,10 +185,7 @@ class DiagnosticFormatter(
 
             // print preceding context lines
             if (index == 0) {
-                val contextStartRow = rowContextLowerBound(rowIndex)
-                for (row in contextStartRow until rowIndex) {
-                    appendLine(formatNonHighlightedSourceRow(row, source))
-                }
+                append(formatPrecedingContextLines(rowIndex, source))
             }
 
             // print highlights in the group
@@ -199,21 +196,52 @@ class DiagnosticFormatter(
             }
 
             val lastHighlightLastRow = highlights.last().location.end.row
-            val lastContextRow = rowContextUpperBound(lastHighlightLastRow, source)
             if (index != groupList.lastIndex) {
-                // print intermediate context lines
-                val nextHighlightFirstRow = groupList[index + 1].first
-                val actualLastContextRow = minOf(lastContextRow, nextHighlightFirstRow - 1)
-                for (row in (lastHighlightLastRow + 1)..actualLastContextRow) {
-                    appendLine(formatNonHighlightedSourceRow(row, source))
-                }
+                append(formatIntermediateContextLines(lastHighlightLastRow, groupList[index + 1].first, source))
             } else {
-                // print trailing context lines
-                for (row in (lastHighlightLastRow + 1)..lastContextRow) {
-                    appendLine(formatNonHighlightedSourceRow(row, source))
-                }
+                append(formatTrailingContextLines(lastHighlightLastRow, source))
             }
         }
+    }
+
+    private fun formatPrecedingContextLines(rowIndex: Int, source: SourceFile): String = buildString {
+        val contextStartRow = rowContextLowerBound(rowIndex)
+        for (row in contextStartRow until rowIndex) {
+            appendLine(formatNonHighlightedSourceRow(row, source))
+        }
+    }
+
+    private fun formatTrailingContextLines(rowIndex: Int, source: SourceFile): String = buildString {
+        val contextEndRow = rowContextUpperBound(rowIndex, source)
+        for (row in (rowIndex + 1)..contextEndRow) {
+            appendLine(formatNonHighlightedSourceRow(row, source))
+        }
+    }
+
+    private fun formatIntermediateContextLines(previousRowIndex: Int, nextRowIndex: Int, source: SourceFile): String = buildString {
+
+        // case 1: lines are directly adjacent, no context lines need to be drawn
+        if (previousRowIndex + 1 == nextRowIndex) {
+            return@buildString
+        }
+
+        val previousContextEndRow = rowContextUpperBound(previousRowIndex, source)
+        val nextContextStartRow = rowContextLowerBound(nextRowIndex)
+
+        // case 2: their context areas overlap, so we can draw all lines between the two
+        // we add one to the previous context end row as to not draw a line separator between two context areas
+        // that are directly adjacent but do not overlap
+        if (previousContextEndRow + 1 >= nextContextStartRow) {
+            for (row in (previousRowIndex + 1) until nextRowIndex) {
+                appendLine(formatNonHighlightedSourceRow(row, source))
+            }
+            return@buildString
+        }
+
+        // case 3: their context areas do not overlap and we must draw a '...' separator between the two areas
+        append(formatTrailingContextLines(previousRowIndex, source))
+        appendLine("    ... ")
+        append(formatPrecedingContextLines(nextRowIndex, source))
     }
 
     private fun formatSingleLineHighlights(highlights: List<DiagnosticHighlight>, severity: DiagnosticSeverity): String = buildString {
@@ -411,7 +439,7 @@ class DiagnosticFormatter(
     }
 
     companion object {
-        private const val CONTEXT_ROW_COUNT = 5
+        private const val CONTEXT_ROW_COUNT = 3
 
         fun format(controller: DiagnosticController): String {
             val formatter = DiagnosticFormatter(controller)

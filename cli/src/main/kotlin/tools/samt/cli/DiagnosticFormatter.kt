@@ -27,6 +27,13 @@ class DiagnosticFormatter(
 
         // print file-specific messages
         for (context in diagnosticController.contexts) {
+
+            // sort messages by severity and then by location (row)
+            context.messages.sortWith(compareBy(
+                { it.severity },
+                { it.highlights.firstOrNull()?.location?.start?.row }
+            ))
+
             context.messages.forEachIndexed { index, message ->
                 append(formatMessage(message, context))
                 if (index != context.messages.lastIndex) {

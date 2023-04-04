@@ -210,6 +210,7 @@ class Lexer private constructor(
         readNext() // skip leading double quote
         val readString = buildString {
             while (!end && current != '"') {
+                val escapeStartLocation = currentPosition
                 if (current == '\\') {
                     readNext()
                     when (current) {
@@ -220,12 +221,16 @@ class Lexer private constructor(
                         '\\' -> append('\\')
                         '"' -> append('"')
                         else -> {
+                            val invalidEscapeCharacter = current
+                            readNext()
+                            val escapeEndLocation = currentPosition
+                            val escapeLocation = Location(diagnostic, escapeStartLocation, escapeEndLocation)
                             diagnostic.error {
-                                message("Invalid escape sequence: '\\$current'")
-                                // FIXME: Only highlight the invalid escape sequence, not the whole string
-                                highlight(windowLocation(), suggestChange = current.toString())
+                                message("Invalid escape sequence: '\\$invalidEscapeCharacter'")
+                                highlight(escapeLocation, suggestChange = invalidEscapeCharacter.toString())
                                 info("Valid escape sequences are: \\t, \\r, \\n, \\b, \\\\, \\\"")
                             }
+                            continue
                         }
                     }
                     readNext()

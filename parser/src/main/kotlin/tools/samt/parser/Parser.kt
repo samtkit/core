@@ -596,8 +596,8 @@ class Parser private constructor(
         if (T::class == IdentifierToken::class && check<StaticToken>()) {
             diagnostic.error {
                 message("Unescaped identifier '${gotString}'")
-                highlight("reserved keyword", current!!.location, suggestChange = "^${gotString}")
-                info("The following words are keywords: ${Lexer.KEYWORDS.keys.joinToString(", ")}")
+                highlight(current!!.location, suggestChange = "^${gotString}")
+                help("To use '${gotString}' as an identifier, escape it with a caret: '^${gotString}'")
             }
 
             // we can continue parsing the file treating the static token as an identifier
@@ -610,6 +610,7 @@ class Parser private constructor(
             diagnostic.fatal {
                 message("Unexpected token '${gotString}', expected '${expectedString}'")
                 highlight(current!!.location, suggestChange = expectedString)
+                help("Replace '${gotString}' with '${expectedString}'")
             }
         } else {
             diagnostic.fatal {

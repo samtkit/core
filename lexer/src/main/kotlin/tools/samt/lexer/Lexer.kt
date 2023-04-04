@@ -73,10 +73,9 @@ class Lexer private constructor(
                 val errorLocation = windowLocation()
                 val codeAsHex = unrecognizedCharacter.code.toString(16)
 
-                diagnostic.error {
+                diagnostic.fatal {
                     message("Unrecognized character: '$unrecognizedCharacter'")
                     highlight("hex: 0x$codeAsHex", errorLocation)
-                    info("The source file must be valid UTF-8")
                 }
 
                 null

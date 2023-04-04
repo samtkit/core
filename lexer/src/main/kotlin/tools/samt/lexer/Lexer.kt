@@ -67,12 +67,13 @@ class Lexer private constructor(
             '>' -> readStructureToken { GreaterThanSignToken(it) }
             '?' -> readStructureToken { QuestionMarkToken(it) }
             else -> {
+                val unrecognizedCharacter = current
                 readNext() // Skip unrecognized character
                 val errorLocation = windowLocation()
-                val codeAsHex = current.code.toString(16)
+                val codeAsHex = unrecognizedCharacter.code.toString(16)
 
                 diagnostic.error {
-                    message("Unrecognized character: '$current'")
+                    message("Unrecognized character: '$unrecognizedCharacter'")
                     highlight("hex: 0x$codeAsHex", errorLocation)
                     info("The source file must be valid UTF-8")
                 }

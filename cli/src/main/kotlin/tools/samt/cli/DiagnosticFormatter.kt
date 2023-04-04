@@ -11,15 +11,15 @@ class DiagnosticFormatter(
     // FIXME: this is a bit of a hack to get the terminal width
     //        it also means we're assuming this output will only ever be printed in a terminal
     //        i don't actually know what happens if it doesn't run in a tty setting
-    private val terminalWidth = Terminal().info.width
+    private val terminalWidth: Int = Terminal().info.width
 
     private fun format(): String = buildString {
 
         // print context-less messages
-        val contextlessMessages = diagnosticController.contextlessMessages
-        contextlessMessages.forEachIndexed { index, message ->
-            append(formatContextlessMessage(message))
-            if (index != contextlessMessages.lastIndex) {
+        val globalMessages = diagnosticController.globalMessages
+        globalMessages.forEachIndexed { index, message ->
+            append(formatGlobalMessage(message))
+            if (index != globalMessages.lastIndex) {
                 appendLine()
             }
         }
@@ -66,7 +66,7 @@ class DiagnosticFormatter(
         return filePath.removePrefix(workingDirectory).removePrefix("/")
     }
 
-    private fun formatContextlessMessage(message: DiagnosticContextlessMessage): String = buildString {
+    private fun formatGlobalMessage(message: DiagnosticGlobalMessage): String = buildString {
         append(formatSeverityIndicator(message.severity))
         append(" ")
         append(message.message)

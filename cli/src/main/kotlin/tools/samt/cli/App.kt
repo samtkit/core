@@ -28,7 +28,7 @@ fun main(args: Array<String>) {
 
         // must specify at least one SAMT file
         if (filePaths.isEmpty()) {
-            controller.reportContextlessError("No files specified")
+            controller.reportGlobalError("No files specified")
             return@also
         }
 
@@ -38,17 +38,17 @@ fun main(args: Array<String>) {
                 val file = File(path)
 
                 if (!file.exists()) {
-                    controller.reportContextlessError("File '$path' does not exist")
+                    controller.reportGlobalError("File '$path' does not exist")
                     continue
                 }
 
                 if (!file.canRead()) {
-                    controller.reportContextlessError("File '$path' cannot be read, bad file permissions?")
+                    controller.reportGlobalError("File '$path' cannot be read, bad file permissions?")
                     continue
                 }
 
                 if (file.extension != "samt") {
-                    controller.reportContextlessError("File '$path' must end in .samt")
+                    controller.reportGlobalError("File '$path' must end in .samt")
                     continue
                 }
 

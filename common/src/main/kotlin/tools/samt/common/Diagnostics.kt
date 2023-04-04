@@ -16,7 +16,7 @@ class DiagnosticAnnotationHelp(val message: String): DiagnosticAnnotation
 class DiagnosticAnnotationInformation(val message: String): DiagnosticAnnotation
 
 // messages that do not belong to a specific source file
-data class DiagnosticContextlessMessage(
+data class DiagnosticGlobalMessage(
     val severity: DiagnosticSeverity,
     val message: String,
 )
@@ -43,9 +43,9 @@ class DiagnosticController(val workingDirectoryAbsolutePath: String) {
     val contexts: MutableList<DiagnosticContext> = mutableListOf()
 
     /**
-     * All contextless diagnostic messages.
+     * All global diagnostic messages.
      * */
-    val contextlessMessages: MutableList<DiagnosticContextlessMessage> = mutableListOf()
+    val globalMessages: MutableList<DiagnosticGlobalMessage> = mutableListOf()
 
     fun createContext(source: SourceFile): DiagnosticContext {
         val context = DiagnosticContext(source)
@@ -53,17 +53,17 @@ class DiagnosticController(val workingDirectoryAbsolutePath: String) {
         return context
     }
 
-    fun reportContextlessError(message: String) = reportContextless(DiagnosticSeverity.Error, message)
-    fun reportContextlessWarning(message: String) = reportContextless(DiagnosticSeverity.Warning, message)
-    fun reportContextlessInfo(message: String) = reportContextless(DiagnosticSeverity.Info, message)
-    fun reportContextless(severity: DiagnosticSeverity, message: String) {
-        contextlessMessages.add(DiagnosticContextlessMessage(severity, message))
+    fun reportGlobalError(message: String) = reportGlobal(DiagnosticSeverity.Error, message)
+    fun reportGlobalWarning(message: String) = reportGlobal(DiagnosticSeverity.Warning, message)
+    fun reportGlobalInfo(message: String) = reportGlobal(DiagnosticSeverity.Info, message)
+    fun reportGlobal(severity: DiagnosticSeverity, message: String) {
+        globalMessages.add(DiagnosticGlobalMessage(severity, message))
     }
 
-    fun hasMessages(): Boolean = contexts.any { it.hasMessages() } or contextlessMessages.isNotEmpty()
-    fun hasErrors(): Boolean = contexts.any { it.hasErrors() } or contextlessMessages.any { it.severity == DiagnosticSeverity.Error }
-    fun hasWarnings(): Boolean = contexts.any { it.hasWarnings() } or contextlessMessages.any { it.severity == DiagnosticSeverity.Warning }
-    fun hasInfos(): Boolean = contexts.any { it.hasInfos() } or contextlessMessages.any { it.severity == DiagnosticSeverity.Info }
+    fun hasMessages(): Boolean = contexts.any { it.hasMessages() } or globalMessages.isNotEmpty()
+    fun hasErrors(): Boolean = contexts.any { it.hasErrors() } or globalMessages.any { it.severity == DiagnosticSeverity.Error }
+    fun hasWarnings(): Boolean = contexts.any { it.hasWarnings() } or globalMessages.any { it.severity == DiagnosticSeverity.Warning }
+    fun hasInfos(): Boolean = contexts.any { it.hasInfos() } or globalMessages.any { it.severity == DiagnosticSeverity.Info }
 }
 
 class DiagnosticContext(

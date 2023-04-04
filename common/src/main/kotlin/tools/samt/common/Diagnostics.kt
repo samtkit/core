@@ -47,10 +47,10 @@ class DiagnosticController(val workingDirectoryAbsolutePath: String) {
      * */
     val contextlessMessages: MutableList<DiagnosticContextlessMessage> = mutableListOf()
 
-    inline fun withSourceContext(source: SourceFile, block: (DiagnosticContext) -> Unit) {
+    fun createContext(source: SourceFile): DiagnosticContext {
         val context = DiagnosticContext(source)
         contexts.add(context)
-        block(context)
+        return context
     }
 
     fun reportContextlessError(message: String) = reportContextless(DiagnosticSeverity.Error, message)
@@ -98,9 +98,9 @@ class DiagnosticContext(
 class DiagnosticMessageBuilder(
     val severity: DiagnosticSeverity,
 ) {
-    var message: String? = null
-    val highlights: MutableList<DiagnosticHighlight> = mutableListOf()
-    val annotations: MutableList<DiagnosticAnnotation> = mutableListOf()
+    private var message: String? = null
+    private val highlights: MutableList<DiagnosticHighlight> = mutableListOf()
+    private val annotations: MutableList<DiagnosticAnnotation> = mutableListOf()
 
     fun message(message: String) {
         require(this.message == null)

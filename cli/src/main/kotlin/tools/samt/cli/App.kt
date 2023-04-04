@@ -65,11 +65,10 @@ fun main(args: Array<String>) {
         // attempt to parse each source file into an AST
         val fileNodes = buildList {
             for (source in sourceFiles) {
-                controller.withSourceContext(source) { context ->
-                    val fileNode = parseSourceFile(source, context)
-                    if (fileNode != null) {
-                        add(fileNode)
-                    }
+                val context = controller.createContext(source)
+                val fileNode = parseSourceFile(source, context)
+                if (fileNode != null) {
+                    add(fileNode)
                 }
             }
         }
@@ -92,10 +91,4 @@ fun main(args: Array<String>) {
         t.println(DiagnosticFormatter.format(diagnosticController))
         return
     }
-}
-
-private fun format(timeInNs: Long): String {
-    val timeInMs = timeInNs.toDouble() / 1_000_000.0
-    return String.format("%.2f", timeInMs)
-
 }

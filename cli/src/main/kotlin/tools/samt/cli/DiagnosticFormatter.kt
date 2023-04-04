@@ -15,7 +15,7 @@ class DiagnosticFormatter(
 
     private fun format(): String = buildString {
 
-        // print contextless messages
+        // print context-less messages
         val contextlessMessages = diagnosticController.contextlessMessages
         contextlessMessages.forEachIndexed { index, message ->
             append(formatContextlessMessage(message))
@@ -48,10 +48,10 @@ class DiagnosticFormatter(
     }
 
     private fun formatTextForSeverity(text: String, severity: DiagnosticSeverity, withBackground: Boolean = false): String {
-        if (withBackground) {
-            return (severityForegroundColor(severity) on severityBackgroundColor(severity))(text)
+        return if (withBackground) {
+            (severityForegroundColor(severity) on severityBackgroundColor(severity))(text)
         } else {
-            return (severityBackgroundColor(severity))(text)
+            (severityBackgroundColor(severity))(text)
         }
     }
 
@@ -124,8 +124,8 @@ class DiagnosticFormatter(
 
         // print remaining highlights for other source files
         val remainingHighlights = highlightsBySourceFile.filterKeys { it != mainSourceFileAbsolutePath }
-        for ((_, highlights) in remainingHighlights) {
-            append(formatSingleFileHighlights(highlights, message.severity))
+        for ((_, fileHighlights) in remainingHighlights) {
+            append(formatSingleFileHighlights(fileHighlights, message.severity))
         }
     }
 
@@ -234,7 +234,6 @@ class DiagnosticFormatter(
         // draw the highlight carets for each highlight section
         append(formatNonHighlightedEmptySection())
         for (colIndex in sourceLine.indices) {
-            val char = sourceLine[colIndex]
             val highlight = highlights.firstOrNull { it.location.containsRowColumn(rowIndex, colIndex) }
             if (highlight != null) {
                 append(formatTextForSeverity("^", severity))
@@ -247,12 +246,12 @@ class DiagnosticFormatter(
         // iteratively draw the message arrow lines and message texts
         val highlightsRemainingStack = highlights.toMutableList()
         while (highlightsRemainingStack.isNotEmpty()) {
-            repeat(2) {
+            repeat(2) { iterationCount ->
                 append(formatNonHighlightedEmptySection())
                 for (colIndex in sourceLine.indices) {
                     val highlight = highlightsRemainingStack.lastOrNull { it.location.end.col == colIndex + 1 }
                     if (highlight != null) {
-                        if (highlight == highlightsRemainingStack.last() && it == 1) {
+                        if (highlight == highlightsRemainingStack.last() && iterationCount == 1) {
                             append(formatTextForSeverity(highlight.message!!, severity))
                         } else {
                             append(formatTextForSeverity("|", severity))
@@ -263,7 +262,7 @@ class DiagnosticFormatter(
                 }
                 appendLine()
 
-                if (it == 1) {
+                if (iterationCount == 1) {
                     highlightsRemainingStack.removeLast()
                 }
             }
@@ -288,7 +287,7 @@ class DiagnosticFormatter(
         appendLine(formatTextForSeverity(firstRowHighlightedPortion, severity, withBackground = true))
 
         // print intermediate rows
-        for (rowIndex in (startRowIndex + 1)..(endRowIndex - 1)) {
+        for (rowIndex in (startRowIndex + 1) until endRowIndex) {
             append(formatHighlightedMultilineLineNumberSection(rowIndex, severity))
             val sourceRow = location.context.source.sourceLines[rowIndex]
             appendLine(formatTextForSeverity(sourceRow, severity, withBackground = true))
@@ -430,7 +429,7 @@ class DiagnosticFormatter(
         val ownEnd = location.end.col
         val otherStart = other.location.start.col
         val otherEnd = other.location.end.col
-        return (otherStart >= ownStart && otherStart <= ownEnd) || (otherEnd >= ownStart && otherEnd <= ownEnd)
+        return (otherStart in ownStart..ownEnd) || (otherEnd in ownStart..ownEnd)
     }
 
     private fun DiagnosticHighlight.contentRowsOverlapWith(other: DiagnosticHighlight): Boolean {
@@ -438,6 +437,6 @@ class DiagnosticFormatter(
         val ownEnd = location.end.row
         val otherStart = other.location.start.row
         val otherEnd = other.location.end.row
-        return (otherStart >= ownStart && otherStart <= ownEnd) || (otherEnd >= ownStart && otherEnd <= ownEnd)
+        return (otherStart in ownStart..ownEnd) || (otherEnd in ownStart..ownEnd)
     }
 }

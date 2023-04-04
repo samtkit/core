@@ -350,14 +350,14 @@ class Parser private constructor(
         expect<ImplementsToken>()
         val serviceName = parseBundleIdentifier()
         var serviceOperationNames: List<IdentifierNode> = emptyList()
+        val braceStartLocation = currentStart
         if (skip<OpenBraceToken>()) {
             serviceOperationNames = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
 
             if (serviceOperationNames.isEmpty()) {
                 diagnostic.error {
                     message("Expected at least one operation name in the implements clause")
-                    highlight(locationFromStart(start))
-                    info("A valid implements clause looks like 'implements ServiceName { operation1, operation2 }'")
+                    highlight("expected at least one operation name", locationFromStart(braceStartLocation))
                     help("If you want to implement all operations, you can omit the braces and the operation names")
                 }
             }

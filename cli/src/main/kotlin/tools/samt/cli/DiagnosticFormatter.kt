@@ -245,6 +245,10 @@ class DiagnosticFormatter(
 
         // iteratively draw the message arrow lines and message texts
         val highlightsRemainingStack = highlights.toMutableList()
+
+        // remove highlights that do not have a message or change suggestion
+        highlightsRemainingStack.removeAll { it.message == null && it.changeSuggestion == null }
+
         while (highlightsRemainingStack.isNotEmpty()) {
             repeat(2) { iterationCount ->
                 append(formatNonHighlightedEmptySection())
@@ -252,7 +256,12 @@ class DiagnosticFormatter(
                     val highlight = highlightsRemainingStack.lastOrNull { it.location.end.col == colIndex + 1 }
                     if (highlight != null) {
                         if (highlight == highlightsRemainingStack.last() && iterationCount == 1) {
-                            append(formatTextForSeverity(highlight.message!!, severity))
+                            if (highlight.message != null) {
+                                append(formatTextForSeverity(highlight.message!!, severity))
+                            } else {
+                                require(highlight.changeSuggestion != null)
+                                append(formatTextForSeverity("Did you mean '${highlight.changeSuggestion}'?", severity))
+                            }
                         } else {
                             append(formatTextForSeverity("|", severity))
                         }

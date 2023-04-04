@@ -176,6 +176,17 @@ class Lexer private constructor(
     private fun readName(caretPassed: Boolean = false): Token {
         if (caretPassed) {
             readNext() // Ignore Caret for identifier
+
+            val caretLocation = windowLocation()
+            if (!current.isLetter()) {
+                diagnostic.error {
+                    message("Expected an identifier after caret")
+                    highlight(caretLocation)
+                    info("Identifiers must start with a letter")
+                }
+
+                return IdentifierToken(caretLocation, "^")
+            }
         }
 
         val name = buildString {

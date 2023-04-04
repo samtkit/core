@@ -51,6 +51,7 @@ data class DoublePeriodToken(override val location: Location): StructureToken
 data class ColonToken(override val location: Location): StructureToken
 data class AsteriskToken(override val location: Location): StructureToken
 data class AtSignToken(override val location: Location): StructureToken
+data class EqualsToken(override val location: Location): StructureToken
 data class LessThanSignToken(override val location: Location): StructureToken
 data class GreaterThanSignToken(override val location: Location): StructureToken
 data class QuestionMarkToken(override val location: Location): StructureToken
@@ -106,6 +107,7 @@ fun getHumanReadableTokenName(key: KClass<out Token>): String = when (key) {
     ColonToken::class -> ":"
     AsteriskToken::class -> "*"
     AtSignToken::class -> "@"
+    EqualsToken::class -> "="
     LessThanSignToken::class -> "<"
     GreaterThanSignToken::class -> ">"
     QuestionMarkToken::class -> "?"

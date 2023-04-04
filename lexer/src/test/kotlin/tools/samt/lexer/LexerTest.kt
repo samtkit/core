@@ -317,6 +317,7 @@ SAMT!""", stream.next()
             :
             *
             @
+            =
             <
             >
             ?
@@ -353,6 +354,7 @@ SAMT!""", stream.next()
         assertIs<ColonToken>(stream.next())
         assertIs<AsteriskToken>(stream.next())
         assertIs<AtSignToken>(stream.next())
+        assertIs<EqualsToken>(stream.next())
         assertIs<LessThanSignToken>(stream.next())
         assertIs<GreaterThanSignToken>(stream.next())
         assertIs<QuestionMarkToken>(stream.next())

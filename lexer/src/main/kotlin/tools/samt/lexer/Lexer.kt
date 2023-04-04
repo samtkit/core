@@ -63,6 +63,7 @@ class Lexer private constructor(
             ':' -> readStructureToken { ColonToken(it) }
             '*' -> readStructureToken { AsteriskToken(it) }
             '@' -> readStructureToken { AtSignToken(it) }
+            '=' -> readStructureToken { EqualsToken(it) }
             '<' -> readStructureToken { LessThanSignToken(it) }
             '>' -> readStructureToken { GreaterThanSignToken(it) }
             '?' -> readStructureToken { QuestionMarkToken(it) }

@@ -280,13 +280,18 @@ class Lexer private constructor(
     private fun skipComment(): Token? {
         readNext()
         if (!end) {
-            if (current == '/') {
-                skipLineComment()
-            } else if (current == '*') {
-                skipCommentBlock()
+            when (current) {
+                '/' -> {
+                    skipLineComment()
+                    return null
+                }
+                '*' -> {
+                    skipCommentBlock()
+                    return null
+                }
             }
         }
-        return null
+        return ForwardSlashToken(windowLocation())
     }
 
     private fun skipLineComment() {
@@ -297,20 +302,59 @@ class Lexer private constructor(
     }
 
     private fun skipCommentBlock() {
-        while (!end) {
-            readNext()
-            if (!end && current == '*') {
-                readNext()
-                if (!end && current == '/') {
+
+        // skip current asterisk character
+        require(current == '*')
+        readNext()
+
+        // read until we find a closing '*/' character pair
+        // increment the nested comment depth for every opening '/*' character pair
+        var commentOpenerPositionStack = mutableListOf(windowLocation())
+        var nestedCommentDepth = 1
+        commentReadLoop@ while (!end) {
+            val currentCharacterPosition = currentPosition
+            when (current) {
+
+                // handle new opening block comment
+                '/' -> {
                     readNext()
-                    return
+                    if (current == '*') {
+                        readNext()
+                        nestedCommentDepth++
+                        commentOpenerPositionStack.add(Location(diagnostic, currentCharacterPosition, currentPosition))
+                    }
                 }
+
+                // handle closing block comment
+                '*' -> {
+                    readNext()
+                    if (current == '/') {
+                        readNext()
+                        nestedCommentDepth--
+                        commentOpenerPositionStack.removeAt(commentOpenerPositionStack.lastIndex)
+
+                        if (nestedCommentDepth == 0) {
+                            break@commentReadLoop
+                        }
+                    }
+                }
+
+                else -> readNext()
             }
+
         }
-        diagnostic.error {
-            message("Unclosed block comment")
-            highlight(windowLocation(), highlightBeginningOnly = true)
-            help("Block comments must be closed with a */")
+
+        if (nestedCommentDepth > 0) {
+            diagnostic.error {
+                message("Unclosed block comment")
+
+                for (opener in commentOpenerPositionStack) {
+                    highlight("unclosed block comment", opener)
+                }
+
+                help("Block comments must be closed with a */")
+                info("Block comments can be nested and must each be closed properly")
+            }
         }
 
         return

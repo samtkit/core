@@ -41,8 +41,28 @@ class LexerTest {
     }
 
     @Test
+    fun `nested block comments`() {
+        val source = "service /* outermost comment /* middle comment /* innermost comment */ */ */ A { }"
+        val stream = readTokenStream(source)
+        assertIs<ServiceToken>(stream.next())
+        assertIdentifierToken("A", stream.next())
+        assertIs<OpenBraceToken>(stream.next())
+        assertIs<CloseBraceToken>(stream.next())
+        assertIs<EndOfFileToken>(stream.next())
+        assertFalse(diagnostics.hasErrors())
+    }
+
+    @Test
     fun `unclosed block comment`() {
         val source = "/**"
+        val stream = readTokenStream(source)
+        assertIs<EndOfFileToken>(stream.next())
+        assertTrue(diagnostics.hasErrors())
+    }
+
+    @Test
+    fun `unclosed nested block comments`() {
+        val source = "/* /* */"
         val stream = readTokenStream(source)
         assertIs<EndOfFileToken>(stream.next())
         assertTrue(diagnostics.hasErrors())
@@ -317,10 +337,11 @@ SAMT!""", stream.next()
             :
             *
             @
+            ?
             =
             <
             >
-            ?
+            /
 """
         val stream = Lexer.scan(source.reader(), diagnostics).iterator()
 
@@ -354,10 +375,11 @@ SAMT!""", stream.next()
         assertIs<ColonToken>(stream.next())
         assertIs<AsteriskToken>(stream.next())
         assertIs<AtSignToken>(stream.next())
+        assertIs<QuestionMarkToken>(stream.next())
         assertIs<EqualsToken>(stream.next())
         assertIs<LessThanSignToken>(stream.next())
         assertIs<GreaterThanSignToken>(stream.next())
-        assertIs<QuestionMarkToken>(stream.next())
+        assertIs<ForwardSlashToken>(stream.next())
     }
 
     private fun readTokenStream(source: String): Iterator<Token> {

@@ -7,18 +7,30 @@ import com.github.ajalt.mordant.terminal.Terminal
 import tools.samt.common.*
 
 class DiagnosticFormatter(
-    private val diagnosticController: DiagnosticController
+    private val diagnosticController: DiagnosticController,
+    private val terminalWidth: Int,
 ) {
-    // FIXME: this is a bit of a hack to get the terminal width
-    //        it also means we're assuming this output will only ever be printed in a terminal
-    //        i don't actually know what happens if it doesn't run in a tty setting
-    private val terminalWidth: Int = Terminal().info.width
+    companion object {
+        private const val CONTEXT_ROW_COUNT = 3
+
+        // FIXME: this is a bit of a hack to get the terminal width
+        //        it also means we're assuming this output will only ever be printed in a terminal
+        //        i don't actually know what happens if it doesn't run in a tty setting
+        fun format(controller: DiagnosticController, terminalWidth: Int = Terminal().info.width): String {
+            val formatter = DiagnosticFormatter(controller, terminalWidth)
+            return formatter.format()
+        }
+
+        private fun rowContextLowerBound(row: Int): Int = maxOf(0, row - CONTEXT_ROW_COUNT)
+        private fun rowContextUpperBound(row: Int, sourceFile: SourceFile): Int = minOf(sourceFile.sourceLines.lastIndex, row + CONTEXT_ROW_COUNT)
+    }
 
     private fun format(): String = buildString {
 
         // print context-less messages
         val globalMessages = diagnosticController.globalMessages
         globalMessages.forEachIndexed { index, message ->
+            appendLine("⎯".repeat(terminalWidth))
             append(formatGlobalMessage(message))
             if (index != globalMessages.lastIndex) {
                 appendLine()
@@ -35,6 +47,7 @@ class DiagnosticFormatter(
             ))
 
             context.messages.forEachIndexed { index, message ->
+                appendLine("⎯".repeat(terminalWidth))
                 append(formatMessage(message, context))
                 if (index != context.messages.lastIndex) {
                     appendLine()
@@ -84,10 +97,10 @@ class DiagnosticFormatter(
         append(formatSeverityIndicator(message.severity))
         append(" ")
         append(message.message)
+        appendLine()
     }
 
     private fun formatMessage(message: DiagnosticMessage, context: DiagnosticContext): String = buildString {
-        appendLine("⎯".repeat(terminalWidth))
 
         // <severity>: <message>
         append(formatSeverityIndicator(message.severity))
@@ -111,9 +124,9 @@ class DiagnosticFormatter(
             append(firstHighlightLocation.toString())
         }
         appendLine()
-        appendLine()
 
         if (message.highlights.isNotEmpty()) {
+            appendLine()
             append(formatMessageHighlights(message))
         }
 
@@ -443,18 +456,6 @@ class DiagnosticFormatter(
         append(gray((row + 1).toString().padStart(4)))
         append(" ┃ ")
         append(gray(source.sourceLines[row]))
-    }
-
-    companion object {
-        private const val CONTEXT_ROW_COUNT = 3
-
-        fun format(controller: DiagnosticController): String {
-            val formatter = DiagnosticFormatter(controller)
-            return formatter.format()
-        }
-
-        private fun rowContextLowerBound(row: Int): Int = maxOf(0, row - CONTEXT_ROW_COUNT)
-        private fun rowContextUpperBound(row: Int, sourceFile: SourceFile): Int = minOf(sourceFile.sourceLines.lastIndex, row + CONTEXT_ROW_COUNT)
     }
 
     private fun DiagnosticHighlight.overlaps(other: DiagnosticHighlight): Boolean {

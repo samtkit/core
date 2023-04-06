@@ -119,13 +119,14 @@ class LexerTest {
 
     @Test
     fun `illegal emoji in identifier`() {
-        val source = "record foo🙈 { }"
+        val source = "record foo% { }"
         val (stream, context) = readTokenStream(source)
         assertIs<RecordToken>(stream.next())
         assertIdentifierToken("foo", stream.next())
-        assertThrows<DiagnosticException> {
+        val exception = assertThrows<DiagnosticException> {
             assertIs<OpenBraceToken>(stream.next())
         }
+        assertEquals("Unrecognized character: '%'", exception.message)
         assertTrue(context.hasErrors())
     }
 

@@ -249,6 +249,20 @@ SAMT!""", stream.next()
         assertIs<EndOfFileToken>(stream.next())
         assertFalse(context.hasErrors())
         assertTrue(context.hasWarnings())
+        assertEquals(DiagnosticSeverity.Warning, context.messages.single().severity)
+        assertEquals("Identifier unnecessarily escaped", context.messages.single().message)
+    }
+
+    @Test
+    fun `missing identifier after escape caret`() {
+        val source = """record ^"""
+        val (stream, context) = readTokenStream(source)
+        assertIs<RecordToken>(stream.next())
+        assertIs<IdentifierToken>(stream.next())
+        assertIs<EndOfFileToken>(stream.next())
+        assertTrue(context.hasErrors())
+        assertEquals(DiagnosticSeverity.Error, context.messages.single().severity)
+        assertEquals("Expected an identifier after caret", context.messages.single().message)
     }
 
     @Test

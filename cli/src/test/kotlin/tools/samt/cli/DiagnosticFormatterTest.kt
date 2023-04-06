@@ -173,14 +173,14 @@ class DiagnosticFormatterTest {
               1 ┃ package debug
               2 ┃ enum Test {
               3 ┃     Foo,
-                ┃     ^^^ 
+                ┃     ^^^
                 ┃ 
               4 ┃     Bar,
               5 ┃     Baz,
               6 ┃     Qux
                 ┃     ^^^
-                ┃       |
-                ┃       some highlight
+                ┃     |
+                ┃     some highlight
                 ┃ 
               7 ┃ }
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
@@ -226,9 +226,9 @@ class DiagnosticFormatterTest {
               1 ┃ package debug
               2 ┃ enum Test {
               3 ┃     Foo,
-                ┃     ^^^ 
-                ┃       | 
-                ┃       some highlight 1 
+                ┃     ^^^
+                ┃     |
+                ┃     some highlight 1
                 ┃ 
               4 ┃     Bar,
               5 ┃     Bar,
@@ -239,8 +239,8 @@ class DiagnosticFormatterTest {
              12 ┃     Bar,
              13 ┃     Qux
                 ┃     ^^^
-                ┃       |
-                ┃       some highlight 2
+                ┃     |
+                ┃     some highlight 2
                 ┃ 
              14 ┃ }
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
@@ -278,12 +278,12 @@ class DiagnosticFormatterTest {
               2 ┃ enum Test {
               3 ┃     Foo, Bar, Baz
                 ┃     ^^^  ^^^  ^^^
-                ┃       |    |    |
-                ┃       |    |    enum value 'Baz'
-                ┃       |    |     
-                ┃       |    enum value 'Bar'     
-                ┃       |          
-                ┃       enum value 'Foo'          
+                ┃     |    |    |
+                ┃     |    |    enum value 'Baz'
+                ┃     |    |
+                ┃     |    enum value 'Bar'
+                ┃     |
+                ┃     enum value 'Foo'
                 ┃ 
               4 ┃ }
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
@@ -321,13 +321,125 @@ class DiagnosticFormatterTest {
               2 ┃ enum Test {
               3 ┃     Foo
                 ┃     ^^^
-                ┃       |
-                ┃       some highlight
+                ┃     |
+                ┃     some highlight
                 ┃ 
               4 ┃ }
         
                 = info: info annotation
                 = help: help annotation
+        """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
+    }
+
+    @Test
+    fun `highlight beginning only flag with no message`() {
+        val source = """
+            package debug
+            enum Test {
+                Foo
+            }
+        """.trimIndent()
+
+        val (fileNode, context, controller) = parse(source)
+        assert(fileNode.statements.single() is EnumDeclarationNode)
+        val enumNode = fileNode.statements.single() as EnumDeclarationNode
+
+        context.error {
+            message("some error")
+            highlight(enumNode.location, highlightBeginningOnly = true)
+        }
+
+        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
+
+        assertEquals("""
+        ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+        ERROR: some error
+         ---> DiagnosticFormatterTest.samt:2:1
+        
+              1 ┃ package debug
+              2 ┃ enum Test {
+                ┃ ^
+                ┃ 
+              3 ┃     Foo
+              4 ┃ }
+        """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
+    }
+
+    @Test
+    fun `highlight beginning only flag with a message`() {
+        val source = """
+            package debug
+            enum Test {
+                Foo
+            }
+        """.trimIndent()
+
+        val (fileNode, context, controller) = parse(source)
+        assert(fileNode.statements.single() is EnumDeclarationNode)
+        val enumNode = fileNode.statements.single() as EnumDeclarationNode
+
+        context.error {
+            message("some error")
+            highlight("some highlight", enumNode.location, highlightBeginningOnly = true)
+        }
+
+        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
+
+        assertEquals("""
+        ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+        ERROR: some error
+         ---> DiagnosticFormatterTest.samt:2:1
+        
+              1 ┃ package debug
+              2 ┃ enum Test {
+                ┃ ^
+                ┃ |
+                ┃ some highlight
+                ┃ 
+              3 ┃     Foo
+              4 ┃ }
+        """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
+    }
+
+    @Test
+    fun `highlight beginning only flag mixed with regular highlight`() {
+        val source = """
+            package debug
+            enum Test {
+                Foo
+            }
+        """.trimIndent()
+
+        val (fileNode, context, controller) = parse(source)
+        assert(fileNode.statements.single() is EnumDeclarationNode)
+        val enumNode = fileNode.statements.single() as EnumDeclarationNode
+
+        context.error {
+            message("some error")
+            highlight("enum begin", enumNode.location, highlightBeginningOnly = true)
+            highlight("enum name", enumNode.name.location)
+        }
+
+        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
+
+        assertEquals("""
+        ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+        ERROR: some error
+         ---> DiagnosticFormatterTest.samt:2:1
+        
+              1 ┃ package debug
+              2 ┃ enum Test {
+                ┃ ^    ^^^^
+                ┃ |    |
+                ┃ |    enum name
+                ┃ |
+                ┃ enum begin
+                ┃ 
+              3 ┃     Foo
+              4 ┃ }
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 

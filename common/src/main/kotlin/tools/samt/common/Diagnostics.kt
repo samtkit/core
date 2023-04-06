@@ -25,6 +25,7 @@ data class DiagnosticHighlight(
     val message: String?,
     val location: Location,
     val changeSuggestion: String?,
+    val highlightBeginningOnly: Boolean,
 )
 
 data class SourceFile(
@@ -117,8 +118,12 @@ class DiagnosticMessageBuilder(
         suggestChange: String? = null,
         highlightBeginningOnly: Boolean = false,
     ) {
-        val finalLocation = if (highlightBeginningOnly) location.copy(end = location.start) else location
-        highlights.add(DiagnosticHighlight(null, finalLocation, suggestChange))
+        val finalLocation = if (highlightBeginningOnly) {
+            location.copy(end = location.start.copy(charIndex = location.start.charIndex + 1, col = location.start.col + 1))
+        } else {
+            location
+        }
+        highlights.add(DiagnosticHighlight(null, finalLocation, suggestChange, highlightBeginningOnly))
     }
 
     fun highlight(
@@ -127,8 +132,12 @@ class DiagnosticMessageBuilder(
         suggestChange: String? = null,
         highlightBeginningOnly: Boolean = false,
     ) {
-        val finalLocation = if (highlightBeginningOnly) location.copy(end = location.start) else location
-        highlights.add(DiagnosticHighlight(message, finalLocation, suggestChange))
+        val finalLocation = if (highlightBeginningOnly) {
+            location.copy(end = location.start.copy(charIndex = location.start.charIndex + 1, col = location.start.col + 1))
+        } else {
+            location
+        }
+        highlights.add(DiagnosticHighlight(message, finalLocation, suggestChange, highlightBeginningOnly))
     }
 
     fun info(message: String) {

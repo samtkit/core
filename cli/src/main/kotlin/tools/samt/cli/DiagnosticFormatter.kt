@@ -277,7 +277,7 @@ class DiagnosticFormatter(
         for (colIndex in sourceLine.indices) {
             val char = sourceLine[colIndex]
             val highlight = highlights.firstOrNull { it.location.containsRowColumn(rowIndex, colIndex) }
-            if (highlight != null) {
+            if (highlight != null && !highlight.highlightBeginningOnly) {
                 append(formatTextForSeverity(char.toString(), severity, withBackground = true))
             } else {
                 append(char)
@@ -288,6 +288,13 @@ class DiagnosticFormatter(
         // draw the highlight carets for each highlight section
         append(formatNonHighlightedEmptySection())
         for (colIndex in sourceLine.indices) {
+
+            // are we past any possible highlights?
+            if (highlights.all { colIndex >= it.location.end.col }) {
+                break
+            }
+
+            // is this column part of a highlight?
             val highlight = highlights.firstOrNull { it.location.containsRowColumn(rowIndex, colIndex) }
             if (highlight != null) {
                 append(formatTextForSeverity("^", severity))
@@ -297,25 +304,30 @@ class DiagnosticFormatter(
         }
         appendLine()
 
-        // iteratively draw the message arrow lines and message texts
-        val highlightsRemainingStack = highlights.toMutableList()
-
+        // iteratively draw the message arrows and messages
         // remove highlights that do not have a message or change suggestion
+        val highlightsRemainingStack = highlights.toMutableList()
         highlightsRemainingStack.removeAll { it.message == null && it.changeSuggestion == null }
-
         while (highlightsRemainingStack.isNotEmpty()) {
-            repeat(2) { iterationCount ->
+            repeat(2) { iterationStep ->
                 append(formatNonHighlightedEmptySection())
                 for (colIndex in sourceLine.indices) {
-                    val highlight = highlightsRemainingStack.lastOrNull { it.location.end.col == colIndex + 1 }
+
+                    // are we past any possible highlights?
+                    if (highlightsRemainingStack.all { colIndex > it.location.start.col }) {
+                        break
+                    }
+
+                    val highlight = highlightsRemainingStack.lastOrNull { colIndex == it.location.start.col }
                     if (highlight != null) {
-                        if (highlight == highlightsRemainingStack.last() && iterationCount == 1) {
+                        if (highlight == highlightsRemainingStack.last() && iterationStep == 1) {
                             if (highlight.message != null) {
                                 append(formatTextForSeverity(highlight.message!!, severity))
                             } else {
                                 require(highlight.changeSuggestion != null)
                                 append(formatTextForSeverity("Did you mean '${highlight.changeSuggestion}'?", severity))
                             }
+                            break
                         } else {
                             append(formatTextForSeverity("|", severity))
                         }
@@ -325,7 +337,7 @@ class DiagnosticFormatter(
                 }
                 appendLine()
 
-                if (iterationCount == 1) {
+                if (iterationStep == 1) {
                     highlightsRemainingStack.removeLast()
                 }
             }

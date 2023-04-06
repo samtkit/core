@@ -33,7 +33,7 @@ data class SourceFile(
     val sourceLines: List<String>,  // each line of the source file
 )
 
-class DiagnosticException(message: String) : RuntimeException(message)
+class DiagnosticException(val diagnosticMessage: DiagnosticMessage) : RuntimeException(diagnosticMessage.message)
 
 class DiagnosticController(val workingDirectoryAbsolutePath: String) {
 
@@ -83,7 +83,7 @@ class DiagnosticContext(
     }
 
     fun fatal(block: DiagnosticMessageBuilder.() -> Unit): Nothing {
-        throw DiagnosticException(report(DiagnosticSeverity.Error, block).message)
+        throw DiagnosticException(report(DiagnosticSeverity.Error, block))
     }
     fun error(block: DiagnosticMessageBuilder.() -> Unit) = report(DiagnosticSeverity.Error, block)
     fun warn(block: DiagnosticMessageBuilder.() -> Unit) = report(DiagnosticSeverity.Warning, block)

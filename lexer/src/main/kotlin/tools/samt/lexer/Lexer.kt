@@ -77,8 +77,6 @@ class Lexer private constructor(
                     message("Unrecognized character: '$unrecognizedCharacter'")
                     highlight("hex: 0x$codeAsHex", errorLocation)
                 }
-
-                null
             }
         }
     }
@@ -236,7 +234,7 @@ class Lexer private constructor(
                             val invalidEscapeCharacter = current
                             readNext()
                             val escapeEndLocation = currentPosition
-                            val escapeLocation = Location(diagnostic, escapeStartLocation, escapeEndLocation)
+                            val escapeLocation = Location(diagnostic.source, escapeStartLocation, escapeEndLocation)
                             diagnostic.error {
                                 message("Invalid escape sequence: '\\$invalidEscapeCharacter'")
                                 highlight(escapeLocation, suggestChange = invalidEscapeCharacter.toString())
@@ -309,7 +307,7 @@ class Lexer private constructor(
 
         // read until we find a closing '*/' character pair
         // increment the nested comment depth for every opening '/*' character pair
-        var commentOpenerPositionStack = mutableListOf(windowLocation())
+        val commentOpenerPositionStack = mutableListOf(windowLocation())
         var nestedCommentDepth = 1
         commentReadLoop@ while (!end) {
             val currentCharacterPosition = currentPosition
@@ -321,7 +319,7 @@ class Lexer private constructor(
                     if (current == '*') {
                         readNext()
                         nestedCommentDepth++
-                        commentOpenerPositionStack.add(Location(diagnostic, currentCharacterPosition, currentPosition))
+                        commentOpenerPositionStack.add(Location(diagnostic.source, currentCharacterPosition, currentPosition))
                     }
                 }
 
@@ -360,7 +358,7 @@ class Lexer private constructor(
         return
     }
 
-    private fun windowLocation() = Location(diagnostic, windowStartPosition, currentPosition)
+    private fun windowLocation() = Location(diagnostic.source, windowStartPosition, currentPosition)
 
     private fun skipBlanks() {
         while (!end && (current == ' ' || current == '\n' || current == '\t' || current == '\r')) {

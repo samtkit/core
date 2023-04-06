@@ -45,7 +45,6 @@ class Parser private constructor(
                             highlight("extraneous package declaration", statement.location)
                             highlight("initial package declaration", packageDeclaration!!.location)
                         }
-
                     }
                     packageDeclaration = statement
                 }
@@ -634,7 +633,7 @@ class Parser private constructor(
         return current is T
     }
 
-    private fun locationFromStart(start: FileOffset) = Location(diagnostic, start, previousEnd)
+    private fun locationFromStart(start: FileOffset) = Location(diagnostic.source, start, previousEnd)
 
     companion object {
         fun parse(source: SourceFile, tokenStream: Sequence<Token>, context: DiagnosticContext): FileNode {

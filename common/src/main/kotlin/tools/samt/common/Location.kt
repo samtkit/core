@@ -13,14 +13,14 @@ data class FileOffset(val charIndex: Int, val row: Int, val col: Int) {
  * file offset in [end] is exclusive.
  * */
 data class Location(
-    val context: DiagnosticContext,
+    val source: SourceFile,
     val start: FileOffset,
     val end: FileOffset = start,
 ) {
     init {
         require(start.row <= end.row) { "Location end row (${end.row}) cannot be before start row ${start.row}" }
-        require(end.row <= context.source.sourceLines.lastIndex) {
-            "Location end row (${end.row}) cannot be after last source file row ${context.source.sourceLines.lastIndex}"
+        require(end.row <= source.sourceLines.lastIndex) {
+            "Location end row (${end.row}) cannot be after last source file row ${source.sourceLines.lastIndex}"
         }
     }
 

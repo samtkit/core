@@ -96,7 +96,7 @@ class DiagnosticFormatter(
         appendLine()
 
         val errorSourceFilePath = if (message.highlights.isNotEmpty()) {
-            message.highlights.first().location.context.source.absolutePath
+            message.highlights.first().location.source.absolutePath
         } else {
             context.source.absolutePath
         }
@@ -129,8 +129,8 @@ class DiagnosticFormatter(
         require(highlights.isNotEmpty())
 
         // group highlights by source file
-        val mainSourceFileAbsolutePath = highlights.first().location.context.source.absolutePath
-        val highlightsBySourceFile = highlights.groupBy { it.location.context.source.absolutePath }
+        val mainSourceFileAbsolutePath = highlights.first().location.source.absolutePath
+        val highlightsBySourceFile = highlights.groupBy { it.location.source.absolutePath }
 
         // print the highlights for the main source file
         val mainSourceFileHighlights = highlightsBySourceFile[mainSourceFileAbsolutePath]!!
@@ -182,7 +182,7 @@ class DiagnosticFormatter(
     private fun formatSingleFileHighlightGroup(highlights: List<DiagnosticHighlight>, severity: DiagnosticSeverity): String = buildString {
         require(highlights.isNotEmpty())
 
-        val source = highlights.first().location.context.source
+        val source = highlights.first().location.source
 
         // group highlights by their line number
         val highlightsByLineNumber = highlights.groupBy { it.location.start.row }.toSortedMap()
@@ -254,7 +254,7 @@ class DiagnosticFormatter(
     private fun formatSingleLineHighlights(highlights: List<DiagnosticHighlight>, severity: DiagnosticSeverity): String = buildString {
         val location = highlights.first().location
         val rowIndex = location.start.row
-        val sourceLine = location.context.source.sourceLines[rowIndex]
+        val sourceLine = location.source.sourceLines[rowIndex]
         require(highlights.all { !it.location.isMultiLine() })
         require(highlights.all { it.location.start.row == rowIndex })
 
@@ -329,7 +329,7 @@ class DiagnosticFormatter(
         val endRowIndex = location.end.row
 
         // print initial row
-        val firstRow = location.context.source.sourceLines[startRowIndex]
+        val firstRow = location.source.sourceLines[startRowIndex]
         val firstRowNonHighlightedPortion = firstRow.substring(0, location.start.col)
         val firstRowHighlightedPortion = firstRow.substring(location.start.col)
         append(formatHighlightedMultilineLineNumberSection(startRowIndex, severity))
@@ -339,12 +339,12 @@ class DiagnosticFormatter(
         // print intermediate rows
         for (rowIndex in (startRowIndex + 1) until endRowIndex) {
             append(formatHighlightedMultilineLineNumberSection(rowIndex, severity))
-            val sourceRow = location.context.source.sourceLines[rowIndex]
+            val sourceRow = location.source.sourceLines[rowIndex]
             appendLine(formatTextForSeverity(sourceRow, severity, withBackground = true))
         }
 
         // print final row
-        val lastRow = location.context.source.sourceLines[endRowIndex]
+        val lastRow = location.source.sourceLines[endRowIndex]
         val lastRowHighlightedPortion = lastRow.substring(0, location.end.col)
         val lastRowNonHighlightedPortion = lastRow.substring(location.end.col)
         append(formatHighlightedMultilineLineNumberSection(endRowIndex, severity))

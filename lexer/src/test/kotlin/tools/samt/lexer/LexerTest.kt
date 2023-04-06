@@ -2,8 +2,6 @@ package tools.samt.lexer
 
 import org.junit.jupiter.api.assertThrows
 import tools.samt.common.*
-import java.io.IOException
-import java.io.StringReader
 import kotlin.test.*
 
 class LexerTest {

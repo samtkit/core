@@ -6,7 +6,6 @@ import tools.samt.common.SourceFile
 import tools.samt.lexer.Lexer
 import tools.samt.parser.FileNode
 import tools.samt.parser.Parser
-import tools.samt.parser.ParserException
 
 fun parseSourceFile(source: SourceFile, context: DiagnosticContext): FileNode? {
     val tokenStream = Lexer.scan(source.content.reader(), context)

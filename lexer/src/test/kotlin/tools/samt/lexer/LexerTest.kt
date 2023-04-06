@@ -353,7 +353,7 @@ SAMT!""", stream.next()
     }
 
     private fun readTokenStream(source: String): Pair<Iterator<Token>, DiagnosticContext> {
-        val sourceFile = SourceFile("/tmp/test", source, source.lines())
+        val sourceFile = SourceFile("/tmp/test", source)
         val context = diagnosticController.createContext(sourceFile)
         return Pair(Lexer.scan(source.reader(), context).iterator(), context)
     }

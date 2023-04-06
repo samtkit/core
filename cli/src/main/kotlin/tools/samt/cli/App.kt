@@ -53,7 +53,7 @@ fun main(args: Array<String>) {
                 }
 
                 val source = file.readText()
-                add(SourceFile(file.canonicalPath, source, source.lines()))
+                add(SourceFile(file.canonicalPath, source))
             }
         }
 

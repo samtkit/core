@@ -2,6 +2,7 @@ package tools.samt.parser
 
 import tools.samt.common.*
 import tools.samt.lexer.*
+import kotlin.reflect.full.isSubclassOf
 
 class Parser private constructor(
     private val source: SourceFile,
@@ -50,6 +51,13 @@ class Parser private constructor(
                 }
 
                 else -> {
+                    if (packageDeclaration == null) {
+                        diagnostic.error {
+                            message("Unexpected statement")
+                            highlight("must occur after package declaration", statement.location)
+                            info("Statements can only be written after the package declaration")
+                        }
+                    }
                     statements.add(statement)
                 }
             }
@@ -605,7 +613,7 @@ class Parser private constructor(
             return IdentifierToken(staticToken.location, gotString) as T
         }
 
-        if (T::class == StaticToken::class || T::class == StructureToken::class) {
+        if (T::class.isSubclassOf(StaticToken::class) || T::class.isSubclassOf(StructureToken::class)) {
             diagnostic.fatal {
                 message("Unexpected token '${gotString}', expected '${expectedString}'")
                 highlight(current!!.location, suggestChange = expectedString)

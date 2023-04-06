@@ -35,7 +35,7 @@ class DiagnosticsTest {
             import foo as bar
             package debug
         """.trimIndent()
-        val sourceFile = SourceFile(sourcePath, sourceCode, sourceCode.lines())
+        val sourceFile = SourceFile(sourcePath, sourceCode)
         val context = controller.createContext(sourceFile)
 
         assertThrows<DiagnosticException>("some fatal error") {
@@ -64,7 +64,7 @@ class DiagnosticsTest {
             import foo as bar
             package debug
         """.trimIndent().trim()
-        val sourceFile = SourceFile(sourcePath, sourceCode, sourceCode.lines())
+        val sourceFile = SourceFile(sourcePath, sourceCode)
         val context = controller.createContext(sourceFile)
 
         val importStatementStartOffset = FileOffset(0, 0, 0)

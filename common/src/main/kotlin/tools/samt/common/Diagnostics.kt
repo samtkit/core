@@ -28,9 +28,14 @@ data class DiagnosticHighlight(
 )
 
 data class SourceFile(
-    val absolutePath: String,       // absolute path to the source file
-    val content: String,            // the content of the source file as a string
-    val sourceLines: List<String>,  // each line of the source file
+    // absolute path to the source file
+    val absolutePath: String,
+
+    // the content of the source file as a string
+    val content: String,
+
+    // each line of the source file
+    val sourceLines: List<String> = content.lines(),
 )
 
 class DiagnosticException(val diagnosticMessage: DiagnosticMessage) : RuntimeException(diagnosticMessage.message)

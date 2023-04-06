@@ -1,7 +1,8 @@
 package tools.samt.cli
 
-import tools.samt.common.DiagnosticConsole
 import tools.samt.common.DiagnosticContext
+import tools.samt.common.DiagnosticController
+import tools.samt.common.SourceFile
 import tools.samt.lexer.Lexer
 import tools.samt.parser.FileNode
 import tools.samt.parser.Parser
@@ -33,7 +34,7 @@ class ASTPrinterTest {
         val dumpWithoutColorCodes = dump.replace(Regex("\u001B\\[[;\\d]*m"), "")
 
         assertEquals("""
-            FileNode CliCompilerTest.samt <1:1>
+            FileNode /tmp/ASTPrinterTest.samt <1:1>
             ├─WildcardImportNode <1:1>
             │ └─ImportBundleIdentifierNode foo.bar.baz.* <1:8>
             │   ├─IdentifierNode foo <1:8>
@@ -81,12 +82,13 @@ class ASTPrinterTest {
     }
 
     private fun parse(source: String): FileNode {
-        val filePath = "CliCompilerTest.samt"
-        val diagnostics = DiagnosticConsole(DiagnosticContext(filePath, source))
-        val stream = Lexer.scan(source.reader(), diagnostics)
-        val fileTree = Parser.parse(filePath, stream, diagnostics)
-        diagnostics.messages.forEach { println(it) }
-        assertFalse(diagnostics.hasErrors(), "Expected no errors, but had errors")
+        val filePath = "/tmp/ASTPrinterTest.samt"
+        val sourceFile = SourceFile(filePath, source)
+        val diagnosticController = DiagnosticController("/tmp")
+        val diagnosticContext = diagnosticController.createContext(sourceFile)
+        val stream = Lexer.scan(source.reader(), diagnosticContext)
+        val fileTree = Parser.parse(sourceFile, stream, diagnosticContext)
+        assertFalse(diagnosticContext.hasErrors(), "Expected no errors, but had errors")
         return fileTree
     }
 }

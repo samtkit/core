@@ -39,7 +39,7 @@ data class SourceFile(
     val sourceLines: List<String> = content.lines(),
 )
 
-class DiagnosticException(val diagnosticMessage: DiagnosticMessage) : RuntimeException(diagnosticMessage.message)
+class DiagnosticException(message: DiagnosticMessage) : RuntimeException(message.message)
 
 class DiagnosticController(val workingDirectoryAbsolutePath: String) {
 

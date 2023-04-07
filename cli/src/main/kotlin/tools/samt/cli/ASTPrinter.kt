@@ -5,8 +5,8 @@ import tools.samt.parser.*
 import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.*
 
-class ASTPrinter private constructor() {
-    private fun dump(node: Node): String = buildString {
+object ASTPrinter {
+    fun dump(node: Node): String = buildString {
         val topLevelStyle = (red + bold + underline)
         val expressionStyle = (blue + bold)
 
@@ -225,12 +225,6 @@ class ASTPrinter private constructor() {
             is FloatNode,
             is BooleanNode,
             is StringNode -> Unit
-        }
-    }
-
-    companion object {
-        fun dump(node: FileNode): String {
-            return ASTPrinter().dump(node)
         }
     }
 }

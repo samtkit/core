@@ -31,7 +31,7 @@ class DiagnosticFormatter(
         // print context-less messages
         val globalMessages = diagnosticController.globalMessages
         globalMessages.forEachIndexed { index, message ->
-            appendLine("⎯".repeat(terminalWidth))
+            appendLine("─".repeat(terminalWidth))
             append(formatGlobalMessage(message))
             if (index != globalMessages.lastIndex) {
                 appendLine()
@@ -48,7 +48,7 @@ class DiagnosticFormatter(
             ))
 
             context.messages.forEachIndexed { index, message ->
-                appendLine("⎯".repeat(terminalWidth))
+                appendLine("─".repeat(terminalWidth))
                 append(formatMessage(message, context))
                 if (index != context.messages.lastIndex) {
                     appendLine()
@@ -259,7 +259,7 @@ class DiagnosticFormatter(
             return@buildString
         }
 
-        // case 3: their context areas do not overlap and we must draw a '...' separator between the two areas
+        // case 3: their context areas do not overlap, and we must draw a '...' separator between the two areas
         append(formatTrailingContextLines(previousRowIndex, source))
         appendLine("    ... ")
         append(formatPrecedingContextLines(nextRowIndex, source))
@@ -444,30 +444,30 @@ class DiagnosticFormatter(
     }
 
     private fun formatNonHighlightedEmptySection(): String = buildString {
-        append("        ┃ ")
+        append("        │ ")
     }
 
     private fun formatHighlightedLineNumberSection(row: Int, severity: DiagnosticSeverity): String = buildString {
         append("   ")
         append(formatTextForSeverity((row + 1).toString().padStart(4), severity, withBold = true))
-        append(" ┃ ")
+        append(" │ ")
     }
 
     private fun formatHighlightedMultilineLineNumberSection(row: Int, severity: DiagnosticSeverity): String = buildString {
         append(formatTextForSeverity("|> ", severity))
         append(formatTextForSeverity((row + 1).toString().padStart(4), severity, withBold = true))
-        append(" ┃ ")
+        append(" │ ")
     }
 
     private fun formatHighlightedMultilineEmptySection(severity: DiagnosticSeverity): String = buildString {
         append(formatTextForSeverity("|      ", severity))
-        append(" ┃ ")
+        append(" │ ")
     }
 
     private fun formatNonHighlightedSourceRow(row: Int, source: SourceFile): String = buildString {
         append("   ")
         append(gray((row + 1).toString().padStart(4)))
-        append(" ┃ ")
+        append(" │ ")
         append(gray(source.sourceLines[row]))
     }
 

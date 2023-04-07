@@ -18,18 +18,21 @@ class DiagnosticFormatterTest {
         controller.reportGlobalError("This is a global error")
         controller.reportGlobalWarning("This is a global warning")
         controller.reportGlobalInfo("This is a global info")
-        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val output = DiagnosticFormatter.format(controller, 0, 0, terminalWidth = 40)
         val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
 
         assertEquals("""
-            ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+            ────────────────────────────────────────
             ERROR: This is a global error
             
-            ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+            ────────────────────────────────────────
             WARNING: This is a global warning
             
-            ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+            ────────────────────────────────────────
             INFO: This is a global info
+            
+            ────────────────────────────────────────
+            BUILD FAILED in 0ms (1 error(s), 1 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -52,22 +55,24 @@ class DiagnosticFormatterTest {
             message("some info")
         }
 
-        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val output = DiagnosticFormatter.format(controller, 0, 0, terminalWidth = 40)
         val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
 
         assertEquals("""
-            ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+            ────────────────────────────────────────
             ERROR: some error
              ---> test.txt
             
-            ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+            ────────────────────────────────────────
             WARNING: some warning
              ---> test.txt
             
-            ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+            ────────────────────────────────────────
             INFO: some info
              ---> test.txt
             
+            ────────────────────────────────────────
+            BUILD FAILED in 0ms (1 error(s), 1 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -89,18 +94,21 @@ class DiagnosticFormatterTest {
             highlight(enumNode.location)
         }
 
-        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val output = DiagnosticFormatter.format(controller, 0, 0, terminalWidth = 40)
         val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
 
         assertEquals("""
-        ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-        ERROR: some error
-         ---> DiagnosticFormatterTest.samt:2:1
-        
-              1 ┃ package debug
-        |>    2 ┃ enum Test {
-        |>    3 ┃     Foo, Bar, Baz
-        |>    4 ┃ }
+            ────────────────────────────────────────
+            ERROR: some error
+             ---> DiagnosticFormatterTest.samt:2:1
+            
+                  1 │ package debug
+            |>    2 │ enum Test {
+            |>    3 │     Foo, Bar, Baz
+            |>    4 │ }
+            
+            ────────────────────────────────────────
+            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -122,21 +130,24 @@ class DiagnosticFormatterTest {
             highlight("some highlight", enumNode.location)
         }
 
-        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val output = DiagnosticFormatter.format(controller, 0, 0, terminalWidth = 40)
         val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
 
         assertEquals("""
-        ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-        ERROR: some error
-         ---> DiagnosticFormatterTest.samt:2:1
-        
-              1 ┃ package debug
-        |>    2 ┃ enum Test {
-        |>    3 ┃     Foo, Bar, Baz
-        |>    4 ┃ }
-        |       ┃ 
-        +--------- some highlight
-                ┃
+            ────────────────────────────────────────
+            ERROR: some error
+             ---> DiagnosticFormatterTest.samt:2:1
+            
+                  1 │ package debug
+            |>    2 │ enum Test {
+            |>    3 │     Foo, Bar, Baz
+            |>    4 │ }
+            |       │ 
+            +--------- some highlight
+                    │ 
+            
+            ────────────────────────────────────────
+            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -162,27 +173,30 @@ class DiagnosticFormatterTest {
             highlight("some highlight", enumNode.values.last().location)
         }
 
-        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val output = DiagnosticFormatter.format(controller, 0, 0, terminalWidth = 40)
         val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
 
         assertEquals("""
-        ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-        ERROR: some error
-         ---> DiagnosticFormatterTest.samt:3:5
-        
-              1 ┃ package debug
-              2 ┃ enum Test {
-              3 ┃     Foo,
-                ┃     ^^^
-                ┃ 
-              4 ┃     Bar,
-              5 ┃     Baz,
-              6 ┃     Qux
-                ┃     ^^^
-                ┃     |
-                ┃     some highlight
-                ┃ 
-              7 ┃ }
+            ────────────────────────────────────────
+            ERROR: some error
+             ---> DiagnosticFormatterTest.samt:3:5
+            
+                  1 │ package debug
+                  2 │ enum Test {
+                  3 │     Foo,
+                    │     ^^^
+                    │ 
+                  4 │     Bar,
+                  5 │     Baz,
+                  6 │     Qux
+                    │     ^^^
+                    │     |
+                    │     some highlight
+                    │ 
+                  7 │ }
+            
+            ────────────────────────────────────────
+            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -215,34 +229,37 @@ class DiagnosticFormatterTest {
             highlight("some highlight 2", enumNode.values.last().location)
         }
 
-        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val output = DiagnosticFormatter.format(controller, 0, 0, terminalWidth = 40)
         val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
 
         assertEquals("""
-        ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-        ERROR: some error
-         ---> DiagnosticFormatterTest.samt:3:5
-        
-              1 ┃ package debug
-              2 ┃ enum Test {
-              3 ┃     Foo,
-                ┃     ^^^
-                ┃     |
-                ┃     some highlight 1
-                ┃ 
-              4 ┃     Bar,
-              5 ┃     Bar,
-              6 ┃     Bar,
-            ... 
-             10 ┃     Bar,
-             11 ┃     Bar,
-             12 ┃     Bar,
-             13 ┃     Qux
-                ┃     ^^^
-                ┃     |
-                ┃     some highlight 2
-                ┃ 
-             14 ┃ }
+            ────────────────────────────────────────
+            ERROR: some error
+             ---> DiagnosticFormatterTest.samt:3:5
+            
+                  1 │ package debug
+                  2 │ enum Test {
+                  3 │     Foo,
+                    │     ^^^
+                    │     |
+                    │     some highlight 1
+                    │ 
+                  4 │     Bar,
+                  5 │     Bar,
+                  6 │     Bar,
+                ... 
+                 10 │     Bar,
+                 11 │     Bar,
+                 12 │     Bar,
+                 13 │     Qux
+                    │     ^^^
+                    │     |
+                    │     some highlight 2
+                    │ 
+                 14 │ }
+            
+            ────────────────────────────────────────
+            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -266,26 +283,29 @@ class DiagnosticFormatterTest {
             }
         }
 
-        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val output = DiagnosticFormatter.format(controller, 0, 0, terminalWidth = 40)
         val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
 
         assertEquals("""
-        ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-        ERROR: some error
-         ---> DiagnosticFormatterTest.samt:3:5
-        
-              1 ┃ package debug
-              2 ┃ enum Test {
-              3 ┃     Foo, Bar, Baz
-                ┃     ^^^  ^^^  ^^^
-                ┃     |    |    |
-                ┃     |    |    enum value 'Baz'
-                ┃     |    |
-                ┃     |    enum value 'Bar'
-                ┃     |
-                ┃     enum value 'Foo'
-                ┃ 
-              4 ┃ }
+            ────────────────────────────────────────
+            ERROR: some error
+             ---> DiagnosticFormatterTest.samt:3:5
+            
+                  1 │ package debug
+                  2 │ enum Test {
+                  3 │     Foo, Bar, Baz
+                    │     ^^^  ^^^  ^^^
+                    │     |    |    |
+                    │     |    |    enum value 'Baz'
+                    │     |    |
+                    │     |    enum value 'Bar'
+                    │     |
+                    │     enum value 'Foo'
+                    │ 
+                  4 │ }
+            
+            ────────────────────────────────────────
+            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -309,25 +329,28 @@ class DiagnosticFormatterTest {
             help("help annotation")
         }
 
-        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val output = DiagnosticFormatter.format(controller, 0, 0, terminalWidth = 40)
         val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
 
         assertEquals("""
-        ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-        ERROR: some error
-         ---> DiagnosticFormatterTest.samt:3:5
-        
-              1 ┃ package debug
-              2 ┃ enum Test {
-              3 ┃     Foo
-                ┃     ^^^
-                ┃     |
-                ┃     some highlight
-                ┃ 
-              4 ┃ }
-        
-                = info: info annotation
-                = help: help annotation
+            ────────────────────────────────────────
+            ERROR: some error
+             ---> DiagnosticFormatterTest.samt:3:5
+            
+                  1 │ package debug
+                  2 │ enum Test {
+                  3 │     Foo
+                    │     ^^^
+                    │     |
+                    │     some highlight
+                    │ 
+                  4 │ }
+            
+                    = info: info annotation
+                    = help: help annotation
+            
+            ────────────────────────────────────────
+            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -349,20 +372,23 @@ class DiagnosticFormatterTest {
             highlight(enumNode.location, highlightBeginningOnly = true)
         }
 
-        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val output = DiagnosticFormatter.format(controller, 0, 0, terminalWidth = 40)
         val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
 
         assertEquals("""
-        ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-        ERROR: some error
-         ---> DiagnosticFormatterTest.samt:2:1
-        
-              1 ┃ package debug
-              2 ┃ enum Test {
-                ┃ ^
-                ┃ 
-              3 ┃     Foo
-              4 ┃ }
+            ────────────────────────────────────────
+            ERROR: some error
+             ---> DiagnosticFormatterTest.samt:2:1
+            
+                  1 │ package debug
+                  2 │ enum Test {
+                    │ ^
+                    │ 
+                  3 │     Foo
+                  4 │ }
+            
+            ────────────────────────────────────────
+            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -384,22 +410,25 @@ class DiagnosticFormatterTest {
             highlight("some highlight", enumNode.location, highlightBeginningOnly = true)
         }
 
-        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val output = DiagnosticFormatter.format(controller, 0, 0, terminalWidth = 40)
         val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
 
         assertEquals("""
-        ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-        ERROR: some error
-         ---> DiagnosticFormatterTest.samt:2:1
-        
-              1 ┃ package debug
-              2 ┃ enum Test {
-                ┃ ^
-                ┃ |
-                ┃ some highlight
-                ┃ 
-              3 ┃     Foo
-              4 ┃ }
+            ────────────────────────────────────────
+            ERROR: some error
+             ---> DiagnosticFormatterTest.samt:2:1
+            
+                  1 │ package debug
+                  2 │ enum Test {
+                    │ ^
+                    │ |
+                    │ some highlight
+                    │ 
+                  3 │     Foo
+                  4 │ }
+            
+            ────────────────────────────────────────
+            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -422,24 +451,27 @@ class DiagnosticFormatterTest {
             highlight("enum name", enumNode.name.location)
         }
 
-        val output = DiagnosticFormatter.format(controller, terminalWidth = 40)
+        val output = DiagnosticFormatter.format(controller, 0, 0, terminalWidth = 40)
         val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
 
         assertEquals("""
-        ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-        ERROR: some error
-         ---> DiagnosticFormatterTest.samt:2:1
-        
-              1 ┃ package debug
-              2 ┃ enum Test {
-                ┃ ^    ^^^^
-                ┃ |    |
-                ┃ |    enum name
-                ┃ |
-                ┃ enum begin
-                ┃ 
-              3 ┃     Foo
-              4 ┃ }
+            ────────────────────────────────────────
+            ERROR: some error
+             ---> DiagnosticFormatterTest.samt:2:1
+            
+                  1 │ package debug
+                  2 │ enum Test {
+                    │ ^    ^^^^
+                    │ |    |
+                    │ |    enum name
+                    │ |
+                    │ enum begin
+                    │ 
+                  3 │     Foo
+                  4 │ }
+            
+            ────────────────────────────────────────
+            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 

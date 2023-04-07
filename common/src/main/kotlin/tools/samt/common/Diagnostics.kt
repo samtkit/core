@@ -44,11 +44,6 @@ class DiagnosticException(message: DiagnosticMessage) : RuntimeException(message
 class DiagnosticController(val workingDirectoryAbsolutePath: String) {
 
     /**
-     * The time at which this diagnostic controller was created.
-     * */
-    val constructionTimestamp = System.currentTimeMillis()
-
-    /**
      * All diagnostic contexts, one for each source file.
      * */
     val contexts: MutableList<DiagnosticContext> = mutableListOf()

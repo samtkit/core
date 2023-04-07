@@ -9,6 +9,8 @@ import java.io.File
 
 class DiagnosticFormatter(
     private val diagnosticController: DiagnosticController,
+    private val startTimestamp: Long,
+    private val currentTimestamp: Long,
     private val terminalWidth: Int,
 ) {
     companion object {
@@ -17,8 +19,8 @@ class DiagnosticFormatter(
         // FIXME: this is a bit of a hack to get the terminal width
         //        it also means we're assuming this output will only ever be printed in a terminal
         //        i don't actually know what happens if it doesn't run in a tty setting
-        fun format(controller: DiagnosticController, terminalWidth: Int = Terminal().info.width): String {
-            val formatter = DiagnosticFormatter(controller, terminalWidth)
+        fun format(controller: DiagnosticController, startTimestamp: Long, currentTimestamp: Long, terminalWidth: Int = Terminal().info.width): String {
+            val formatter = DiagnosticFormatter(controller, startTimestamp, currentTimestamp, terminalWidth)
             return formatter.format()
         }
 
@@ -29,7 +31,7 @@ class DiagnosticFormatter(
     private fun format(): String = buildString {
 
         // keep track of the number of errors and warnings
-        var countsBySeverity = mutableMapOf<DiagnosticSeverity, Int>()
+        val countsBySeverity = mutableMapOf<DiagnosticSeverity, Int>()
         countsBySeverity[DiagnosticSeverity.Error] = 0
         countsBySeverity[DiagnosticSeverity.Warning] = 0
         countsBySeverity[DiagnosticSeverity.Info] = 0
@@ -65,11 +67,12 @@ class DiagnosticFormatter(
                 countsBySeverity[message.severity] = countsBySeverity.getValue(message.severity) + 1
             }
         }
+        appendLine()
 
         // print summary
         val errorCount = countsBySeverity.getValue(DiagnosticSeverity.Error)
         val warningCount = countsBySeverity.getValue(DiagnosticSeverity.Warning)
-        val duration = System.currentTimeMillis() - diagnosticController.constructionTimestamp
+        val duration = currentTimestamp - startTimestamp
         appendLine("─".repeat(terminalWidth))
         if (errorCount == 0) {
             append((green + bold)("BUILD SUCCESSFUL") + " in ${duration}ms")
@@ -78,7 +81,7 @@ class DiagnosticFormatter(
         }
 
         if (errorCount > 0 || warningCount > 0) {
-            appendLine(" (${errorCount} error(s), ${warningCount} warning(s))")
+            appendLine(" ($errorCount error(s), $warningCount warning(s))")
         } else {
             appendLine()
         }
@@ -161,7 +164,7 @@ class DiagnosticFormatter(
         // print highlight annotations
         if (message.annotations.isNotEmpty()) {
             appendLine()
-            appendLine(formatHighlightAnnotations(message.annotations))
+            append(formatHighlightAnnotations(message.annotations))
         }
     }
 

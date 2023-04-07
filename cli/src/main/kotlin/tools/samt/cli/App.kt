@@ -24,6 +24,7 @@ fun main(args: Array<String>) {
     val workingDirectory = System.getProperty("user.dir")
     val filePaths = cliArgs.files
 
+    val startTimestamp = System.currentTimeMillis()
     val diagnosticController = DiagnosticController(workingDirectory).also { controller ->
 
         // must specify at least one SAMT file
@@ -86,5 +87,6 @@ fun main(args: Array<String>) {
         }
     }
 
-    t.println(DiagnosticFormatter.format(diagnosticController))
+    val currentTimestamp = System.currentTimeMillis()
+    t.println(DiagnosticFormatter.format(diagnosticController, startTimestamp, currentTimestamp, terminalWidth = t.info.width))
 }

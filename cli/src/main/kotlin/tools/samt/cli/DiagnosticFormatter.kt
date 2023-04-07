@@ -166,25 +166,15 @@ class DiagnosticFormatter(
         // this assures us that each highlight in the group is either on a different line or
         // if they are on the same line, they are not overlapping
         val nonOverlappingGroups = mutableListOf<MutableList<DiagnosticHighlight>>()
-        sourceHighlightLoop@ for (highlight in highlights) {
-
-            // check if the highlight fits into any existing groups
-            groupLoop@ for (group in nonOverlappingGroups) {
-
-                // compare with each highlight in the group to see if they overlap
-                for (otherHighlight in group) {
-                    if (highlight.overlaps(otherHighlight)) {
-                        continue@groupLoop
-                    }
-                }
-
-                // no conflicts were found, add the highlight to this group
-                group.add(highlight)
-                continue@sourceHighlightLoop
+        for (highlight in highlights) {
+            val matchingGroup = nonOverlappingGroups.find { group ->
+                group.any { groupHighlight -> groupHighlight.overlaps(highlight) }
             }
-
-            // could not find a group to fit this highlight in, create a new group
-            nonOverlappingGroups.add(mutableListOf(highlight))
+            if (matchingGroup != null) {
+                matchingGroup.add(highlight)
+            } else {
+                nonOverlappingGroups.add(mutableListOf(highlight))
+            }
         }
 
         // print each highlight group

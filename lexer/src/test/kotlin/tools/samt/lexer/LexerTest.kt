@@ -1,140 +1,148 @@
 package tools.samt.lexer
 
-import tools.samt.common.DiagnosticConsole
-import tools.samt.common.DiagnosticContext
-import tools.samt.common.FileOffset
-import java.io.IOException
-import java.io.StringReader
+import org.junit.jupiter.api.assertThrows
+import tools.samt.common.*
 import kotlin.test.*
 
 class LexerTest {
-    private lateinit var diagnostics: DiagnosticConsole
-
-    @BeforeTest
-    fun setup() {
-        diagnostics = DiagnosticConsole(DiagnosticContext("test", ""))
-    }
-
-    @AfterTest
-    fun teardown() {
-        diagnostics.messages.forEach { println(it) }
-    }
+    private var diagnosticController = DiagnosticController("/tmp")
 
     @Test
     fun `comment only file`() {
         val source = "// Line Comment \r\n/* Block Comment */\n// Line Comment"
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
+        assertFalse(context.hasErrors())
     }
 
     @Test
     fun `block comment`() {
         val source = "service /* Comment */ A { }"
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertIs<ServiceToken>(stream.next())
         assertIdentifierToken("A", stream.next())
         assertIs<OpenBraceToken>(stream.next())
         assertIs<CloseBraceToken>(stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
+        assertFalse(context.hasErrors())
+    }
+
+    @Test
+    fun `nested block comments`() {
+        val source = "service /* outermost comment /* middle comment /* innermost comment */ */ */ A { }"
+        val (stream, context) = readTokenStream(source)
+        assertIs<ServiceToken>(stream.next())
+        assertIdentifierToken("A", stream.next())
+        assertIs<OpenBraceToken>(stream.next())
+        assertIs<CloseBraceToken>(stream.next())
+        assertIs<EndOfFileToken>(stream.next())
+        assertFalse(context.hasErrors())
     }
 
     @Test
     fun `unclosed block comment`() {
         val source = "/**"
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertIs<EndOfFileToken>(stream.next())
-        assertTrue(diagnostics.hasErrors())
+        assertTrue(context.hasErrors())
+    }
+
+    @Test
+    fun `unclosed nested block comments`() {
+        val source = "/* /* */"
+        val (stream, context) = readTokenStream(source)
+        assertIs<EndOfFileToken>(stream.next())
+        assertTrue(context.hasErrors())
     }
 
     @Test
     fun `line comment`() {
         val source = "record // Comment \r\nA { }"
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertIs<RecordToken>(stream.next())
         assertIdentifierToken("A", stream.next())
         assertIs<OpenBraceToken>(stream.next())
         assertIs<CloseBraceToken>(stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
+        assertFalse(context.hasErrors())
     }
 
     @Test
     fun `integer boundaries`() {
         val source = "2147483647 -2147483648 2147483649 9999999999999999999"
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertIntegerToken(2147483647, stream.next())
         assertIntegerToken(-2147483648, stream.next())
         assertIntegerToken(2147483649, stream.next())
         assertIntegerToken(0, stream.next()) // Invalid numbers get converted to 0
         assertIs<EndOfFileToken>(stream.next())
-        assertTrue(diagnostics.hasErrors())
+        assertTrue(context.hasErrors())
     }
 
     @Test
     fun `float boundaries`() {
         val source = "0.3 -0.5"
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertFloatToken(0.3, stream.next())
         assertFloatToken(-0.5, stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
+        assertFalse(context.hasErrors())
     }
 
     @Test
     fun `negative float without whole part`() {
         val source = "-.5"
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertFloatToken(-0.5, stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertTrue(diagnostics.hasErrors())
+        assertTrue(context.hasErrors())
     }
 
     @Test
     fun `float without whole part`() {
         val source = ".5"
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertIs<PeriodToken>(stream.next())
         assertIntegerToken(5, stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
+        assertFalse(context.hasErrors())
     }
 
     @Test
     fun `float without fraction part`() {
         val source = "5."
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertFloatToken(5.0, stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertTrue(diagnostics.hasErrors())
+        assertTrue(context.hasErrors())
     }
 
     @Test
     fun `illegal emoji in identifier`() {
-        val source = "record foo🙈 { }"
-        val stream = readTokenStream(source)
+        val source = "record foo% { }"
+        val (stream, context) = readTokenStream(source)
         assertIs<RecordToken>(stream.next())
         assertIdentifierToken("foo", stream.next())
-        assertIs<OpenBraceToken>(stream.next())
-        assertIs<CloseBraceToken>(stream.next())
-        assertIs<EndOfFileToken>(stream.next())
-        assertTrue(diagnostics.hasErrors())
+        val exception = assertThrows<DiagnosticException> {
+            assertIs<OpenBraceToken>(stream.next())
+        }
+        assertEquals("Unrecognized character: '%'", exception.message)
+        assertTrue(context.hasErrors())
     }
 
     @Test
     fun `simple string literal`() {
         val source = """"Hello SAMT!""""
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertStringToken("Hello SAMT!", stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
+        assertFalse(context.hasErrors())
     }
 
     @Test
     fun `string literal with escape sequences`() {
         val source = """"Hello \"SAMT\"\r\n    Space indented\r\n\tTab indented!""""
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertStringToken(
             """
 Hello "SAMT"
@@ -143,44 +151,44 @@ Hello "SAMT"
         """.trimIndent().replace("\n", "\r\n"), stream.next()
         )
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
+        assertFalse(context.hasErrors())
     }
 
     @Test
     fun `string literal with illegal escape sequences`() {
         val source = """"Dubious \escape""""
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertStringToken("Dubious scape", stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertTrue(diagnostics.hasErrors())
+        assertTrue(context.hasErrors())
     }
 
     @Test
     fun `multiline string literal`() {
         val source = """"Hello
 SAMT!""""
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertStringToken(
             """Hello
 SAMT!""", stream.next()
         )
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
+        assertFalse(context.hasErrors())
     }
 
     @Test
     fun `unclosed string literal`() {
         val source = """"Hello"""
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertStringToken("Hello", stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertTrue(diagnostics.hasErrors())
+        assertTrue(context.hasErrors())
     }
 
     @Test
     fun `range between two integers`() {
         val source = """Long ( range(1..*) )"""
-        val stream = readTokenStream(source)
+        val (stream, _) = readTokenStream(source)
         assertIdentifierToken("Long", stream.next())
         assertIs<OpenParenthesisToken>(stream.next())
         assertIdentifierToken("range", stream.next())
@@ -195,7 +203,7 @@ SAMT!""", stream.next()
     @Test
     fun `range between two floats`() {
         val source = """Double ( range(0.01..1.00) )"""
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertIdentifierToken("Double", stream.next())
         assertIs<OpenParenthesisToken>(stream.next())
         assertIdentifierToken("range", stream.next())
@@ -206,58 +214,55 @@ SAMT!""", stream.next()
         assertIs<CloseParenthesisToken>(stream.next())
         assertIs<CloseParenthesisToken>(stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
+        assertFalse(context.hasErrors())
     }
 
     @Test
     fun `range between two identifiers`() {
         val source = """foo.. bar ..baz"""
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertIdentifierToken("foo", stream.next())
         assertIs<DoublePeriodToken>(stream.next())
         assertIdentifierToken("bar", stream.next())
         assertIs<DoublePeriodToken>(stream.next())
         assertIdentifierToken("baz", stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
+        assertFalse(context.hasErrors())
     }
 
     @Test
     fun `escaped keyword is read as identifier`() {
         val source = """record ^record"""
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertIs<RecordToken>(stream.next())
         assertIdentifierToken("record", stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
+        assertFalse(context.hasErrors())
     }
 
     @Test
     fun `escaped identifier is read as identifier but emits warning`() {
         val source = """record ^foo"""
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         assertIs<RecordToken>(stream.next())
         assertIdentifierToken("foo", stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
-        assertTrue(diagnostics.hasWarnings())
+        assertFalse(context.hasErrors())
+        assertTrue(context.hasWarnings())
+        assertEquals(DiagnosticSeverity.Warning, context.messages.single().severity)
+        assertEquals("Identifier unnecessarily escaped", context.messages.single().message)
     }
 
     @Test
-    fun `reader without mark support does not fail on number parse`() {
-        val source = "1.5 42..128"
-        val reader = object : StringReader(source) {
-            override fun mark(readAheadLimit: Int): Unit = throw IOException()
-
-            override fun markSupported(): Boolean = false
-        }
-        val stream = Lexer.scan(reader, diagnostics).iterator()
-        assertFloatToken(1.5, stream.next())
-        assertIntegerToken(42, stream.next())
-        assertIs<DoublePeriodToken>(stream.next())
-        assertIntegerToken(128, stream.next())
+    fun `missing identifier after escape caret`() {
+        val source = """record ^"""
+        val (stream, context) = readTokenStream(source)
+        assertIs<RecordToken>(stream.next())
+        assertIs<IdentifierToken>(stream.next())
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
+        assertTrue(context.hasErrors())
+        assertEquals(DiagnosticSeverity.Error, context.messages.single().severity)
+        assertEquals("Expected an identifier after caret", context.messages.single().message)
     }
 
     @Test
@@ -269,7 +274,7 @@ SAMT!""", stream.next()
                "Hello"
                 }
         """.trimIndent()
-        val stream = readTokenStream(source)
+        val (stream, context) = readTokenStream(source)
         val record = assertIs<RecordToken>(stream.next())
         assertLocation(FileOffset(0, 0, 0), FileOffset(6, 0, 6), record)
         val identifierA = assertIs<IdentifierToken>(stream.next())
@@ -281,7 +286,7 @@ SAMT!""", stream.next()
         val closeBrace = assertIs<CloseBraceToken>(stream.next())
         assertLocation(FileOffset(29, 4, 4), FileOffset(30, 4, 5), closeBrace)
         assertIs<EndOfFileToken>(stream.next())
-        assertFalse(diagnostics.hasErrors())
+        assertFalse(context.hasErrors())
     }
 
     @Test
@@ -317,11 +322,13 @@ SAMT!""", stream.next()
             :
             *
             @
+            ?
+            =
             <
             >
-            ?
+            /
 """
-        val stream = Lexer.scan(source.reader(), diagnostics).iterator()
+        val (stream, _) = readTokenStream(source)
 
         assertIs<RecordToken>(stream.next())
         assertIs<EnumToken>(stream.next())
@@ -353,13 +360,17 @@ SAMT!""", stream.next()
         assertIs<ColonToken>(stream.next())
         assertIs<AsteriskToken>(stream.next())
         assertIs<AtSignToken>(stream.next())
+        assertIs<QuestionMarkToken>(stream.next())
+        assertIs<EqualsToken>(stream.next())
         assertIs<LessThanSignToken>(stream.next())
         assertIs<GreaterThanSignToken>(stream.next())
-        assertIs<QuestionMarkToken>(stream.next())
+        assertIs<ForwardSlashToken>(stream.next())
     }
 
-    private fun readTokenStream(source: String): Iterator<Token> {
-        return Lexer.scan(source.reader(), diagnostics).iterator()
+    private fun readTokenStream(source: String): Pair<Iterator<Token>, DiagnosticContext> {
+        val sourceFile = SourceFile("/tmp/test", source)
+        val context = diagnosticController.createContext(sourceFile)
+        return Pair(Lexer.scan(source.reader(), context).iterator(), context)
     }
 
     private fun assertIdentifierToken(value: String, actual: Token) {

@@ -1,14 +1,12 @@
 package tools.samt.lexer
 
-import tools.samt.common.DiagnosticConsole
-import tools.samt.common.FileOffset
-import tools.samt.common.Location
+import tools.samt.common.*
 import java.io.BufferedReader
 import java.io.Reader
 
 class Lexer private constructor(
     reader: Reader,
-    private val diagnostics: DiagnosticConsole,
+    private val diagnostic: DiagnosticContext,
 ) {
     private var current = '0'
     private var end = false
@@ -65,15 +63,20 @@ class Lexer private constructor(
             ':' -> readStructureToken { ColonToken(it) }
             '*' -> readStructureToken { AsteriskToken(it) }
             '@' -> readStructureToken { AtSignToken(it) }
+            '=' -> readStructureToken { EqualsToken(it) }
             '<' -> readStructureToken { LessThanSignToken(it) }
             '>' -> readStructureToken { GreaterThanSignToken(it) }
             '?' -> readStructureToken { QuestionMarkToken(it) }
             else -> {
+                val unrecognizedCharacter = current
                 readNext() // Skip unrecognized character
                 val errorLocation = windowLocation()
-                val codeAsHex = current.code.toString(16)
-                diagnostics.reportError("Unrecognized character: $current (0x$codeAsHex)", errorLocation)
-                null
+                val codeAsHex = unrecognizedCharacter.code.toString(16)
+
+                diagnostic.fatal {
+                    message("Unrecognized character: '$unrecognizedCharacter'")
+                    highlight("hex: 0x$codeAsHex", errorLocation)
+                }
             }
         }
     }
@@ -102,7 +105,12 @@ class Lexer private constructor(
             }
             val hasWholeDigits = readDigits()
             if (!hasWholeDigits) {
-                diagnostics.reportError("Number is missing whole part (0.5 is valid, .5 is not)", windowLocation())
+                diagnostic.error {
+                    message("Invalid number formatting")
+                    highlight("missing whole part", windowLocation())
+                    info("0.5 is valid, .5 is not")
+                }
+
                 append('0')
             }
 
@@ -126,7 +134,12 @@ class Lexer private constructor(
                 val hasFractionalDigits = readDigits()
 
                 if (!hasFractionalDigits) {
-                    diagnostics.reportError("Number is missing fractional part (0.0 is valid, 0. is not)", windowLocation())
+                    diagnostic.error {
+                        message("Invalid number formatting")
+                        highlight("missing fractional part", windowLocation())
+                        info("5.0 is valid, 5. is not")
+                    }
+
                     append('0')
                 }
             }
@@ -136,13 +149,23 @@ class Lexer private constructor(
         return if (hasDecimalPoint) {
             val doubleValue = numberAsString.toDoubleOrNull()
             if (doubleValue == null) {
-                diagnostics.reportError("Malformed floating point number '$numberAsString'", location)
+                diagnostic.error {
+                    message("Could not parse floating point number")
+                    highlight(location)
+                }
                 FloatToken(location, 0.0)
             } else FloatToken(location, doubleValue)
         } else {
             val longValue = numberAsString.toLongOrNull()
             if (longValue == null) {
-                diagnostics.reportError("Malformed whole number '$numberAsString'", location)
+                diagnostic.error {
+                    message("Could not parse whole number")
+                    highlight(location)
+                    help("Whole numbers must fit in a 64-bit signed integer")
+                    info("The maximum value is ${Long.MAX_VALUE}")
+                    info("The minimum value is ${Long.MIN_VALUE}")
+                }
+
                 IntegerToken(location, 0)
             } else IntegerToken(location, longValue)
         }
@@ -151,6 +174,17 @@ class Lexer private constructor(
     private fun readName(caretPassed: Boolean = false): Token {
         if (caretPassed) {
             readNext() // Ignore Caret for identifier
+
+            val caretLocation = windowLocation()
+            if (!current.isLetter()) {
+                diagnostic.error {
+                    message("Expected an identifier after caret")
+                    highlight(caretLocation)
+                    info("Identifiers must start with a letter")
+                }
+
+                return IdentifierToken(caretLocation, "^")
+            }
         }
 
         val name = buildString {
@@ -167,7 +201,13 @@ class Lexer private constructor(
             parsedKeyword != null && caretPassed -> IdentifierToken(location, name)
             parsedKeyword != null -> parsedKeyword(location)
             caretPassed -> {
-                diagnostics.reportWarning("Escaped word '$name' is not a keyword, please remove unnecessary ^", location)
+                diagnostic.warn {
+                    message("Identifier unnecessarily escaped")
+                    highlight(location)
+                    help("Identifiers must only be escaped if they are valid keywords")
+                    info("The following words are keywords: ${KEYWORDS.keys.joinToString(", ")}")
+                }
+
                 IdentifierToken(location, name)
             }
 
@@ -180,7 +220,7 @@ class Lexer private constructor(
         readNext() // skip leading double quote
         val readString = buildString {
             while (!end && current != '"') {
-
+                val escapeStartLocation = currentPosition
                 if (current == '\\') {
                     readNext()
                     when (current) {
@@ -191,9 +231,16 @@ class Lexer private constructor(
                         '\\' -> append('\\')
                         '"' -> append('"')
                         else -> {
-                            diagnostics.reportError(
-                                    "Invalid escape sequence: $current", windowLocation()
-                            )
+                            val invalidEscapeCharacter = current
+                            readNext()
+                            val escapeEndLocation = currentPosition
+                            val escapeLocation = Location(diagnostic.source, escapeStartLocation, escapeEndLocation)
+                            diagnostic.error {
+                                message("Invalid escape sequence: '\\$invalidEscapeCharacter'")
+                                highlight(escapeLocation, suggestChange = invalidEscapeCharacter.toString())
+                                info("Valid escape sequences are: \\t, \\r, \\n, \\b, \\\\, \\\"")
+                            }
+                            continue
                         }
                     }
                     readNext()
@@ -204,10 +251,12 @@ class Lexer private constructor(
             }
         }
         if (end) {
-            diagnostics.reportError(
-                    "String was not closed when reaching end of file",
-                    windowLocation(),
-            )
+            diagnostic.error {
+                message("Unclosed string literal")
+                highlight(windowLocation(), highlightBeginningOnly = true)
+                help("String literals must be closed with a double quote (\")")
+            }
+
             return StringToken(windowLocation(), readString)
         }
         readNext() // skip trailing double quote
@@ -229,13 +278,18 @@ class Lexer private constructor(
     private fun skipComment(): Token? {
         readNext()
         if (!end) {
-            if (current == '/') {
-                skipLineComment()
-            } else if (current == '*') {
-                skipCommentBlock()
+            when (current) {
+                '/' -> {
+                    skipLineComment()
+                    return null
+                }
+                '*' -> {
+                    skipCommentBlock()
+                    return null
+                }
             }
         }
-        return null
+        return ForwardSlashToken(windowLocation())
     }
 
     private fun skipLineComment() {
@@ -246,23 +300,65 @@ class Lexer private constructor(
     }
 
     private fun skipCommentBlock() {
-        while (!end) {
-            readNext()
-            if (!end && current == '*') {
-                readNext()
-                if (!end && current == '/') {
+
+        // skip current asterisk character
+        require(current == '*')
+        readNext()
+
+        // read until we find a closing '*/' character pair
+        // increment the nested comment depth for every opening '/*' character pair
+        val commentOpenerPositionStack = mutableListOf(windowLocation())
+        var nestedCommentDepth = 1
+        commentReadLoop@ while (!end) {
+            val currentCharacterPosition = currentPosition
+            when (current) {
+
+                // handle new opening block comment
+                '/' -> {
                     readNext()
-                    return
+                    if (current == '*') {
+                        readNext()
+                        nestedCommentDepth++
+                        commentOpenerPositionStack.add(Location(diagnostic.source, currentCharacterPosition, currentPosition))
+                    }
                 }
+
+                // handle closing block comment
+                '*' -> {
+                    readNext()
+                    if (current == '/') {
+                        readNext()
+                        nestedCommentDepth--
+                        commentOpenerPositionStack.removeAt(commentOpenerPositionStack.lastIndex)
+
+                        if (nestedCommentDepth == 0) {
+                            break@commentReadLoop
+                        }
+                    }
+                }
+
+                else -> readNext()
+            }
+
+        }
+
+        if (nestedCommentDepth > 0) {
+            diagnostic.error {
+                message("Unclosed block comment")
+
+                for (opener in commentOpenerPositionStack) {
+                    highlight("unclosed block comment", opener)
+                }
+
+                help("Block comments must be closed with a */")
+                info("Block comments can be nested and must each be closed properly")
             }
         }
-        diagnostics.reportError(
-                "Opened block comment was not closed when reaching end of file", windowLocation()
-        )
+
         return
     }
 
-    private fun windowLocation() = Location(windowStartPosition, currentPosition)
+    private fun windowLocation() = Location(diagnostic.source, windowStartPosition, currentPosition)
 
     private fun skipBlanks() {
         while (!end && (current == ' ' || current == '\n' || current == '\t' || current == '\r')) {
@@ -307,7 +403,7 @@ class Lexer private constructor(
     }
 
     companion object {
-        private val KEYWORDS: Map<String, (location: Location) -> StaticToken> = mapOf(
+        val KEYWORDS: Map<String, (location: Location) -> StaticToken> = mapOf(
                 "record" to { RecordToken(it) },
                 "enum" to { EnumToken(it) },
                 "service" to { ServiceToken(it) },
@@ -328,7 +424,7 @@ class Lexer private constructor(
                 "false" to { FalseToken(it) },
         )
 
-        fun scan(reader: Reader, diagnostics: DiagnosticConsole): Sequence<Token> {
+        fun scan(reader: Reader, diagnostics: DiagnosticContext): Sequence<Token> {
             return Lexer(reader, diagnostics).readTokenStream()
         }
     }

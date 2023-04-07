@@ -51,9 +51,11 @@ data class DoublePeriodToken(override val location: Location): StructureToken
 data class ColonToken(override val location: Location): StructureToken
 data class AsteriskToken(override val location: Location): StructureToken
 data class AtSignToken(override val location: Location): StructureToken
+data class QuestionMarkToken(override val location: Location): StructureToken
+data class EqualsToken(override val location: Location): StructureToken
 data class LessThanSignToken(override val location: Location): StructureToken
 data class GreaterThanSignToken(override val location: Location): StructureToken
-data class QuestionMarkToken(override val location: Location): StructureToken
+data class ForwardSlashToken(override val location: Location): StructureToken
 
 inline fun <reified T : Token> getHumanReadableName() = getHumanReadableTokenName(T::class)
 fun Token.getHumanReadableName() = when(this) {
@@ -106,9 +108,11 @@ fun getHumanReadableTokenName(key: KClass<out Token>): String = when (key) {
     ColonToken::class -> ":"
     AsteriskToken::class -> "*"
     AtSignToken::class -> "@"
+    QuestionMarkToken::class -> "?"
+    EqualsToken::class -> "="
     LessThanSignToken::class -> "<"
     GreaterThanSignToken::class -> ">"
-    QuestionMarkToken::class -> "?"
+    ForwardSlashToken::class -> "/"
 
     // Bug: Missing entry for token type
     else -> throw IllegalArgumentException("Missing entry for token type '${key.simpleName}' in getHumanReadableTokenName lookup table")

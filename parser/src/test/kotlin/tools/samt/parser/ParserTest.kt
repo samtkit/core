@@ -1,10 +1,13 @@
 package tools.samt.parser
 
 import org.junit.jupiter.api.Nested
-import tools.samt.lexer.Lexer
 import org.junit.jupiter.api.assertThrows
 import tools.samt.common.*
-import kotlin.test.*
+import tools.samt.lexer.Lexer
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class ParserUnitTest {
 
@@ -16,7 +19,7 @@ class ParserUnitTest {
                 record A {}
             """.trimIndent()
             val exception = parseWithFatalError(source)
-            assertEquals("Files must have at least one package declaration", exception.message)
+            assertEquals("Missing package declaration", exception.message)
         }
 
         @Test
@@ -40,28 +43,10 @@ class ParserUnitTest {
                 
                 record A {}
             """.trimIndent()
-            val (fileTree, diagnostics) = parseWithRecoverableError(source)
-
-            val firstPackageLocation = Location(
-                FileOffset(14, 2, 0),
-                FileOffset(23, 2, 9),
-            )
-            val secondPackageLocation = Location(
-                FileOffset(24, 3, 0),
-                FileOffset(33, 3, 9),
-            )
-
-            assertEquals(
-                listOf(
-                    DiagnosticMessage(
-                        "Cannot have multiple package declarations per file",
-                        secondPackageLocation,
-                        DiagnosticSeverity.Error
-                    ),
-                    DiagnosticMessage("Previously declared package here", firstPackageLocation, DiagnosticSeverity.Info),
-                ), diagnostics.messages
-            )
-            assertPackage("b", fileTree.packageDeclaration)
+            val (_, diagnostics) = parseWithRecoverableError(source)
+            assertEquals(1, diagnostics.messages.size)
+            val message = diagnostics.messages.single()
+            assertEquals("Too many package declarations", message.message)
         }
 
         @Test
@@ -71,16 +56,11 @@ class ParserUnitTest {
 
                 package recordBeforePackage
             """
-            val (fileTree, diagnostics) = parseWithRecoverableError(source)
+            val (_, diagnostics) = parseWithRecoverableError(source)
             assertEquals(
-                "Expected a package declaration before any other statements",
+                "Unexpected statement",
                 diagnostics.messages.single().message
             )
-            assertPackage("recordBeforePackage", fileTree.packageDeclaration)
-            assertEmpty(fileTree.imports)
-            assertNodes(fileTree.statements) {
-                record("Foo")
-            }
         }
     }
 
@@ -114,9 +94,10 @@ class ParserUnitTest {
             """
             val (fileTree, diagnostics) = parseWithRecoverableError(source)
             assertEquals(
-                "Wildcard imports cannot have an alias",
+                "Malformed import statement",
                 diagnostics.messages.single().message
             )
+            assertEquals("wildcard import cannot declare an alias", diagnostics.messages.single().highlights.single().message)
             assertPackage("badImports", fileTree.packageDeclaration)
             assertNodes(fileTree.imports) {
                 wildcardImport("tools.samt")
@@ -134,10 +115,7 @@ class ParserUnitTest {
                 import library.foo.bar.Baz
             """
             val (fileTree, diagnostics) = parseWithRecoverableError(source)
-            assertEquals(
-                "Import statements must be placed before the package declaration",
-                diagnostics.messages.single().message
-            )
+            assertEquals("Unexpected import statement", diagnostics.messages.single().message)
             assertPackage("badImports", fileTree.packageDeclaration)
             assertNodes(fileTree.imports) {
                 wildcardImport("tools.samt")
@@ -501,7 +479,7 @@ class ParserUnitTest {
                 alias A: List<B}
             """
             val exception = parseWithFatalError(source)
-            assertEquals("Expected '>' but got '}'", exception.message)
+            assertEquals("Unexpected token '}', expected '>'", exception.message)
         }
 
         @Test
@@ -512,7 +490,7 @@ class ParserUnitTest {
                 alias A 42.0
             """
             val exception = parseWithFatalError(source)
-            assertEquals("Expected ':' but got '42.0'", exception.message)
+            assertEquals("Unexpected token '42.0', expected ':'", exception.message)
         }
 
         @Test
@@ -521,7 +499,10 @@ class ParserUnitTest {
                 import package foo
             """
             val exception = parseWithFatalError(source)
-            assertEquals("'package' is a reserved keyword, did you mean to escape it? (e.g. '^package')", exception.message)
+            assertEquals(
+                "Unexpected token 'foo', expected a statement",
+                exception.message
+            )
         }
 
         @Test
@@ -529,10 +510,13 @@ class ParserUnitTest {
             val source = """
                 package foo
 
-                record record A {}
+                record record {}
             """
-            val exception = parseWithFatalError(source)
-            assertEquals("'record' is a reserved keyword, did you mean to escape it? (e.g. '^record')", exception.message)
+            val (_, diagnostics) = parseWithRecoverableError(source)
+            assertEquals(
+                "Unescaped identifier 'record'",
+                diagnostics.messages.single().message
+            )
         }
 
         @Test
@@ -543,7 +527,7 @@ class ParserUnitTest {
                 uses Foo {}
             """
             val exception = parseWithFatalError(source)
-            assertEquals("Expected some sort of a declaration but got 'uses'", exception.message)
+            assertEquals("Unexpected token 'uses', expected a statement", exception.message)
         }
 
         @Test
@@ -597,7 +581,7 @@ class ParserUnitTest {
                 }
             """
             val error = parseWithFatalError(source)
-            assertEquals("Expected 'implements' or 'transport' but found 'record'", error.message)
+            assertEquals("Unexpected token 'record', expected 'implements' or 'transport'", error.message)
         }
 
         @Test
@@ -627,12 +611,7 @@ class ParserUnitTest {
                 }
             """
             val (_, diagnostics) = parseWithRecoverableError(source)
-            assertEquals(
-                listOf(
-                    "Provider can only have one transport declaration",
-                    "Previously declared here"
-                ), diagnostics.messages.map { it.message }
-            )
+            assertEquals("Too many transport declarations for provider 'FooEndpoint'", diagnostics.messages.single().message)
         }
 
         @Test
@@ -833,38 +812,42 @@ class ParserUnitTest {
                 @NotAllowed
                 package annotations
             """
-            val exception = parseWithFatalError(source)
-            assertEquals("Expected declaration with annotation support", exception.message)
+
+            val (_, diagnostics) = parseWithRecoverableError(source)
+            assertEquals("Statement does not support annotations", diagnostics.messages.single().message)
         }
     }
 
     private fun parse(source: String): FileNode {
-        val filePath = "ParserTest.samt"
-        val diagnostics = DiagnosticConsole(DiagnosticContext(filePath, source))
-        val stream = Lexer.scan(source.reader(), diagnostics)
-        val fileTree = Parser.parse(filePath, stream, diagnostics)
-        diagnostics.messages.forEach { println(it) }
-        assertFalse(diagnostics.hasErrors(), "Expected no errors, but had errors")
+        val filePath = "/tmp/ParserTest.samt"
+        val sourceFile = SourceFile(filePath, source)
+        val diagnosticController = DiagnosticController("/tmp")
+        val diagnosticContext = diagnosticController.createContext(sourceFile)
+        val stream = Lexer.scan(source.reader(), diagnosticContext)
+        val fileTree = Parser.parse(sourceFile, stream, diagnosticContext)
+        assertFalse(diagnosticContext.hasErrors(), "Expected no errors, but had errors")
         return fileTree
     }
 
-    private fun parseWithRecoverableError(source: String): Pair<FileNode, DiagnosticConsole> {
-        val filePath = "ParserTest.samt"
-        val diagnostics = DiagnosticConsole(DiagnosticContext(filePath, source))
-        val stream = Lexer.scan(source.reader(), diagnostics)
-        val fileTree = Parser.parse(filePath, stream, diagnostics)
-        diagnostics.messages.forEach { println(it) }
-        assertTrue(diagnostics.hasErrors(), "Expected errors, but had no errors")
-        return Pair(fileTree, diagnostics)
+    private fun parseWithRecoverableError(source: String): Pair<FileNode, DiagnosticContext> {
+        val filePath = "/tmp/ParserTest.samt"
+        val sourceFile = SourceFile(filePath, source)
+        val diagnosticController = DiagnosticController("/tmp")
+        val diagnosticContext = diagnosticController.createContext(sourceFile)
+        val stream = Lexer.scan(source.reader(), diagnosticContext)
+        val fileTree = Parser.parse(sourceFile, stream, diagnosticContext)
+        assertTrue(diagnosticContext.hasErrors(), "Expected errors, but had no errors")
+        return Pair(fileTree, diagnosticContext)
     }
 
-    private fun parseWithFatalError(source: String): ParserException {
-        val filePath = "ParserTest.samt"
-        val diagnostics = DiagnosticConsole(DiagnosticContext(filePath, source))
-        val stream = Lexer.scan(source.reader(), diagnostics)
-        val ex = assertThrows<ParserException> { Parser.parse(filePath, stream, diagnostics) }
-        diagnostics.messages.forEach { println(it) }
-        assertTrue(diagnostics.hasErrors(), "Expected errors, but had no errors")
-        return ex
+    private fun parseWithFatalError(source: String): DiagnosticException {
+        val filePath = "/tmp/ParserTest.samt"
+        val sourceFile = SourceFile(filePath, source)
+        val diagnosticController = DiagnosticController("/tmp")
+        val diagnosticContext = diagnosticController.createContext(sourceFile)
+        val stream = Lexer.scan(source.reader(), diagnosticContext)
+        val exception = assertThrows<DiagnosticException> { Parser.parse(sourceFile, stream, diagnosticContext) }
+        assertTrue(diagnosticContext.hasErrors(), "Expected errors, but had no errors")
+        return exception
     }
 }

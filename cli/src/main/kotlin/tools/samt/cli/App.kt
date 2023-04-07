@@ -1,11 +1,11 @@
 package tools.samt.cli
 
 import com.beust.jcommander.JCommander
-import tools.samt.parser.FileNode
-import kotlin.system.measureNanoTime
 
-import com.github.ajalt.mordant.rendering.TextStyles.*
 import com.github.ajalt.mordant.terminal.Terminal
+import tools.samt.common.DiagnosticController
+import tools.samt.common.SourceFile
+import java.io.File
 
 fun main(args: Array<String>) {
     val cliArgs = CliArgs()
@@ -21,32 +21,72 @@ fun main(args: Array<String>) {
 
     val t = Terminal()
 
-    var fileNodes: List<FileNode>? = null
-    if (cliArgs.benchmark) {
-        var totalTime = 0L
-        repeat(cliArgs.benchmarkRuns) {
-            val parseTime = measureNanoTime {
-                fileNodes = parse(cliArgs.files)
+    val workingDirectory = System.getProperty("user.dir")
+    val filePaths = cliArgs.files
+
+    val startTimestamp = System.currentTimeMillis()
+    val diagnosticController = DiagnosticController(workingDirectory).also { controller ->
+
+        // must specify at least one SAMT file
+        if (filePaths.isEmpty()) {
+            controller.reportGlobalError("No files specified")
+            return@also
+        }
+
+        // attempt to load each source file
+        val sourceFiles = buildList {
+            for (path in filePaths) {
+                val file = File(path)
+
+                if (!file.exists()) {
+                    controller.reportGlobalError("File '$path' does not exist")
+                    continue
+                }
+
+                if (!file.canRead()) {
+                    controller.reportGlobalError("File '$path' cannot be read, bad file permissions?")
+                    continue
+                }
+
+                if (file.extension != "samt") {
+                    controller.reportGlobalError("File '$path' must end in .samt")
+                    continue
+                }
+
+                val source = file.readText()
+                add(SourceFile(file.canonicalPath, source))
             }
-            totalTime += parseTime
         }
 
-        t.println("Average parse step took ${underline(format(totalTime / cliArgs.benchmarkRuns))}ms")
-    } else {
-        fileNodes = parse(cliArgs.files)
-    }
+        // if any source files failed to load, exit
+        if (controller.hasErrors()) {
+            return@also
+        }
 
-    require(fileNodes != null)
+        // attempt to parse each source file into an AST
+        val fileNodes = buildList {
+            for (source in sourceFiles) {
+                val context = controller.createContext(source)
+                val fileNode = parseSourceFile(source, context)
+                if (fileNode != null) {
+                    add(fileNode)
+                }
+            }
+        }
 
-    if (cliArgs.dumpAst) {
-        fileNodes!!.forEach { fileNode ->
-            t.print(ASTPrinter.dump(fileNode))
+        // if any source files failed to parse, exit
+        if (controller.hasErrors()) {
+            return@also
+        }
+
+        // if the user requested the AST to be dumped, do so
+        if (cliArgs.dumpAst) {
+            fileNodes.forEach {
+                t.print(ASTPrinter.dump(it))
+            }
         }
     }
-}
 
-private fun format(timeInNs: Long): String {
-    val timeInMs = timeInNs.toDouble() / 1_000_000.0
-    return String.format("%.2f", timeInMs)
-
+    val currentTimestamp = System.currentTimeMillis()
+    t.println(DiagnosticFormatter.format(diagnosticController, startTimestamp, currentTimestamp, terminalWidth = t.info.width))
 }

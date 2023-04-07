@@ -1,14 +1,13 @@
 package tools.samt.parser
 
-import tools.samt.common.DiagnosticConsole
-import tools.samt.common.FileOffset
-import tools.samt.common.Location
+import tools.samt.common.*
 import tools.samt.lexer.*
+import kotlin.reflect.full.isSubclassOf
 
 class Parser private constructor(
-    private val filePath: String,
+    private val source: SourceFile,
     tokenStream: Sequence<Token>,
-    private val diagnostics: DiagnosticConsole,
+    private val diagnostic: DiagnosticContext,
 ) {
     private val tokenStream: Iterator<Token> = tokenStream.iterator()
 
@@ -29,25 +28,35 @@ class Parser private constructor(
             when (val statement = parseStatement()) {
                 is ImportNode -> {
                     if (packageDeclaration != null) {
-                        reportError(
-                            "Import statements must be placed before the package declaration",
-                            statement.location
-                        )
+                        diagnostic.error {
+                            message("Unexpected import statement")
+                            highlight("must occur before package declaration", statement.location)
+                            highlight("no imports allowed after this point", packageDeclaration!!.location)
+                            info("Import targets are resolved in the global scope, while anything written after the package declaration is scoped to the package")
+                        }
+
                     }
                     imports.add(statement)
                 }
 
                 is PackageDeclarationNode -> {
                     if (packageDeclaration != null) {
-                        reportError("Cannot have multiple package declarations per file", statement.location)
-                        reportInfo("Previously declared package here", packageDeclaration.location)
+                        diagnostic.error {
+                            message("Too many package declarations")
+                            highlight("extraneous package declaration", statement.location)
+                            highlight("initial package declaration", packageDeclaration!!.location)
+                        }
                     }
                     packageDeclaration = statement
                 }
 
                 else -> {
                     if (packageDeclaration == null) {
-                        reportError("Expected a package declaration before any other statements", statement.location)
+                        diagnostic.error {
+                            message("Unexpected statement")
+                            highlight("must occur after package declaration", statement.location)
+                            info("Statements can only be written after the package declaration")
+                        }
                     }
                     statements.add(statement)
                 }
@@ -55,10 +64,12 @@ class Parser private constructor(
         }
 
         if (packageDeclaration == null) {
-            reportFatalError("Files must have at least one package declaration")
+            diagnostic.fatal {
+                message("Missing package declaration")
+            }
         }
 
-        return FileNode(locationFromStart(start), filePath, imports, packageDeclaration, statements)
+        return FileNode(locationFromStart(start), source.absolutePath, imports, packageDeclaration, statements)
     }
 
     private fun parseStatement(): StatementNode = when (current) {
@@ -69,10 +80,19 @@ class Parser private constructor(
                 is EnumToken -> parseEnumDeclaration(annotations)
                 is AliasToken -> parseTypeAlias(annotations)
                 is ServiceToken -> parseServiceDeclaration(annotations)
-                else -> reportFatalError(
-                    "Expected declaration with annotation support",
-                    current!!.location
-                )
+
+                else -> {
+                    diagnostic.error {
+                        message("Statement does not support annotations")
+                        highlight(current!!.location, highlightBeginningOnly = true)
+                        help("Annotations can be attached to: record, enum, alias, service")
+                    }
+
+                    // skip the annotation and try to parse the statement again
+                    // this drops the annotation entirely, but it's better
+                    // than failing to parse the entire file
+                    parseStatement()
+                }
             }
         }
 
@@ -84,7 +104,11 @@ class Parser private constructor(
         is ServiceToken -> parseServiceDeclaration()
         is ProvideToken -> parseProviderDeclaration()
         is ConsumeToken -> parseConsumerDeclaration()
-        else -> reportFatalError("Expected some sort of a declaration but got '${current!!.getHumanReadableName()}'", Location(currentStart))
+        else -> diagnostic.fatal {
+            message("Unexpected token '${current!!.getHumanReadableName()}', expected a statement")
+            highlight(current!!.location)
+            info("Valid statements start with: import, package, record, enum, alias, service, provide, consume")
+        }
     }
 
     private fun parseImport(): ImportNode {
@@ -94,14 +118,18 @@ class Parser private constructor(
         val importBundleIdentifier = parseImportBundleIdentifier()
         var alias: IdentifierNode? = null
 
-        val startOfAlias = currentStart
+        val startBeforeAs = currentStart
         if (skip<AsToken>()) {
             alias = parseIdentifier()
         }
 
         return if (importBundleIdentifier.isWildcard) {
             if (alias != null) {
-                reportError("Wildcard imports cannot have an alias", locationFromStart(startOfAlias))
+                diagnostic.error {
+                    message("Malformed import statement")
+                    highlight("wildcard import cannot declare an alias", locationFromStart(startBeforeAs))
+                }
+
             }
             WildcardImportNode(locationFromStart(start), importBundleIdentifier)
         } else {
@@ -230,7 +258,10 @@ class Parser private constructor(
         val returnType = if (skip<ColonToken>()) {
             val returnType = parseExpression()
             if (isOneway) {
-                reportError("Oneway operations cannot have a return type", locationFromStart(returnTypeStart))
+                diagnostic.error {
+                    message("Oneway operations cannot have a return type")
+                    highlight(locationFromStart(returnTypeStart))
+                }
             }
             returnType
         } else null
@@ -239,7 +270,10 @@ class Parser private constructor(
         val raisesList = if (skip<RaisesToken>()) {
             val raisesList = parseCommaSeparatedList(::parseExpression)
             if (isOneway) {
-                reportError("Oneway operations cannot raise exceptions", locationFromStart(raisesStart))
+                diagnostic.error {
+                    message("Oneway operations cannot raise exceptions")
+                    highlight(locationFromStart(raisesStart))
+                }
             }
             raisesList
         } else emptyList()
@@ -287,20 +321,27 @@ class Parser private constructor(
                     val previousDeclaration = transport
                     transport = parseProviderTransport()
                     if (previousDeclaration is ProviderTransportNode) {
-                        reportError("Provider can only have one transport declaration", transport.location)
-                        reportInfo("Previously declared here", previousDeclaration.location)
+                        diagnostic.error {
+                            message("Too many transport declarations for provider '${name.name}'")
+                            highlight("extraneous declaration", transport!!.location, highlightBeginningOnly = true)
+                            highlight("previous declaration", previousDeclaration.location, highlightBeginningOnly = true)
+                        }
+
                     }
                 }
 
-                else -> reportFatalError(
-                    "Expected 'implements' or 'transport' but found '${current!!.getHumanReadableName()}'",
-                    current!!.location
-                )
+                else -> diagnostic.fatal {
+                    message("Unexpected token '${current!!.getHumanReadableName()}', expected 'implements' or 'transport'")
+                    highlight(current!!.location)
+                }
             }
         }
 
         if (transport == null) {
-            reportError("Provider is missing a transport declaration", locationFromStart(start))
+            diagnostic.error {
+                message("Provider is missing a transport declaration")
+                highlight(locationFromStart(start), highlightBeginningOnly = true)
+            }
 
             // The previously reported error would prevent any semantic checks from ever interacting with
             // this dummy node. This might be implemented in a different manner in the future
@@ -316,11 +357,16 @@ class Parser private constructor(
         expect<ImplementsToken>()
         val serviceName = parseBundleIdentifier()
         var serviceOperationNames: List<IdentifierNode> = emptyList()
+        val braceStartLocation = currentStart
         if (skip<OpenBraceToken>()) {
             serviceOperationNames = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
 
             if (serviceOperationNames.isEmpty()) {
-                reportError("Expected at least one operation name in the implements clause", locationFromStart(start))
+                diagnostic.error {
+                    message("Expected at least one operation name in the implements clause")
+                    highlight("expected at least one operation name", locationFromStart(braceStartLocation))
+                    help("If you want to implement all operations, you can omit the braces and the operation names")
+                }
             }
         }
 
@@ -361,7 +407,12 @@ class Parser private constructor(
             serviceOperationNames = parseCommaSeparatedTokenTerminatedList<CloseBraceToken, _>(::parseIdentifier)
 
             if (serviceOperationNames.isEmpty()) {
-                reportError("Expected at least one operation name in the uses clause", locationFromStart(start))
+                diagnostic.error {
+                    message("Expected at least one operation name in the uses clause")
+                    highlight(locationFromStart(start))
+                    info("A valid uses clause looks like 'uses ServiceName { operation1, operation2 }'")
+                    help("If you want to use all operations, you can omit the braces and the operation names")
+                }
             }
         }
 
@@ -385,6 +436,7 @@ class Parser private constructor(
         var target = parseLiteral()
 
         while (!isEnd) {
+            val currentOperationStart = currentStart
             when {
                 skip<OpenParenthesisToken>() -> {
                     val arguments = parseCommaSeparatedTokenTerminatedList<CloseParenthesisToken, _>(::parseExpression)
@@ -394,7 +446,12 @@ class Parser private constructor(
                 skip<LessThanSignToken>() -> {
                     val arguments = parseCommaSeparatedTokenTerminatedList<GreaterThanSignToken, _>(::parseExpression)
                     if (arguments.isEmpty()) {
-                        reportError("Generic specialization requires at least one argument", locationFromStart(start))
+                        diagnostic.error {
+                            message("Generic specialization requires at least one argument")
+                            highlight(locationFromStart(currentOperationStart))
+                            info("A valid generic specialization looks like 'List<String>' or 'Map<String, Int>'")
+                        }
+
                     }
                     target = GenericSpecializationNode(locationFromStart(start), target, arguments)
                 }
@@ -438,7 +495,10 @@ class Parser private constructor(
             skip<AsteriskToken>() -> WildcardNode(locationFromStart(start))
 
             else -> {
-                reportFatalError("Expected an expression", locationFromStart(start))
+                diagnostic.fatal {
+                    message("Expected an expression")
+                    highlight(locationFromStart(start), highlightBeginningOnly = true)
+                }
             }
         }
     }
@@ -512,7 +572,7 @@ class Parser private constructor(
     }
 
     private val isEnd: Boolean
-        get() = current is EndOfFileToken
+        get() = check<EndOfFileToken>()
 
     private inline fun <reified T : Token> expectOrNull(): T? {
         val ret = current as? T
@@ -533,15 +593,38 @@ class Parser private constructor(
         val expectedString = getHumanReadableName<T>()
         val gotString = current!!.getHumanReadableName()
 
-        if (current is EndOfFileToken) {
-            reportFatalError("Expected '${expectedString}' but reached end of file")
+        if (isEnd) {
+            diagnostic.fatal {
+                message("Expected '${expectedString}' but reached end of file")
+                highlight(current!!.location, highlightBeginningOnly = true)
+            }
         }
 
-        if (T::class == IdentifierToken::class && current is StaticToken) {
-            reportFatalError("'${gotString}' is a reserved keyword, did you mean to escape it? (e.g. '^${gotString}')")
+        if (T::class == IdentifierToken::class && check<StaticToken>()) {
+            diagnostic.error {
+                message("Unescaped identifier '${gotString}'")
+                highlight(current!!.location, suggestChange = "^${gotString}")
+                help("To use '${gotString}' as an identifier, escape it with a caret: '^${gotString}'")
+            }
+
+            // we can continue parsing the file treating the static token as an identifier
+            val staticToken = expectOrNull<StaticToken>()
+            requireNotNull(staticToken)
+            return IdentifierToken(staticToken.location, gotString) as T
         }
 
-        reportFatalError("Expected '${expectedString}' but got '${gotString}'")
+        if (T::class.isSubclassOf(StaticToken::class) || T::class.isSubclassOf(StructureToken::class)) {
+            diagnostic.fatal {
+                message("Unexpected token '${gotString}', expected '${expectedString}'")
+                highlight(current!!.location, suggestChange = expectedString)
+                help("Replace '${gotString}' with '${expectedString}'")
+            }
+        } else {
+            diagnostic.fatal {
+                message("Unexpected token '${gotString}', expected a token of type '${expectedString}'")
+                highlight(current!!.location)
+            }
+        }
     }
 
     private inline fun <reified T : Token> skip(): Boolean {
@@ -558,24 +641,11 @@ class Parser private constructor(
         return current is T
     }
 
-    private fun reportError(message: String, location: Location? = null) {
-        diagnostics.reportError(message, location ?: current!!.location)
-    }
-
-    private fun reportInfo(message: String, location: Location? = null) {
-        diagnostics.reportInfo(message, location ?: current!!.location)
-    }
-
-    private fun reportFatalError(message: String, location: Location? = null): Nothing {
-        diagnostics.reportError(message, location)
-        throw ParserException(message)
-    }
-
-    private fun locationFromStart(start: FileOffset) = Location(start, previousEnd)
+    private fun locationFromStart(start: FileOffset) = Location(diagnostic.source, start, previousEnd)
 
     companion object {
-        fun parse(filePath: String, tokenStream: Sequence<Token>, diagnostics: DiagnosticConsole): FileNode {
-            return Parser(filePath, tokenStream, diagnostics).parseFile()
+        fun parse(source: SourceFile, tokenStream: Sequence<Token>, context: DiagnosticContext): FileNode {
+            return Parser(source, tokenStream, context).parseFile()
         }
     }
 }

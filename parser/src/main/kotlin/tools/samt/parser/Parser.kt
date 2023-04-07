@@ -609,7 +609,7 @@ class Parser private constructor(
 
             // we can continue parsing the file treating the static token as an identifier
             val staticToken = expectOrNull<StaticToken>()
-            require(staticToken != null)
+            requireNotNull(staticToken)
             return IdentifierToken(staticToken.location, gotString) as T
         }
 

@@ -343,7 +343,7 @@ class DiagnosticFormatter(
                             if (message != null) {
                                 append(formatTextForSeverity(message, severity))
                             } else {
-                                require(highlight.changeSuggestion != null)
+                                requireNotNull(highlight.changeSuggestion)
                                 append(formatTextForSeverity("Did you mean '${highlight.changeSuggestion}'?", severity))
                             }
                             break
@@ -494,8 +494,6 @@ class DiagnosticFormatter(
         if (location.isMultiLine() || other.location.isMultiLine()) {
             return contentRowsOverlapWith(other)
         }
-
-        require(!(location.isMultiLine() || other.location.isMultiLine()))
 
         if (location.start.row != other.location.start.row) {
             return false

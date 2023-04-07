@@ -22,8 +22,8 @@ class DiagnosticFormatter(
             return formatter.format()
         }
 
-        private fun rowContextLowerBound(row: Int): Int = maxOf(0, row - CONTEXT_ROW_COUNT)
-        private fun rowContextUpperBound(row: Int, sourceFile: SourceFile): Int = minOf(sourceFile.sourceLines.lastIndex, row + CONTEXT_ROW_COUNT)
+        private fun rowContextLowerBound(row: Int): Int = (row - CONTEXT_ROW_COUNT).coerceAtLeast(0)
+        private fun rowContextUpperBound(row: Int, sourceFile: SourceFile): Int = (row + CONTEXT_ROW_COUNT).coerceAtMost(sourceFile.sourceLines.lastIndex)
     }
 
     private fun format(): String = buildString {

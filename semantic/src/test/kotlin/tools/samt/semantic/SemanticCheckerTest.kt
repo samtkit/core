@@ -351,6 +351,21 @@ class SemanticCheckerTest {
         }
     }
 
+    @Nested
+    inner class UniqueServiceOperationParameters {
+        @Test
+        fun `operation parameter names must be unique`() {
+            val source = """
+                package parameters
+
+                service FooService {
+                    foo(foo: Int, bar: Float, baz: String, foo: Boolean)
+                }
+            """.trimIndent()
+            parseAndCheck(source, ::UniqueServiceOperationParametersCheck, listOf("Error: Parameter `foo` for operation 'foo' is already defined"))
+        }
+    }
+
     @Test
     fun `semantic checker passes for valid file`() {
         val source = """

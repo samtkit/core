@@ -28,7 +28,13 @@ class DiagnosticFormatter(
 
     private fun format(): String = buildString {
 
-        // print context-less messages
+        // keep track of the number of errors and warnings
+        var countsBySeverity = mutableMapOf<DiagnosticSeverity, Int>()
+        countsBySeverity[DiagnosticSeverity.Error] = 0
+        countsBySeverity[DiagnosticSeverity.Warning] = 0
+        countsBySeverity[DiagnosticSeverity.Info] = 0
+
+        // print global messages
         val globalMessages = diagnosticController.globalMessages
         globalMessages.forEachIndexed { index, message ->
             appendLine("─".repeat(terminalWidth))
@@ -36,9 +42,11 @@ class DiagnosticFormatter(
             if (index != globalMessages.lastIndex) {
                 appendLine()
             }
+
+            countsBySeverity[message.severity] = countsBySeverity.getValue(message.severity) + 1
         }
 
-        // print file-specific messages
+        // print context messages
         for (context in diagnosticController.contexts) {
 
             // sort messages by severity and then by location (row)
@@ -53,7 +61,26 @@ class DiagnosticFormatter(
                 if (index != context.messages.lastIndex) {
                     appendLine()
                 }
+
+                countsBySeverity[message.severity] = countsBySeverity.getValue(message.severity) + 1
             }
+        }
+
+        // print summary
+        val errorCount = countsBySeverity.getValue(DiagnosticSeverity.Error)
+        val warningCount = countsBySeverity.getValue(DiagnosticSeverity.Warning)
+        val duration = System.currentTimeMillis() - diagnosticController.constructionTimestamp
+        appendLine("─".repeat(terminalWidth))
+        if (errorCount == 0) {
+            append((green + bold)("BUILD SUCCESSFUL") + " in ${duration}ms")
+        } else {
+            append((red + bold)("BUILD FAILED") + " in ${duration}ms")
+        }
+
+        if (errorCount > 0 || warningCount > 0) {
+            appendLine(" (${errorCount} error(s), ${warningCount} warning(s))")
+        } else {
+            appendLine()
         }
     }
 

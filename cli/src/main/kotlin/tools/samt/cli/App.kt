@@ -86,9 +86,5 @@ fun main(args: Array<String>) {
         }
     }
 
-    // if any errors or warnings were reported, print them
-    if (diagnosticController.hasMessages()) {
-        t.println(DiagnosticFormatter.format(diagnosticController))
-        return
-    }
+    t.println(DiagnosticFormatter.format(diagnosticController))
 }

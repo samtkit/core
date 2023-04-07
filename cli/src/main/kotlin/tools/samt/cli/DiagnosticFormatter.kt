@@ -195,7 +195,7 @@ class DiagnosticFormatter(
         val nonOverlappingGroups = mutableListOf<MutableList<DiagnosticHighlight>>()
         for (highlight in highlights) {
             val matchingGroup = nonOverlappingGroups.find { group ->
-                group.any { groupHighlight -> groupHighlight.overlaps(highlight) }
+                group.all { groupHighlight -> !groupHighlight.overlaps(highlight) }
             }
             if (matchingGroup != null) {
                 matchingGroup.add(highlight)

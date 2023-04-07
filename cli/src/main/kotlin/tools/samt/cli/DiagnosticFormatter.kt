@@ -147,7 +147,7 @@ class DiagnosticFormatter(
         val highlightsBySourceFile = highlights.groupBy { it.location.source.absolutePath }
 
         // print the highlights for the main source file
-        val mainSourceFileHighlights = highlightsBySourceFile[mainSourceFileAbsolutePath]!!
+        val mainSourceFileHighlights = highlightsBySourceFile.getValue(mainSourceFileAbsolutePath)
         append(formatSingleFileHighlights(mainSourceFileHighlights, message.severity))
 
         // print remaining highlights for other source files
@@ -312,8 +312,9 @@ class DiagnosticFormatter(
                     val highlight = highlightsRemainingStack.lastOrNull { colIndex == it.location.start.col }
                     if (highlight != null) {
                         if (highlight == highlightsRemainingStack.last() && iterationStep == 1) {
-                            if (highlight.message != null) {
-                                append(formatTextForSeverity(highlight.message!!, severity))
+                            val message = highlight.message
+                            if (message != null) {
+                                append(formatTextForSeverity(message, severity))
                             } else {
                                 require(highlight.changeSuggestion != null)
                                 append(formatTextForSeverity("Did you mean '${highlight.changeSuggestion}'?", severity))
@@ -368,10 +369,11 @@ class DiagnosticFormatter(
         appendLine(gray(lastRowNonHighlightedPortion))
 
         // print optional highlight message
-        if (highlight.message != null) {
+        val message = highlight.message
+        if (message != null) {
             appendLine(formatHighlightedMultilineEmptySection(severity))
             append(formatTextForSeverity("+--------- ", severity))
-            appendLine(formatTextForSeverity(highlight.message!!, severity))
+            appendLine(formatTextForSeverity(message, severity))
             appendLine(formatNonHighlightedEmptySection())
         }
     }

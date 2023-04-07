@@ -15,12 +15,13 @@ data class FileOffset(val charIndex: Int, val row: Int, val col: Int) {
 data class Location(
     val source: SourceFile,
     val start: FileOffset,
-    val end: FileOffset = start,
+    val end: FileOffset,
 ) {
     init {
-        require(start.row <= end.row) { "Location end row (${end.row}) cannot be before start row ${start.row}" }
+        require(start.row <= end.row) { "Location end row ${end.row + 1} cannot be before start row ${start.row + 1}" }
+        require(start.row < end.row || start.col <= end.col) { "Location end col ${end.col + 1} cannot be before start col ${start.col + 1}" }
         require(end.row <= source.sourceLines.lastIndex) {
-            "Location end row (${end.row}) cannot be after last source file row ${source.sourceLines.lastIndex}"
+            "Location end row (${end.row + 1}) cannot be after last source file row ${source.sourceLines.lastIndex}"
         }
     }
 

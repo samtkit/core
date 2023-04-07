@@ -62,7 +62,7 @@ class DiagnosticController(val workingDirectoryAbsolutePath: String) {
     fun reportGlobalError(message: String) = reportGlobal(DiagnosticSeverity.Error, message)
     fun reportGlobalWarning(message: String) = reportGlobal(DiagnosticSeverity.Warning, message)
     fun reportGlobalInfo(message: String) = reportGlobal(DiagnosticSeverity.Info, message)
-    fun reportGlobal(severity: DiagnosticSeverity, message: String) {
+    private fun reportGlobal(severity: DiagnosticSeverity, message: String) {
         globalMessages.add(DiagnosticGlobalMessage(severity, message))
     }
 
@@ -80,7 +80,7 @@ class DiagnosticContext(
      * */
     val messages: MutableList<DiagnosticMessage> = mutableListOf()
 
-    fun report(severity: DiagnosticSeverity, block: DiagnosticMessageBuilder.() -> Unit): DiagnosticMessage {
+    private fun report(severity: DiagnosticSeverity, block: DiagnosticMessageBuilder.() -> Unit): DiagnosticMessage {
         val builder = DiagnosticMessageBuilder(severity)
         builder.block()
         val message = builder.build()
@@ -102,7 +102,7 @@ class DiagnosticContext(
 }
 
 class DiagnosticMessageBuilder(
-    val severity: DiagnosticSeverity,
+    private val severity: DiagnosticSeverity,
 ) {
     private var message: String? = null
     private val highlights: MutableList<DiagnosticHighlight> = mutableListOf()

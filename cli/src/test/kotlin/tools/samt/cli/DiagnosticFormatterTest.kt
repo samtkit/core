@@ -7,6 +7,8 @@ import tools.samt.lexer.Lexer
 import tools.samt.parser.EnumDeclarationNode
 import tools.samt.parser.FileNode
 import tools.samt.parser.Parser
+import kotlin.io.path.Path
+import kotlin.io.path.absolutePathString
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -38,9 +40,11 @@ class DiagnosticFormatterTest {
 
     @Test
     fun `file messages with no highlights`() {
-        val controller = DiagnosticController("/tmp")
+        val baseDirectory = Path("/tmp").absolutePathString()
+        val filePath = Path("/tmp", "test.txt").absolutePathString()
+        val controller = DiagnosticController(baseDirectory)
         val source = ""
-        val sourceFile = SourceFile("/tmp/test.txt", source)
+        val sourceFile = SourceFile(filePath, source)
         val context = controller.createContext(sourceFile)
 
         context.error {
@@ -476,9 +480,10 @@ class DiagnosticFormatterTest {
     }
 
     private fun parse(source: String): Triple<FileNode, DiagnosticContext, DiagnosticController> {
-        val filePath = "/tmp/DiagnosticFormatterTest.samt"
+        val baseDirectory = Path("/tmp").absolutePathString()
+        val filePath = Path("/tmp", "DiagnosticFormatterTest.samt").absolutePathString()
         val sourceFile = SourceFile(filePath, source)
-        val diagnosticController = DiagnosticController("/tmp")
+        val diagnosticController = DiagnosticController(baseDirectory)
         val diagnosticContext = diagnosticController.createContext(sourceFile)
         val stream = Lexer.scan(source.reader(), diagnosticContext)
         val fileTree = Parser.parse(sourceFile, stream, diagnosticContext)

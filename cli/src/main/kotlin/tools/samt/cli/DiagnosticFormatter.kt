@@ -5,6 +5,7 @@ import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.*
 import com.github.ajalt.mordant.terminal.Terminal
 import tools.samt.common.*
+import java.io.File
 
 class DiagnosticFormatter(
     private val diagnosticController: DiagnosticController,
@@ -90,7 +91,7 @@ class DiagnosticFormatter(
 
     private fun formatFilePathRelativeToWorkingDirectory(filePath: String): String {
         val workingDirectory = diagnosticController.workingDirectoryAbsolutePath
-        return filePath.removePrefix(workingDirectory).removePrefix("/")
+        return filePath.removePrefix(workingDirectory).removePrefix(File.separator)
     }
 
     private fun formatGlobalMessage(message: DiagnosticGlobalMessage): String = buildString {

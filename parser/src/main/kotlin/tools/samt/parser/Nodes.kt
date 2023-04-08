@@ -1,12 +1,13 @@
 package tools.samt.parser
 
 import tools.samt.common.Location
+import tools.samt.common.SourceFile
 
 sealed class Node(val location: Location)
 
 class FileNode(
     location: Location,
-    val filePath: String,
+    val sourceFile: SourceFile,
     val imports: List<ImportNode>,
     val packageDeclaration: PackageDeclarationNode,
     val statements: List<StatementNode>,

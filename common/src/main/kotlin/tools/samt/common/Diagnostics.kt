@@ -53,10 +53,13 @@ class DiagnosticController(val workingDirectoryAbsolutePath: String) {
      * */
     val globalMessages: MutableList<DiagnosticGlobalMessage> = mutableListOf()
 
+    /**
+     * Creates a new diagnostic context for the given source file or returns already existing one.
+     * */
     fun createContext(source: SourceFile): DiagnosticContext {
-        val context = DiagnosticContext(source)
-        contexts.add(context)
-        return context
+        val foundContext = contexts.find { it.source == source}
+        if (foundContext != null) return foundContext
+        return DiagnosticContext(source).also { contexts.add(it) }
     }
 
     fun reportGlobalError(message: String) = reportGlobal(DiagnosticSeverity.Error, message)

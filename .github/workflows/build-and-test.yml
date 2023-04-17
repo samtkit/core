@@ -19,9 +19,4 @@ jobs:
           java-version: 17
           cache: gradle
       - name: Verify
-        run: ./gradlew --no-daemon check koverMergedHtmlReport koverMergedVerify
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v3
-        with:
-          name: code-coverage-report
-          path: build/reports/kover/merged/html/
+        run: ./gradlew --no-daemon koverMergedVerify

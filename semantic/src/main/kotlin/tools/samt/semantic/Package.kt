@@ -7,7 +7,9 @@ class Package(val name: String) {
     val subPackages: MutableList<Package> = mutableListOf()
 
     val records: MutableList<RecordType> = mutableListOf()
-    val enums: MutableList<EnumType> = mutableListOf()
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    val enums: MutableList<EnumType> = mutableListOf() // Will be read in the future
     val services: MutableList<ServiceType> = mutableListOf()
     val providers: MutableList<ProviderType> = mutableListOf()
     val consumers: MutableList<ConsumerType> = mutableListOf()

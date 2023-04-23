@@ -20,10 +20,12 @@ object UnknownType : Type {
 
 sealed interface LiteralType : Type
 
+sealed interface NumberType : Type
+
 /**
  * 32-bit whole number, signed
  */
-object IntType : LiteralType {
+object IntType : LiteralType, NumberType {
     override val humanReadableName: String
         get() = "Int"
 }
@@ -31,7 +33,7 @@ object IntType : LiteralType {
 /**
  * 64-bit whole number, signed
  */
-object LongType : LiteralType {
+object LongType : LiteralType, NumberType {
     override val humanReadableName: String
         get() = "Long"
 }
@@ -39,7 +41,7 @@ object LongType : LiteralType {
 /**
  * 32-bit floating point number, signed
  */
-object FloatType : LiteralType {
+object FloatType : LiteralType, NumberType {
     override val humanReadableName: String
         get() = "Float"
 }
@@ -47,7 +49,7 @@ object FloatType : LiteralType {
 /**
  * 64-bit floating point number, signed
  */
-object DoubleType : LiteralType {
+object DoubleType : LiteralType, NumberType {
     override val humanReadableName: String
         get() = "Double"
 }
@@ -55,7 +57,7 @@ object DoubleType : LiteralType {
 /**
  * Arbitrary precision number, fixed amount of digits before and after decimal point
  */
-object DecimalType : LiteralType {
+object DecimalType : LiteralType, NumberType {
     override val humanReadableName: String
         get() = "Decimal"
 }
@@ -150,7 +152,7 @@ data class EnumType(
 
 data class ServiceType(
     val name: String,
-    val operation: List<Operation>,
+    val operations: List<Operation>,
     override val definition: ServiceDeclarationNode,
 ) : CompoundType, UserDefinedType {
     sealed class Operation(
@@ -187,6 +189,7 @@ data class ProviderType(
     data class Implements(
         var service: TypeReference,
         var operations: List<ServiceType.Operation>,
+        val definition: ProviderImplementsNode,
     )
 
     data class Transport(
@@ -203,8 +206,9 @@ data class ConsumerType(
     override val definition: ConsumerDeclarationNode,
 ) : CompoundType, UserDefinedType {
     data class Uses(
-        val service: TypeReference,
+        var service: TypeReference,
         var operations: List<ServiceType.Operation>,
+        val definition: ConsumerUsesNode,
     )
 
     override val humanReadableName: String = "consumer for ${provider.humanReadableName}"
@@ -222,6 +226,7 @@ data class UnresolvedTypeReference(
 }
 
 data class ResolvedTypeReference(
+    val definition: ExpressionNode,
     val type: Type,
     val isOptional: Boolean = false,
     val constraints: List<Constraint> = emptyList(),
@@ -244,8 +249,10 @@ data class ResolvedTypeReference(
 
     sealed interface Constraint {
         val humanReadableName: String
+        val definition: ExpressionNode
 
         data class Range(
+            override val definition: ExpressionNode,
             val lowerBound: Number?,
             val upperBound: Number?,
         ) : Constraint {
@@ -254,6 +261,7 @@ data class ResolvedTypeReference(
         }
 
         data class Size(
+            override val definition: ExpressionNode,
             val lowerBound: Long?,
             val upperBound: Long?,
         ) : Constraint {
@@ -262,6 +270,7 @@ data class ResolvedTypeReference(
         }
 
         data class Pattern(
+            override val definition: ExpressionNode,
             val pattern: String,
         ) : Constraint {
             override val humanReadableName: String
@@ -269,6 +278,7 @@ data class ResolvedTypeReference(
         }
 
         data class Value(
+            override val definition: ExpressionNode,
             val value: Any,
         ) : Constraint {
             override val humanReadableName: String

@@ -42,6 +42,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
         }
 
         return ResolvedTypeReference.Constraint.Range(
+            definition = expression,
             lowerBound = lower,
             upperBound = higher,
         )
@@ -58,6 +59,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
                 }
                 null
             }
+
             else -> {
                 controller.createContext(expressionNode.location.source).error {
                     message("Range constraint argument must be a valid integer range")
@@ -90,6 +92,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
         }
 
         return ResolvedTypeReference.Constraint.Size(
+            definition = expression,
             lowerBound = lower,
             upperBound = higher,
         )
@@ -97,14 +100,14 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
 
     private fun createPattern(expression: StringNode): ResolvedTypeReference.Constraint.Pattern {
         // We will validate the pattern here in the future
-        return ResolvedTypeReference.Constraint.Pattern(expression.value)
+        return ResolvedTypeReference.Constraint.Pattern(expression, expression.value)
     }
 
     private fun createValue(expression: ExpressionNode): ResolvedTypeReference.Constraint.Value? {
         return when (expression) {
-            is StringNode -> ResolvedTypeReference.Constraint.Value(expression.value)
-            is NumberNode -> ResolvedTypeReference.Constraint.Value(expression.value)
-            is BooleanNode -> ResolvedTypeReference.Constraint.Value(expression.value)
+            is StringNode -> ResolvedTypeReference.Constraint.Value(expression, expression.value)
+            is NumberNode -> ResolvedTypeReference.Constraint.Value(expression, expression.value)
+            is BooleanNode -> ResolvedTypeReference.Constraint.Value(expression, expression.value)
             else -> {
                 controller.createContext(expression.location.source).error {
                     message("Value constraint must be a string, integer, float or boolean")
@@ -116,10 +119,10 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
         }
     }
 
-    fun build(constraint: ExpressionNode): ResolvedTypeReference.Constraint? {
-        when (constraint) {
+    private fun buildConstraint(baseType: Type, expression: ExpressionNode): ResolvedTypeReference.Constraint? {
+        when (expression) {
             is CallExpressionNode -> {
-                val name = constraint.base.let {
+                val name = expression.base.let {
                     when (it) {
                         is IdentifierNode -> it.name
                         is BundleIdentifierNode -> it.name
@@ -128,56 +131,56 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
                 }
                 when (name) {
                     "range" -> {
-                        if (constraint.arguments.size != 1 || constraint.arguments.firstOrNull() !is RangeExpressionNode) {
-                            controller.createContext(constraint.location.source).error {
+                        if (expression.arguments.size != 1 || expression.arguments.firstOrNull() !is RangeExpressionNode) {
+                            controller.createContext(expression.location.source).error {
                                 message("Range constraint must have exactly one range argument")
-                                highlight("invalid constraint", constraint.location)
+                                highlight("invalid constraint", expression.location)
                                 help("A valid constraint would be range(1..10.5)")
                             }
                             return null
                         }
-                        return createRange(constraint.arguments.first() as RangeExpressionNode)
+                        return createRange(expression.arguments.first() as RangeExpressionNode)
                     }
 
                     "size" -> {
-                        if (constraint.arguments.size != 1 || constraint.arguments.firstOrNull() !is RangeExpressionNode) {
-                            controller.createContext(constraint.location.source).error {
+                        if (expression.arguments.size != 1 || expression.arguments.firstOrNull() !is RangeExpressionNode) {
+                            controller.createContext(expression.location.source).error {
                                 message("Size constraint must have exactly one size argument")
-                                highlight("invalid constraint", constraint.location)
+                                highlight("invalid constraint", expression.location)
                                 help("A valid constraint would be size(1..10)")
                             }
                             return null
                         }
-                        return createSize(constraint.arguments.first() as RangeExpressionNode)
+                        return createSize(expression.arguments.first() as RangeExpressionNode)
                     }
 
                     "pattern" -> {
-                        if (constraint.arguments.size != 1 || constraint.arguments.firstOrNull() !is StringNode) {
-                            controller.createContext(constraint.location.source).error {
+                        if (expression.arguments.size != 1 || expression.arguments.firstOrNull() !is StringNode) {
+                            controller.createContext(expression.location.source).error {
                                 message("Pattern constraint must have exactly one string argument")
-                                highlight("invalid constraint", constraint.location)
+                                highlight("invalid constraint", expression.location)
                                 help("A valid constraint would be pattern(\"a-z\")")
                             }
                             return null
                         }
-                        return createPattern(constraint.arguments.first() as StringNode)
+                        return createPattern(expression.arguments.first() as StringNode)
                     }
 
                     "value" -> {
-                        if (constraint.arguments.size != 1) {
-                            controller.createContext(constraint.location.source).error {
+                        if (expression.arguments.size != 1) {
+                            controller.createContext(expression.location.source).error {
                                 message("value constraint must have exactly one argument")
-                                highlight("invalid constraint", constraint.location)
+                                highlight("invalid constraint", expression.location)
                             }
                             return null
                         }
-                        return createValue(constraint.arguments.first())
+                        return createValue(expression.arguments.first())
                     }
 
                     is String -> {
-                        controller.createContext(constraint.location.source).error {
+                        controller.createContext(expression.location.source).error {
                             message("Constraint with name '${name}' does not exist")
-                            highlight("unknown constraint", constraint.base.location)
+                            highlight("unknown constraint", expression.base.location)
                             help("A valid constraint would be range(1..10.5), size(1..10), pattern(\"a-z\") or value(\"foo\")")
                         }
                         return null
@@ -185,22 +188,62 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
                 }
             }
             // It might make sense to limit shorthand constraints to only the first argument
-            is RangeExpressionNode -> return createRange(constraint)
+            is RangeExpressionNode -> return if (baseType is StringType || baseType is ListType || baseType is MapType) createSize(
+                expression
+            ) else createRange(expression)
+
             is NumberNode -> {
-                // We should probably create a Range or Size constraint depending on the base type
-                return ResolvedTypeReference.Constraint.Range(
-                    lowerBound = null,
-                    upperBound = constraint.value
-                )
+                return if (expression is IntegerNode && (baseType is StringType || baseType is ListType || baseType is MapType)) {
+                    ResolvedTypeReference.Constraint.Size(
+                        definition = expression,
+                        lowerBound = null,
+                        upperBound = expression.value
+                    )
+                } else {
+                    ResolvedTypeReference.Constraint.Range(
+                        definition = expression,
+                        lowerBound = null,
+                        upperBound = expression.value
+                    )
+                }
             }
 
-            is StringNode -> return createPattern(constraint)
+            is StringNode -> return createPattern(expression)
             else -> Unit
         }
-        controller.createContext(constraint.location.source).error {
+        controller.createContext(expression.location.source).error {
             message("Invalid constraint")
-            highlight("invalid constraint", constraint.location)
+            highlight("invalid constraint", expression.location)
         }
         return null
+    }
+
+    private fun validateConstraintMatches(constraint: ResolvedTypeReference.Constraint, baseType: Type): Boolean {
+        return when (constraint) {
+            is ResolvedTypeReference.Constraint.Pattern -> baseType is StringType
+            is ResolvedTypeReference.Constraint.Range -> baseType is NumberType
+            is ResolvedTypeReference.Constraint.Size -> baseType is StringType || baseType is ListType || baseType is MapType
+            is ResolvedTypeReference.Constraint.Value -> when (constraint.value) {
+                is String -> baseType is StringType
+                is Number -> baseType is NumberType
+                is Boolean -> baseType is BooleanType
+                else -> false
+            }
+        }
+    }
+
+    fun build(baseType: Type, expression: ExpressionNode): ResolvedTypeReference.Constraint? {
+        val constraint = buildConstraint(baseType, expression) ?: return null
+
+        return if (validateConstraintMatches(constraint, baseType)) {
+            constraint
+        } else {
+            controller.createContext(expression.location.source).error {
+                message("Constraint '${constraint.humanReadableName}' is not allowed for type '${baseType.humanReadableName}'")
+                highlight("illegal constraint", expression.location)
+            }
+            null
+        }
+
     }
 }

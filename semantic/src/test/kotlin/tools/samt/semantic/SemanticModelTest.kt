@@ -247,6 +247,28 @@ class SemanticModelTest {
     @Nested
     inner class Constraints {
         @Test
+        fun `cannot use constraints on bad base type`() {
+            val source = """
+                package complex
+
+                record Complex {
+                    int: Int? (pattern("a-z"))
+                    list: List<String> (pattern("a-z"))
+                    int2: Int (size(1..100))
+                    string: String (value(42))
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf(
+                    "Error: Constraint 'pattern(a-z)' is not allowed for type 'Int'",
+                    "Error: Constraint 'pattern(a-z)' is not allowed for type 'List<String>'",
+                    "Error: Constraint 'size(1..100)' is not allowed for type 'Int'",
+                    "Error: Constraint 'value(42)' is not allowed for type 'String'",
+                )
+            )
+        }
+
+        @Test
         fun `range must be valid`() {
             val source = """
                 package complex
@@ -491,6 +513,97 @@ class SemanticModelTest {
             """.trimIndent()
             parseAndCheck(
                 source to listOf("Error: Async operations are not yet supported")
+            )
+        }
+    }
+
+    @Nested
+    inner class PostProcessor {
+        @Test
+        fun `cannot use service within record fields`() {
+            val source = """
+                package color
+
+                service ColorService {
+                    get(): Int
+                }
+
+                record Color {
+                    ^service: ColorService
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf("Error: Cannot use service 'ColorService' within data model")
+            )
+        }
+
+        @Test
+        fun `cannot use record within consumer`() {
+            val source = """
+                package color
+
+                service ColorService {
+                    get(): Int
+                }
+
+                record Color {
+                    value: String
+                }
+
+                provide FooEndpoint {
+                    implements ColorService
+                    implements Color
+                    transport HTTP
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf("Error: Expected a service but got 'Color'")
+            )
+        }
+
+        @Test
+        fun `cannot provide operations which do not exist in service`() {
+            val source = """
+                package color
+
+                service ColorService {
+                    get(): Int
+                }
+
+                provide FooEndpoint {
+                    implements ColorService { get, post }
+                    transport HTTP
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf("Error: Missing operation 'post' in service 'ColorService'")
+            )
+        }
+
+        @Test
+        fun `cannot use operations which do not exist in service or are not implemented by provider`() {
+            val source = """
+                package color
+
+                service ColorService {
+                    get(): Int
+                    post()
+                }
+
+                provide FooEndpoint {
+                    implements ColorService { get }
+                    transport HTTP
+                }
+
+                consume FooEndpoint {
+                    uses ColorService { get, post, put }
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf(
+                    "Error: Operation 'post' in service 'ColorService' is not implemented by provider 'FooEndpoint'",
+                    "Error: Missing operation 'put' in service 'ColorService'",
+                )
             )
         }
     }

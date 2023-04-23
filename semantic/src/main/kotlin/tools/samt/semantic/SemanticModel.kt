@@ -18,6 +18,7 @@ class SemanticModelBuilder(
 ) {
     private val global = Package(name = "")
     private val constraintBuilder = ConstraintBuilder(controller)
+    private val postProcessor = SemanticModelPostProcessor(controller)
 
     private inline fun ensureNameIsAvailable(
         parentPackage: Package,
@@ -64,9 +65,10 @@ class SemanticModelBuilder(
 
         resolveTypes(fileScopeBySource)
 
+        postProcessor.process(global)
+
         return global
     }
-
 
     private fun buildPackages() {
         for (file in files) {
@@ -121,7 +123,7 @@ class SemanticModelBuilder(
                                     is OnewayOperationNode -> {
                                         ServiceType.OnewayOperation(
                                             name = operation.name.name,
-                                            parameters = parameters
+                                            parameters = parameters,
                                         )
                                     }
 
@@ -147,8 +149,12 @@ class SemanticModelBuilder(
 
                     is ProviderDeclarationNode -> {
                         ensureNameIsAvailable(parentPackage, statement) {
-                            val implements = statement.implements.map { implement ->
-                                ProviderType.Implements(UnresolvedTypeReference(implement.serviceName), emptyList())
+                            val implements = statement.implements.map { implements ->
+                                ProviderType.Implements(
+                                    UnresolvedTypeReference(implements.serviceName),
+                                    emptyList(),
+                                    implements
+                                )
                             }
                             val transport = ProviderType.Transport(
                                 name = statement.transport.protocolName.name,
@@ -161,7 +167,13 @@ class SemanticModelBuilder(
                     is ConsumerDeclarationNode -> {
                         parentPackage += ConsumerType(
                             provider = UnresolvedTypeReference(statement.providerName),
-                            uses = emptyList(),
+                            uses = statement.usages.map {
+                                ConsumerType.Uses(
+                                    service = UnresolvedTypeReference(it.serviceName),
+                                    operations = emptyList(),
+                                    definition = it
+                                )
+                            },
                             definition = statement
                         )
                     }
@@ -195,7 +207,7 @@ class SemanticModelBuilder(
                 }
             }
             for (service in subPackage.services) {
-                for (operation in service.operation) {
+                for (operation in service.operations) {
                     for (parameter in operation.parameters) {
                         parameter.type = parameter.type.resolve()
                     }
@@ -215,6 +227,9 @@ class SemanticModelBuilder(
             }
             for (consumer in subPackage.consumers) {
                 consumer.provider = consumer.provider.resolve()
+                for (uses in consumer.uses) {
+                    uses.service = uses.service.resolve()
+                }
             }
         }
     }
@@ -361,7 +376,7 @@ class SemanticModelBuilder(
             when (expression) {
                 is IdentifierNode -> {
                     scope.typeLookup[expression.name]?.let {
-                        return ResolvedTypeReference(it)
+                        return ResolvedTypeReference(expression, it)
                     }
 
                     controller.createContext(expression.location.source).error {
@@ -383,7 +398,7 @@ class SemanticModelBuilder(
                                 expression.components.subList(1, expression.components.size),
                                 expectedPackageType.sourcePackage
                             )?.let {
-                                return ResolvedTypeReference(it)
+                                return ResolvedTypeReference(expression, it)
                             }
                         }
 
@@ -405,7 +420,7 @@ class SemanticModelBuilder(
 
                 is CallExpressionNode -> {
                     val baseType = resolveExpression(expression.base)
-                    val constraints = expression.arguments.mapNotNull { constraintBuilder.build(it) }
+                    val constraints = expression.arguments.mapNotNull { constraintBuilder.build(baseType.type, it) }
                     if (baseType.constraints.isNotEmpty()) {
                         controller.createContext(expression.location.source).error {
                             message("Cannot have nested constraints")
@@ -426,13 +441,17 @@ class SemanticModelBuilder(
                     when (name) {
                         "List" -> {
                             if (expression.arguments.size == 1) {
-                                return ResolvedTypeReference(ListType(resolveExpression(expression.arguments[0])))
+                                return ResolvedTypeReference(
+                                    expression,
+                                    ListType(resolveExpression(expression.arguments[0]))
+                                )
                             }
                         }
 
                         "Map" -> {
                             if (expression.arguments.size == 2) {
                                 return ResolvedTypeReference(
+                                    expression,
                                     MapType(
                                         keyType = resolveExpression(expression.arguments[0]),
                                         valueType = resolveExpression(expression.arguments[1])
@@ -477,7 +496,7 @@ class SemanticModelBuilder(
                 }
             }
 
-            return ResolvedTypeReference(UnknownType)
+            return ResolvedTypeReference(expression, UnknownType)
         }
 
         return resolveExpression(rootExpression)

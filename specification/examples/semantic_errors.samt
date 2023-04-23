@@ -1,0 +1,27 @@
+package debug
+
+record Foo {
+    name: String??
+    hobbies: List<String>
+    age: 23
+    birthyear: 2000(10..20)
+    foobar: [1, 2, 3]
+}
+
+@Description([1, 2, 3])
+record Bar extends Foo {
+    name: String({ foo: 25 })
+    bar: Int(*..*)
+    bar: Int("hello".."world")
+}
+
+service Greeter {
+    sayHello(name: String): String
+    sayHello(name: String): String
+}
+
+enum Color {
+    Red, Blue, Green, Red,
+
+    Blue
+}

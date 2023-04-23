@@ -83,7 +83,7 @@ class DiagnosticContext(
      * */
     val messages: MutableList<DiagnosticMessage> = mutableListOf()
 
-    private fun report(severity: DiagnosticSeverity, block: DiagnosticMessageBuilder.() -> Unit): DiagnosticMessage {
+    inline fun report(severity: DiagnosticSeverity, block: DiagnosticMessageBuilder.() -> Unit): DiagnosticMessage {
         val builder = DiagnosticMessageBuilder(severity)
         builder.block()
         val message = builder.build()
@@ -91,12 +91,12 @@ class DiagnosticContext(
         return message
     }
 
-    fun fatal(block: DiagnosticMessageBuilder.() -> Unit): Nothing {
+    inline fun fatal(block: DiagnosticMessageBuilder.() -> Unit): Nothing {
         throw DiagnosticException(report(DiagnosticSeverity.Error, block))
     }
-    fun error(block: DiagnosticMessageBuilder.() -> Unit) = report(DiagnosticSeverity.Error, block)
-    fun warn(block: DiagnosticMessageBuilder.() -> Unit) = report(DiagnosticSeverity.Warning, block)
-    fun info(block: DiagnosticMessageBuilder.() -> Unit) = report(DiagnosticSeverity.Info, block)
+    inline fun error(block: DiagnosticMessageBuilder.() -> Unit) = report(DiagnosticSeverity.Error, block)
+    inline fun warn(block: DiagnosticMessageBuilder.() -> Unit) = report(DiagnosticSeverity.Warning, block)
+    inline fun info(block: DiagnosticMessageBuilder.() -> Unit) = report(DiagnosticSeverity.Info, block)
 
     fun hasMessages(): Boolean = messages.isNotEmpty()
     fun hasErrors(): Boolean = messages.any { it.severity == DiagnosticSeverity.Error }

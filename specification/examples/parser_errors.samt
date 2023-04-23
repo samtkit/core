@@ -1,0 +1,34 @@
+import foo.baz.* as somealias
+
+package debug
+
+import package
+
+import foo
+
+alias Test : Int(0..1000000000000000000000000)
+
+alias ^foobar : String
+
+alias ^ : String
+
+alias test : String(pattern("\n\x"))
+
+package debug
+
+service Foo {
+    oneway foo(): Int
+    oneway foo() raises Error
+}
+
+provide FooProvider {
+    implements Foo { }
+}
+
+enum Foo {
+    Bar, Bar,
+    Baz,
+    Baz
+}
+
+alias foo = String

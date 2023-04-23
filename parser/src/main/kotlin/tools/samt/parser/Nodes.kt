@@ -17,6 +17,11 @@ sealed class StatementNode(
     location: Location,
 ) : Node(location)
 
+sealed class NamedDeclarationNode(
+    val name: IdentifierNode,
+    location: Location,
+) : StatementNode(location)
+
 sealed class ImportNode(
     location: Location,
 ) : StatementNode(location)
@@ -39,11 +44,11 @@ class PackageDeclarationNode(
 
 class RecordDeclarationNode(
     location: Location,
-    val name: IdentifierNode,
+    name: IdentifierNode,
     val extends: List<BundleIdentifierNode> = emptyList(),
     val fields: List<RecordFieldNode>,
     val annotations: List<AnnotationNode>,
-) : StatementNode(location)
+) : NamedDeclarationNode(name, location)
 
 class RecordFieldNode(
     location: Location,
@@ -54,24 +59,24 @@ class RecordFieldNode(
 
 class EnumDeclarationNode(
     location: Location,
-    val name: IdentifierNode,
+    name: IdentifierNode,
     val values: List<IdentifierNode>,
     val annotations: List<AnnotationNode>,
-) : StatementNode(location)
+) : NamedDeclarationNode(name, location)
 
 class TypeAliasNode(
     location: Location,
-    val name: IdentifierNode,
+    name: IdentifierNode,
     val type: ExpressionNode,
     val annotations: List<AnnotationNode>,
-) : StatementNode(location)
+) : NamedDeclarationNode(name, location)
 
 class ServiceDeclarationNode(
     location: Location,
-    val name: IdentifierNode,
+    name: IdentifierNode,
     val operations: List<OperationNode>,
     val annotations: List<AnnotationNode>,
-) : StatementNode(location)
+) : NamedDeclarationNode(name, location)
 
 sealed class OperationNode(
     location: Location,
@@ -106,10 +111,10 @@ class OnewayOperationNode(
 
 class ProviderDeclarationNode(
     location: Location,
-    val name: IdentifierNode,
+    name: IdentifierNode,
     val implements: List<ProviderImplementsNode>,
     val transport: ProviderTransportNode,
-) : StatementNode(location)
+) : NamedDeclarationNode(name, location)
 
 class ProviderImplementsNode(
     location: Location,
@@ -209,16 +214,18 @@ class ImportBundleIdentifierNode(
 
 sealed class NumberNode(
     location: Location,
-) : ExpressionNode(location)
+) : ExpressionNode(location) {
+    abstract val value: Number
+}
 
 class IntegerNode(
     location: Location,
-    val value: Long,
+    override val value: Long,
 ) : NumberNode(location)
 
 class FloatNode(
     location: Location,
-    val value: Double,
+    override val value: Double,
 ) : NumberNode(location)
 
 class BooleanNode(

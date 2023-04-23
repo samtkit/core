@@ -1,9 +1,9 @@
 package tools.samt.cli
 
-import tools.samt.parser.*
-
 import com.github.ajalt.mordant.rendering.TextColors.*
-import com.github.ajalt.mordant.rendering.TextStyles.*
+import com.github.ajalt.mordant.rendering.TextStyles.bold
+import com.github.ajalt.mordant.rendering.TextStyles.underline
+import tools.samt.parser.*
 
 object ASTPrinter {
     fun dump(node: Node): String = buildString {
@@ -58,7 +58,7 @@ object ASTPrinter {
     }
 
     private fun dumpInfo(node: Node): String? = when (node) {
-        is FileNode -> gray(node.filePath)
+        is FileNode -> gray(node.sourceFile.absolutePath)
         is RequestResponseOperationNode -> if (node.isAsync) red("async") else null
         is IdentifierNode -> yellow(node.name)
         is ImportBundleIdentifierNode -> yellow(node.name) + if (node.isWildcard) yellow(".*") else ""

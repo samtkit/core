@@ -5,6 +5,7 @@ import com.beust.jcommander.JCommander
 import com.github.ajalt.mordant.terminal.Terminal
 import tools.samt.common.DiagnosticController
 import tools.samt.common.SourceFile
+import tools.samt.semantic.SemanticModelBuilder
 import java.io.File
 
 fun main(args: Array<String>) {
@@ -85,6 +86,9 @@ fun main(args: Array<String>) {
                 t.print(ASTPrinter.dump(it))
             }
         }
+
+        // build up the semantic model from the AST
+        SemanticModelBuilder.build(fileNodes, controller)
     }
 
     val currentTimestamp = System.currentTimeMillis()

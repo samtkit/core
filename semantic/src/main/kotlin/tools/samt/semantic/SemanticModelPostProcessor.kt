@@ -11,8 +11,13 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
         global.allSubPackages.forEach {
             it.records.forEach(::checkRecord)
             it.services.forEach(::checkService)
-            // Important: Providers must be checked before consumers!
+        }
+        global.allSubPackages.forEach {
+            // Important: Provider must be checked after Service!
             it.providers.forEach(::checkProvider)
+        }
+        global.allSubPackages.forEach {
+            // Important: Consumers must be checked after Providers!
             it.consumers.forEach(::checkConsumer)
         }
     }
@@ -123,7 +128,7 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
     private fun checkService(service: ServiceType) {
         service.operations.forEach { operation ->
             operation.parameters.forEach { checkModelType(it.type) }
-            when(operation) {
+            when (operation) {
                 is ServiceType.OnewayOperation -> Unit
                 is ServiceType.RequestResponseOperation -> {
                     operation.returnType?.let { checkModelType(it) }
@@ -135,7 +140,9 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
     private fun checkProvider(provider: ProviderType) {
         provider.implements.forEach { implements ->
             checkServiceType(implements.service) { type ->
-                implements.operations =
+                implements.operations = if (implements.definition.serviceOperationNames.isEmpty()) {
+                    type.operations
+                } else {
                     implements.definition.serviceOperationNames.mapNotNull { serviceOperationName ->
                         val matchingOperation = type.operations.find { it.name == serviceOperationName.name }
                         if (matchingOperation != null) {
@@ -148,6 +155,7 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
                             null
                         }
                     }
+                }
             }
         }
     }
@@ -156,7 +164,8 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
         checkProviderType(consumer.provider) { providerType ->
             consumer.uses.forEach { uses ->
                 checkServiceType(uses.service) { type ->
-                    val matchingImplements = providerType.implements.find { (it.service as ResolvedTypeReference).type == type }
+                    val matchingImplements =
+                        providerType.implements.find { (it.service as ResolvedTypeReference).type == type }
                     if (matchingImplements == null) {
                         controller.createContext(uses.definition.location.source).error {
                             message("Service '${type.name}' is not implemented by provider '${providerType.name}'")
@@ -164,9 +173,12 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
                         }
                         return@forEach
                     }
-                    uses.operations =
+                    uses.operations = if (uses.definition.serviceOperationNames.isEmpty()) {
+                        matchingImplements.operations
+                    } else {
                         uses.definition.serviceOperationNames.mapNotNull { serviceOperationName ->
-                            val matchingOperation = matchingImplements.operations.find { it.name == serviceOperationName.name }
+                            val matchingOperation =
+                                matchingImplements.operations.find { it.name == serviceOperationName.name }
                             if (matchingOperation != null) {
                                 matchingOperation
                             } else {
@@ -184,6 +196,7 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
                                 null
                             }
                         }
+                    }
                 }
             }
         }

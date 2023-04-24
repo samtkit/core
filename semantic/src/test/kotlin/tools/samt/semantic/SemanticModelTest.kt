@@ -590,20 +590,64 @@ class SemanticModelTest {
                     post()
                 }
 
+                service FooService {
+                    bar(): String
+                    baz(arg: Float)
+                }
+
                 provide FooEndpoint {
                     implements ColorService { get }
+                    implements FooService
                     transport HTTP
                 }
 
                 consume FooEndpoint {
                     uses ColorService { get, post, put }
+                    uses FooService { bar, baz, qux }
                 }
             """.trimIndent()
             parseAndCheck(
                 source to listOf(
                     "Error: Operation 'post' in service 'ColorService' is not implemented by provider 'FooEndpoint'",
                     "Error: Missing operation 'put' in service 'ColorService'",
+                    "Error: Missing operation 'qux' in service 'FooService'",
                 )
+            )
+        }
+
+        @Test
+        fun `can use and implement operations which do exist in service`() {
+            val consumer = """
+                import providers.FooEndpoint as Provider
+                import services.FooService as Service
+
+                package consumers
+
+                consume Provider {
+                    uses Service { foo }
+                }
+            """.trimIndent()
+            val provider = """
+                import services.*
+                package providers
+
+                provide FooEndpoint {
+                    implements FooService
+                    transport HTTP
+                }
+            """.trimIndent()
+            val service = """
+                package services
+
+                service FooService {
+                    foo(): String
+                    baz(arg: Float)
+                }
+            """.trimIndent()
+            parseAndCheck(
+                consumer to emptyList(),
+                provider to emptyList(),
+                service to emptyList(),
             )
         }
     }

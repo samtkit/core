@@ -15,7 +15,8 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-          cache: gradle
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
 
       - name: Run snapshot action
         uses: mikepenz/gradle-dependency-submission@main

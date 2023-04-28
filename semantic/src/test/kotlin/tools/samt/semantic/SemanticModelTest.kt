@@ -304,8 +304,8 @@ class SemanticModelTest {
             """.trimIndent()
             parseAndCheck(
                 source to listOf(
-                    "Error: Size constraint argument '5.5' is not a whole number",
-                    "Error: Size constraint must have a lower bound lower than the upper bound",
+                    "Error: Expected size constraint argument to be a whole number or wildcard",
+                    "Error: Size constraint lower bound must be lower than or equal to the upper bound",
                 )
             )
         }
@@ -533,7 +533,7 @@ class SemanticModelTest {
                 }
             """.trimIndent()
             parseAndCheck(
-                source to listOf("Error: Cannot use service 'ColorService' within data model")
+                source to listOf("Error: Cannot use service 'ColorService' as type")
             )
         }
 
@@ -576,7 +576,7 @@ class SemanticModelTest {
                 }
             """.trimIndent()
             parseAndCheck(
-                source to listOf("Error: Missing operation 'post' in service 'ColorService'")
+                source to listOf("Error: Operation 'post' not found in service 'ColorService'")
             )
         }
 
@@ -609,8 +609,8 @@ class SemanticModelTest {
             parseAndCheck(
                 source to listOf(
                     "Error: Operation 'post' in service 'ColorService' is not implemented by provider 'FooEndpoint'",
-                    "Error: Missing operation 'put' in service 'ColorService'",
-                    "Error: Missing operation 'qux' in service 'FooService'",
+                    "Error: Operation 'put' not found in service 'ColorService'",
+                    "Error: Operation 'qux' not found in service 'FooService'",
                 )
             )
         }

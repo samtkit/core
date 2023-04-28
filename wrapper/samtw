@@ -1,0 +1,42 @@
+#!/usr/bin/env sh
+
+if [ ! -f samt-wrapper.properties ]; then
+  echo "samt-wrapper.properties file not found." >&2
+  exit 1
+fi
+
+. samt-wrapper.properties
+
+if ! command -v tar > /dev/null; then
+  echo "This script requires 'tar' to be installed." >&2
+  exit 1
+fi
+
+mkdir -p .samt/cli
+
+if [ ! -f .samt/.gitignore ]; then
+    echo "*" > .samt/.gitignore
+fi
+
+currentVersion=$(cat .samt/cli/version.txt 2> /dev/null || echo "0.0.0")
+
+if [ "$currentVersion" != "$samtVersion" ]; then
+  echo "Downloading samt $samtVersion from '$distributionUrl'..."
+  if command -v curl > /dev/null; then
+    if ! curl -s -L "$distributionUrl" | tar x -C .samt/cli; then
+      echo "An error occurred while downloading '$distributionUrl' archive using curl." >&2
+      exit 1
+    fi
+    echo "$samtVersion" > .samt/cli/version.txt
+  elif command -v curl > /dev/null; then
+    if ! wget -qO- "$distributionUrl" | tar x -C .samt/cli; then
+      echo "An error occurred while downloading '$distributionUrl' archive using wget." >&2
+      exit 1
+    fi
+  else
+    echo "samtw requires either 'curl' or 'wget' to be installed." >&2
+    exit 1
+  fi
+fi
+
+exec ".samt/cli/cli-shadow/bin/cli" "$@"

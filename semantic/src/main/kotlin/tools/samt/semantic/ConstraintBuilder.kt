@@ -233,6 +233,24 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
             controller.createContext(expression.location.source).error {
                 message("Constraint '${constraint.humanReadableName}' is not allowed for type '${baseType.humanReadableName}'")
                 highlight("illegal constraint", expression.location)
+
+                // applicable constraints
+                // string: pattern, size, value
+                // number: range, value
+                // boolean: value
+                // list: size
+                // map: size
+
+                val applicableConstraints = when (baseType) {
+                    is StringType -> "pattern, size or value"
+                    is NumberType -> "range or value"
+                    is BooleanType -> "value"
+                    is ListType -> "size"
+                    is MapType -> "size"
+                    else -> ""
+                }
+
+                help("Applicable constraints for type are $applicableConstraints")
             }
             null
         }

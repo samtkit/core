@@ -27,22 +27,23 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
         when (val type = typeReference.type) {
             is ServiceType -> {
                 controller.createContext(typeReference.definition.location.source).error {
-                    message("Cannot use service '${type.name}' within data model")
-                    highlight("illegal service", typeReference.definition.location)
+                    // error message applies to both record fields and return types
+                    message("Cannot use service '${type.name}' as type")
+                    highlight("service type not allowed here", typeReference.definition.location)
                 }
             }
 
             is ProviderType -> {
                 controller.createContext(typeReference.definition.location.source).error {
-                    message("Cannot use provider '${type.name}' within data model")
-                    highlight("illegal provider", typeReference.definition.location)
+                    message("Cannot use provider '${type.name}' as type")
+                    highlight("provider type not allowed here", typeReference.definition.location)
                 }
             }
 
             is PackageType -> {
                 controller.createContext(typeReference.definition.location.source).error {
-                    message("Cannot use package '${type.packageName}' within data model")
-                    highlight("illegal package", typeReference.definition.location)
+                    message("Cannot use package '${type.packageName}' as type")
+                    highlight("package type not allowed here", typeReference.definition.location)
                 }
             }
 
@@ -149,8 +150,8 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
                             matchingOperation
                         } else {
                             controller.createContext(provider.definition.location.source).error {
-                                message("Missing operation '${serviceOperationName.name}' in service '${type.name}'")
-                                highlight("missing operation", serviceOperationName.location)
+                                message("Operation '${serviceOperationName.name}' not found in service '${type.name}'")
+                                highlight("unknown operation", serviceOperationName.location)
                             }
                             null
                         }
@@ -189,8 +190,8 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
                                     }
                                 } else {
                                     controller.createContext(uses.definition.location.source).error {
-                                        message("Missing operation '${serviceOperationName.name}' in service '${type.name}'")
-                                        highlight("missing operation", serviceOperationName.location)
+                                        message("Operation '${serviceOperationName.name}' not found in service '${type.name}'")
+                                        highlight("unknown operation", serviceOperationName.location)
                                     }
                                 }
                                 null

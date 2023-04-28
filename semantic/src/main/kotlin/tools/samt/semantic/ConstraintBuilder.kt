@@ -52,19 +52,12 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
         fun resolveSide(expressionNode: ExpressionNode): Long? = when (expressionNode) {
             is IntegerNode -> expressionNode.value
             is WildcardNode -> null
-            is FloatNode -> {
-                controller.createContext(expressionNode.location.source).error {
-                    message("Size constraint argument '${expressionNode.value}' is not a whole number")
-                    highlight("illegal floating point number", expressionNode.location)
-                }
-                null
-            }
 
             else -> {
                 controller.createContext(expressionNode.location.source).error {
-                    message("Range constraint argument must be a valid integer range")
-                    highlight("neither a number nor '*'", expressionNode.location)
-                    help("A valid constraint would be size(1..10) or size(1..*)")
+                    message("Expected size constraint argument to be a whole number or wildcard")
+                    highlight("expected whole number or wildcard '*'", expressionNode.location)
+                    help("A valid constraint would be size(1..10), size(1..*) or size(*..10)")
                 }
                 null
             }
@@ -75,7 +68,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
 
         if (lower == null && higher == null) {
             controller.createContext(expression.location.source).error {
-                message("Range constraint must have at least one valid number")
+                message("Constraint parameters cannot both be wildcards")
                 highlight("invalid constraint", expression.location)
                 help("A valid constraint would be range(1..10.5) or range(1..*)")
             }
@@ -83,11 +76,10 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
         }
 
         if (lower != null && higher != null && lower > higher) {
-            controller.createContext(expression.location.source)
-                .error {
-                    message("Size constraint must have a lower bound lower than the upper bound")
-                    highlight("invalid constraint", expression.location)
-                }
+            controller.createContext(expression.location.source).error {
+                message("Size constraint lower bound must be lower than or equal to the upper bound")
+                highlight("invalid constraint", expression.location)
+            }
             return null
         }
 

@@ -69,7 +69,7 @@ class Parser private constructor(
             }
         }
 
-        return FileNode(locationFromStart(start), source.absolutePath, imports, packageDeclaration, statements)
+        return FileNode(locationFromStart(start), source, imports, packageDeclaration, statements)
     }
 
     private fun parseStatement(): StatementNode = when (current) {

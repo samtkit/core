@@ -19,12 +19,13 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-          cache: gradle
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
 
       - name: Build
         run: ./gradlew --no-daemon build -x test
 
-      - uses: JetBrains/qodana-action@v2022.3.4
+      - uses: JetBrains/qodana-action@v2023.1.0
         with:
           pr-mode: false
           cache-default-branch-only: true

@@ -14,10 +14,12 @@ fun parseSourceFile(source: SourceFile, context: DiagnosticContext): FileNode? {
         return null
     }
 
-    return try {
+    val fileNode = try {
         Parser.parse(source, tokenStream, context)
     } catch (e: DiagnosticException) {
         // error message is added to the diagnostic console, so it can be ignored here
-        null
+        return null
     }
+
+    return fileNode
 }

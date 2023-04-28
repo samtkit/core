@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class ParserUnitTest {
+class ParserTest {
 
     @Nested
     inner class PackageTest {

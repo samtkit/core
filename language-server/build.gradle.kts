@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     implementation(libs.jCommander)
+    implementation(libs.lsp4j)
     implementation(project(":common"))
     implementation(project(":lexer"))
     implementation(project(":parser"))

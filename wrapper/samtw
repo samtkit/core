@@ -1,11 +1,11 @@
 #!/usr/bin/env sh
 
-if [ ! -f samt-wrapper.properties ]; then
+if [ ! -f ./samt-wrapper.properties ]; then
   echo "samt-wrapper.properties file not found." >&2
   exit 1
 fi
 
-. samt-wrapper.properties
+. ./samt-wrapper.properties
 
 if ! command -v tar > /dev/null; then
   echo "This script requires 'tar' to be installed." >&2

@@ -14,6 +14,7 @@ dependencies {
     kover(project(":cli"))
     kover(project(":language-server"))
     kover(project(":samt-config"))
+    kover(project(":codegen"))
 }
 
 koverReport {

@@ -7,7 +7,7 @@ import com.github.ajalt.mordant.terminal.Terminal
 import tools.samt.common.*
 import java.io.File
 
-class DiagnosticFormatter(
+internal class DiagnosticFormatter(
     private val diagnosticController: DiagnosticController,
     private val startTimestamp: Long,
     private val currentTimestamp: Long,
@@ -75,9 +75,9 @@ class DiagnosticFormatter(
         val duration = currentTimestamp - startTimestamp
         appendLine("─".repeat(terminalWidth))
         if (errorCount == 0) {
-            append((green + bold)("BUILD SUCCESSFUL") + " in ${duration}ms")
+            append((green + bold)("SUCCESSFUL") + " in ${duration}ms")
         } else {
-            append((red + bold)("BUILD FAILED") + " in ${duration}ms")
+            append((red + bold)("FAILED") + " in ${duration}ms")
         }
 
         if (errorCount > 0 || warningCount > 0) {

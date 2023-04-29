@@ -2,11 +2,13 @@ plugins {
     application
     id("samt-core.kotlin-conventions")
     alias(libs.plugins.shadow)
+    kotlin("plugin.serialization")
 }
 
 dependencies {
     implementation(libs.jCommander)
     implementation(libs.mordant)
+    implementation(libs.kotlinx.serialization.json)
     implementation(project(":common"))
     implementation(project(":lexer"))
     implementation(project(":parser"))

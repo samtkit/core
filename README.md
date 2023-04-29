@@ -48,7 +48,7 @@ You can also compile the CLI module locally:
 And then compile SAMT files using this locally compiled version:
 
 ```shell
-java -jar ./cli/build/libs/samt-cli.jar ./specification/examples/todo-service/*.samt
+java -jar ./cli/build/libs/samt-cli.jar compile ./specification/examples/todo-service/*.samt
 ```
 
 If you're more interested in the [SAMT Visual Studio Code plugin](https://github.com/samtkit/vscode) or the related language server, you can also compile it locally as well:

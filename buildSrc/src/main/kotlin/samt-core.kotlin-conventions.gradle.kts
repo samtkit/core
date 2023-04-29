@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization") apply false
 }
 
 apply(plugin = "kover")

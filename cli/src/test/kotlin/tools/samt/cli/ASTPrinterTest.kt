@@ -1,6 +1,5 @@
 package tools.samt.cli
 
-import tools.samt.common.DiagnosticContext
 import tools.samt.common.DiagnosticController
 import tools.samt.common.SourceFile
 import tools.samt.lexer.Lexer

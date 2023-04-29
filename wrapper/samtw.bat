@@ -1,11 +1,23 @@
 @echo off
 
+setlocal EnableDelayedExpansion
+
 if not exist samt-wrapper.properties (
   echo "samt-wrapper.properties not found."
   exit /b 1
 )
 
-set /p samtVersion=<samt-wrapper.properties
+for /f "tokens=1,2 delims==" %%G in (samt-wrapper.properties) do (
+    if "%%G"=="samtVersion" (
+        set "samtVersion=%%H"
+    )
+    if "%%G"=="distributionUrl" (
+        set distributionUrlPattern=%%H
+    )
+)
+
+set distributionUrl=%distributionUrlPattern:$samtVersion=!samtVersion!%
+set distributionUrl=%distributionUrl:\:=:%
 
 where tar >nul || (
   echo "This script requires 'tar' to be installed." >&2
@@ -24,21 +36,24 @@ if exist .samt\cli\version.txt (
 
 if "%currentVersion%" neq "%samtVersion%" (
   echo Downloading samt %samtVersion% from '%distributionUrl%'...
-  if exist %SystemRoot%\System32\curl.exe (
-    curl -s -L "%distributionUrl%" | tar x -C .samt\cli || (
+  WHERE /q curl
+  if %ERRORLEVEL% EQU 0 (
+    curl -L -o .samt\cli\cli.tar "%distributionUrl%" || (
       echo An error occured while downloading '%distributionUrl%' archive using curl. >&2
       exit /b 1
     )
-  ) else if exist %SystemRoot%\System32\wget.exe (
-    wget -qO- "%distributionUrl%" | tar x -C .samt\cli || (
-      echo An error occured while downloading '%distributionUrl%' archive using wget. >&2
-      exit /b 1
-    )
+
   ) else (
-    echo samtw requires either 'curl' or 'wget' to be installed. >&2
+    echo samtw requires 'curl' to be installed. >&2
     exit /b 1
   )
-  echo %samtVersion% > .samt\cli\version.txt
+
+  tar xf .samt\cli\cli.tar -C .samt\cli || (
+    echo An error occured while unpacking .samt\cli\cli.tar using tar. >&2
+    exit /b 1
+  )
+
+  echo %samtVersion%> .samt\cli\version.txt
 )
 
 call ".samt\cli\cli-shadow\bin\cli.bat" %*

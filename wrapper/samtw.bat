@@ -39,7 +39,7 @@ if "%currentVersion%" neq "%samtVersion%" (
   WHERE /q curl
   if %ERRORLEVEL% EQU 0 (
     curl -L -o .samt\cli\cli.tar "%distributionUrl%" || (
-      echo An error occured while downloading '%distributionUrl%' archive using curl. >&2
+      echo An error occurred while downloading '%distributionUrl%' archive using curl. >&2
       exit /b 1
     )
 
@@ -49,7 +49,7 @@ if "%currentVersion%" neq "%samtVersion%" (
   )
 
   tar xf .samt\cli\cli.tar -C .samt\cli || (
-    echo An error occured while unpacking .samt\cli\cli.tar using tar. >&2
+    echo An error occurred while unpacking .samt\cli\cli.tar using tar. >&2
     exit /b 1
   )
 

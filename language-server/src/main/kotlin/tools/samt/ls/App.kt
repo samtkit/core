@@ -10,7 +10,9 @@ import java.net.Socket
 private fun startServer(inStream: InputStream, outStream: OutputStream) {
     SamtLanguageServer().use {
         val launcher = LSPLauncher.createServerLauncher(it, inStream, outStream)
-        it.connect(launcher.remoteProxy)
+        val client = launcher.remoteProxy
+        redirectLogs(client)
+        it.connect(client)
         launcher.startListening().get()
     }
 }

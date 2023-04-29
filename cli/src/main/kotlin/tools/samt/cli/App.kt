@@ -12,7 +12,7 @@ fun main(args: Array<String>) {
     val cliArgs = CliArgs()
     val jCommander = JCommander.newBuilder()
         .addObject(cliArgs)
-        .programName("java -jar samt-cli.jar")
+        .programName("./samtw")
         .build()
     jCommander.parse(*args)
     if (cliArgs.help) {

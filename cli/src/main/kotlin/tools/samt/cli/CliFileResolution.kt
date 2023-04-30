@@ -31,5 +31,5 @@ internal fun List<String>.readSamtSourceFiles(controller: DiagnosticController):
 
 internal fun gatherSamtFiles(directory: String): List<File> {
     val dir = File(directory)
-    return dir.walkTopDown().filter { it.extension == "samt" }.toList()
+    return dir.walkTopDown().filter { it.isFile && it.extension == "samt" }.toList()
 }

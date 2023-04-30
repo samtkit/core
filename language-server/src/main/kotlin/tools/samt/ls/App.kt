@@ -4,15 +4,16 @@ import com.beust.jcommander.JCommander
 import org.eclipse.lsp4j.launch.LSPLauncher
 import java.io.InputStream
 import java.io.OutputStream
-import java.net.ServerSocket
+import java.io.PrintWriter
 import java.net.Socket
 
+
 private fun startServer(inStream: InputStream, outStream: OutputStream) {
-    SamtLanguageServer().use {
-        val launcher = LSPLauncher.createServerLauncher(it, inStream, outStream)
+    SamtLanguageServer().use { server ->
+        val launcher = LSPLauncher.createServerLauncher(server, inStream, outStream, false, PrintWriter(System.out))
         val client = launcher.remoteProxy
         redirectLogs(client)
-        it.connect(client)
+        server.connect(client)
         launcher.startListening().get()
     }
 }
@@ -20,9 +21,9 @@ private fun startServer(inStream: InputStream, outStream: OutputStream) {
 fun main(args: Array<String>) {
     val cliArgs = CliArgs()
     val jCommander = JCommander.newBuilder()
-        .addObject(cliArgs)
-        .programName("java -jar samt-ls.jar")
-        .build()
+            .addObject(cliArgs)
+            .programName("java -jar samt-ls.jar")
+            .build()
     jCommander.parse(*args)
     if (cliArgs.help) {
         jCommander.usage()
@@ -33,15 +34,6 @@ fun main(args: Array<String>) {
         Socket(cliArgs.clientHost, port).use {
             println("Connecting to client at ${it.remoteSocketAddress}:${it.port}")
             startServer(it.inputStream, it.outputStream)
-        }
-        return
-    }
-
-    cliArgs.serverPort?.also { port ->
-        ServerSocket(port).use {
-            println("Starting server on port ${it.localPort}")
-            val socket = it.accept()
-            startServer(socket.inputStream, socket.outputStream)
         }
         return
     }

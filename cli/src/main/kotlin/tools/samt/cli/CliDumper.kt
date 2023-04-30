@@ -18,18 +18,17 @@ internal fun dump(command: DumpCommand, terminal: Terminal, controller: Diagnost
     val fileNodes = buildList {
         for (source in sourceFiles) {
             val context = controller.createContext(source)
-            val reader = source.content.reader()
 
             if (command.dumpTokens) {
                 // create duplicate scan because sequence can only be iterated once
-                val tokenStream = Lexer.scan(reader, context)
+                val tokenStream = Lexer.scan(source.content.reader(), context)
                 terminal.println("Tokens for ${source.absolutePath}:")
                 terminal.println(TokenPrinter.dump(tokenStream))
                 // clear the diagnostic messages so that messages aren't duplicated
                 context.messages.clear()
             }
 
-            val tokenStream = Lexer.scan(reader, context)
+            val tokenStream = Lexer.scan(source.content.reader(), context)
 
             if (context.hasErrors()) {
                 continue

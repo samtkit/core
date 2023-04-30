@@ -4,6 +4,7 @@ import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.services.*
 import java.io.Closeable
 import java.util.concurrent.CompletableFuture
+import kotlin.system.exitProcess
 
 class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     private lateinit var client: LanguageClient
@@ -18,7 +19,7 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     override fun shutdown(): CompletableFuture<Any> = CompletableFuture.completedFuture(null)
 
     override fun exit() {
-        TODO("Not yet implemented")
+        exitProcess(0)
     }
 
     override fun getTextDocumentService(): TextDocumentService? = null

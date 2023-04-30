@@ -8,9 +8,9 @@ import java.io.PrintWriter
 import java.net.Socket
 
 
-private fun startServer(inStream: InputStream, outStream: OutputStream) {
+private fun startServer(inStream: InputStream, outStream: OutputStream, trace: PrintWriter? = null) {
     SamtLanguageServer().use { server ->
-        val launcher = LSPLauncher.createServerLauncher(server, inStream, outStream, false, PrintWriter(System.out))
+        val launcher = LSPLauncher.createServerLauncher(server, inStream, outStream, false, trace)
         val client = launcher.remoteProxy
         redirectLogs(client)
         server.connect(client)
@@ -32,8 +32,8 @@ fun main(args: Array<String>) {
 
     cliArgs.clientPort?.also { port ->
         Socket(cliArgs.clientHost, port).use {
-            println("Connecting to client at ${it.remoteSocketAddress}:${it.port}")
-            startServer(it.inputStream, it.outputStream)
+            println("Connecting to client at ${it.remoteSocketAddress}")
+            startServer(it.inputStream, it.outputStream, PrintWriter(System.out))
         }
         return
     }

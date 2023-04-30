@@ -33,7 +33,10 @@ fun main(args: Array<String>) {
         "compile" -> compile(compileCommand, controller)
         "dump" -> dump(dumpCommand, terminal, controller)
         "wrapper" -> wrapper(wrapperCommand, terminal, controller)
-        else -> jCommander.usage()
+        else -> {
+            jCommander.usage()
+            return
+        }
     }
     val currentTimestamp = System.currentTimeMillis()
 

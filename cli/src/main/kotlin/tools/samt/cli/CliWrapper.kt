@@ -10,16 +10,14 @@ import java.io.File
 import java.net.URL
 
 internal fun wrapper(command: WrapperCommand, terminal: Terminal, controller: DiagnosticController) {
-    val workingDirectory = controller.workingDirectoryAbsolutePath
-    val wrapperDirectory = File(workingDirectory, "wrapper")
+    val workingDirectory = File(controller.workingDirectoryAbsolutePath)
+    val dotSamtDirectory = File(workingDirectory, ".samt")
 
     if (command.init) {
         terminal.println("Initializing the SAMT wrapper in this directory...")
-        if (!wrapperDirectory.mkdirs()) {
-            controller.reportGlobalWarning("The SAMT wrapper has already been initialized, overriding existing files")
-        }
+        dotSamtDirectory.mkdirs()
 
-        fun downloadFile(file: String) {
+        fun downloadFile(file: String, targetDirectory: File, executable: Boolean) {
             try {
                 val fileName = if (command.initSource.endsWith("/")) {
                     "${command.initSource}$file"
@@ -27,25 +25,38 @@ internal fun wrapper(command: WrapperCommand, terminal: Terminal, controller: Di
                     "${command.initSource}/$file"
                 }
 
+                val targetFile = File(targetDirectory, file)
+                val fileExisted = targetFile.exists()
+
                 URL(fileName).openStream().use { input ->
-                    File(wrapperDirectory, file).outputStream().use { output ->
+                    targetFile.outputStream().use { output ->
                         input.copyTo(output)
                     }
                 }
-                controller.reportGlobalInfo("Downloaded $file from $fileName")
+                if (executable) {
+                    targetFile.setExecutable(true)
+                }
+
+                if (fileExisted) {
+                    controller.reportGlobalWarning("Downloaded $file from $fileName, overwriting existing file")
+                } else {
+                    controller.reportGlobalInfo("Downloaded $file from $fileName")
+                }
             } catch (e: Exception) {
                 controller.reportGlobalError("Failed to download $file from ${command.initSource} (exception: $e)")
             }
         }
 
-        downloadFile("samtw")
-        downloadFile("samtw.bat")
-        downloadFile("samt-wrapper.properties")
+        downloadFile("samtw", workingDirectory, executable = true)
+        downloadFile("samtw.bat", workingDirectory, executable = true)
+        downloadFile("samt-wrapper.properties", dotSamtDirectory, executable = false)
 
         controller.reportGlobalInfo("The SAMT wrapper has been initialized in this directory")
     }
 
-    if (!wrapperDirectory.exists()) {
+    val wrapperPropertiesFile = File(dotSamtDirectory, "samt-wrapper.properties")
+
+    if (!wrapperPropertiesFile.exists()) {
         controller.reportGlobalError("The SAMT wrapper has not been initialized in this directory, run './samtw wrapper --init' to initialize it")
         return
     }
@@ -67,7 +78,6 @@ internal fun wrapper(command: WrapperCommand, terminal: Terminal, controller: Di
         else -> command.version
     }
 
-    val wrapperPropertiesFile = File(wrapperDirectory, "samt-wrapper.properties")
     val wrapperProperties = wrapperPropertiesFile.readText()
 
     var currentVersion: String? = null

@@ -650,6 +650,43 @@ class SemanticModelTest {
                 service to emptyList(),
             )
         }
+
+        @Test
+        fun `cannot use or implement same service multiple times`() {
+            val consumer = """
+                import providers.FooEndpoint as Provider
+                import services.FooService as Service
+
+                package consumers
+
+                consume Provider {
+                    uses Service { foo }
+                    uses services.FooService
+                }
+            """.trimIndent()
+            val provider = """
+                import services.*
+                package providers
+
+                provide FooEndpoint {
+                    implements FooService
+                    implements FooService
+                    transport HTTP
+                }
+            """.trimIndent()
+            val service = """
+                package services
+
+                service FooService {
+                    foo()
+                }
+            """.trimIndent()
+            parseAndCheck(
+                consumer to listOf("Error: Service 'FooService' already used"),
+                provider to listOf("Error: Service 'FooService' already implemented"),
+                service to emptyList(),
+            )
+        }
     }
 
     private fun parseAndCheck(

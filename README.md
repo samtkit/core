@@ -22,6 +22,7 @@ Get started with SAMT, learn fundamental concepts or extend SAMT with a custom g
 
 - [Getting Started](https://github.com/samtkit/core/wiki/Getting-Started)
 - [Modeling Concepts](https://github.com/samtkit/core/wiki/Modeling-Concepts)
+- [SAMT Template](https://github.com/samtkit/template)
 - [Visual Studio Code Plugin](https://marketplace.visualstudio.com/items?itemName=samt.samt)
 
 ### Advanced

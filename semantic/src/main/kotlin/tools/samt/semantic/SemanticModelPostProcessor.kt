@@ -1,6 +1,7 @@
 package tools.samt.semantic
 
 import tools.samt.common.DiagnosticController
+import tools.samt.common.Location
 
 internal class SemanticModelPostProcessor(private val controller: DiagnosticController) {
     /**
@@ -139,8 +140,18 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
     }
 
     private fun checkProvider(provider: ProviderType) {
+        val implementsTypes = mutableMapOf<ServiceType, Location>()
         provider.implements.forEach { implements ->
             checkServiceType(implements.service) { type ->
+                implementsTypes.putIfAbsent(type, implements.definition.location)?.let { existingLocation ->
+                    controller.createContext(implements.definition.location.source).error {
+                        message("Service '${type.name}' already implemented")
+                        highlight("duplicate implements", implements.definition.location)
+                        highlight("previous implements", existingLocation)
+                    }
+                    return@forEach
+                }
+
                 implements.operations = if (implements.definition.serviceOperationNames.isEmpty()) {
                     type.operations
                 } else {
@@ -162,9 +173,19 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
     }
 
     private fun checkConsumer(consumer: ConsumerType) {
+        val usesTypes = mutableMapOf<ServiceType, Location>()
         checkProviderType(consumer.provider) { providerType ->
             consumer.uses.forEach { uses ->
                 checkServiceType(uses.service) { type ->
+                    usesTypes.putIfAbsent(type, uses.definition.location)?.let { existingLocation ->
+                        controller.createContext(uses.definition.location.source).error {
+                            message("Service '${type.name}' already used")
+                            highlight("duplicate uses", uses.definition.location)
+                            highlight("previous uses", existingLocation)
+                        }
+                        return@forEach
+                    }
+
                     val matchingImplements =
                         providerType.implements.find { (it.service as ResolvedTypeReference).type == type }
                     if (matchingImplements == null) {

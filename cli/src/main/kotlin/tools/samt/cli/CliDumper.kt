@@ -14,12 +14,14 @@ internal fun dump(command: DumpCommand, terminal: Terminal, controller: Diagnost
         return
     }
 
+    val dumpAll = !command.dumpTokens && !command.dumpAst && !command.dumpTypes
+
     // attempt to parse each source file into an AST
     val fileNodes = buildList {
         for (source in sourceFiles) {
             val context = controller.createContext(source)
 
-            if (command.dumpTokens) {
+            if (dumpAll || command.dumpTokens) {
                 // create duplicate scan because sequence can only be iterated once
                 val tokenStream = Lexer.scan(source.content.reader(), context)
                 terminal.println("Tokens for ${source.absolutePath}:")
@@ -41,7 +43,7 @@ internal fun dump(command: DumpCommand, terminal: Terminal, controller: Diagnost
                 continue
             }
 
-            if (command.dumpAst) {
+            if (dumpAll || command.dumpAst) {
                 terminal.println(ASTPrinter.dump(fileNode))
             }
 
@@ -61,7 +63,7 @@ internal fun dump(command: DumpCommand, terminal: Terminal, controller: Diagnost
     // build up the semantic model from the AST
     SemanticModelBuilder.build(fileNodes, controller)
 
-    if (command.dumpTypes) {
+    if (dumpAll || command.dumpTypes) {
         terminal.println("Types:")
         terminal.println("Not yet implemented")
         // Type dumper will be added here

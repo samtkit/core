@@ -153,7 +153,6 @@ class DiagnosticMessageBuilder(
 
     fun build(): DiagnosticMessage {
         requireNotNull(message)
-        highlights.sortWith(compareBy({ it.location.start.row }, { it.location.start.col }))
         return DiagnosticMessage(severity, message!!, highlights, annotations)
     }
 }

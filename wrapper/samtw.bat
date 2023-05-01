@@ -50,6 +50,8 @@ if "%currentVersion%" neq "%samtVersion%" (
     exit /b 1
   )
 
+  del .samt\wrapper\cli.tar
+
   echo %samtVersion%> .samt\wrapper\version.txt
 )
 

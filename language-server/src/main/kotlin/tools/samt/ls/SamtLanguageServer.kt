@@ -12,11 +12,17 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     private val textDocumentService = SamtTextDocumentService()
     private val logger = Logger.getLogger("SamtLanguageServer")
 
-    override fun initialize(params: InitializeParams): CompletableFuture<InitializeResult> = CompletableFuture.supplyAsync {
-        val capabilities = ServerCapabilities().apply {
-            diagnosticProvider = DiagnosticRegistrationOptions(true, false)
+    override fun initialize(params: InitializeParams): CompletableFuture<InitializeResult> =
+        CompletableFuture.supplyAsync {
+            val capabilities = ServerCapabilities().apply {
+                // TODO support pull-based diagnostics? diagnosticProvider = DiagnosticRegistrationOptions(true, false)
+                setTextDocumentSync(TextDocumentSyncKind.Full)
+            }
+            InitializeResult(capabilities)
         }
-        InitializeResult(capabilities)
+
+    override fun setTrace(params: SetTraceParams?) {
+        // TODO
     }
 
     override fun shutdown(): CompletableFuture<Any> = CompletableFuture.completedFuture(null)

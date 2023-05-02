@@ -22,6 +22,7 @@ Get started with SAMT, learn fundamental concepts or extend SAMT with a custom g
 
 - [Getting Started](https://github.com/samtkit/core/wiki/Getting-Started)
 - [Modeling Concepts](https://github.com/samtkit/core/wiki/Modeling-Concepts)
+- [SAMT Template](https://github.com/samtkit/template)
 - [Visual Studio Code Plugin](https://marketplace.visualstudio.com/items?itemName=samt.samt)
 
 ### Advanced
@@ -31,7 +32,8 @@ Get started with SAMT, learn fundamental concepts or extend SAMT with a custom g
 
 ## Development Setup
 
-SAMT is written in [Kotlin](https://kotlinlang.org/) and uses [Gradle](https://gradle.org/) as a build tool, for the best developer experience we recommend using [IntelliJ](https://www.jetbrains.com/idea/).
+SAMT is written in [Kotlin](https://kotlinlang.org/) and uses [Gradle](https://gradle.org/) as a build tool,
+for the best developer experience we recommend using [IntelliJ IDEA](https://www.jetbrains.com/idea/).
 
 If you want to start SAMT locally, simply clone the repository and compile it using Gradle:
 
@@ -39,23 +41,15 @@ If you want to start SAMT locally, simply clone the repository and compile it us
 ./gradlew assemble
 ```
 
-You can also compile the CLI module locally:
+And then use this locally compiled SAMT to compile your SAMT files:
 
 ```shell
-./gradlew :cli:shadowJar
+java -jar ./cli/build/libs/samt-cli.jar compile ./specification/examples/todo-service/*.samt
 ```
 
-And then compile SAMT files using this locally compiled version:
-
-```shell
-java -jar ./cli/build/libs/samt-cli.jar ./specification/examples/todo-service/*.samt
-```
-
-If you're more interested in the [SAMT Visual Studio Code plugin](https://github.com/samtkit/vscode) or the related language server, you can also compile it locally as well:
-
-```shell
-./gradlew :language-server:shadowJar
-```
+If you are interested in learning about the functionality and operation of the [SAMT Visual Studio Code Plugin](https://github.com/samtkit/vscode)
+or methods for running and debugging the related language server on your local machine,
+related documentation is available in the [SAMT VS Code Wiki](https://github.com/samtkit/vscode/wiki).
 
 ## Contributing
 

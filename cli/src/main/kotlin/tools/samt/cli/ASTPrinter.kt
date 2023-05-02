@@ -5,7 +5,7 @@ import com.github.ajalt.mordant.rendering.TextStyles.bold
 import com.github.ajalt.mordant.rendering.TextStyles.underline
 import tools.samt.parser.*
 
-object ASTPrinter {
+internal object ASTPrinter {
     fun dump(node: Node): String = buildString {
         val topLevelStyle = (red + bold + underline)
         val expressionStyle = (blue + bold)
@@ -53,8 +53,6 @@ object ASTPrinter {
                 firstLine = false
             }
         }
-
-        appendLine()
     }
 
     private fun dumpInfo(node: Node): String? = when (node) {

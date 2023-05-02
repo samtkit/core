@@ -34,7 +34,7 @@ class DiagnosticFormatterTest {
             INFO: This is a global info
             
             ────────────────────────────────────────
-            BUILD FAILED in 0ms (1 error(s), 1 warning(s))
+            FAILED in 0ms (1 error(s), 1 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -76,7 +76,7 @@ class DiagnosticFormatterTest {
              ---> test.txt
             
             ────────────────────────────────────────
-            BUILD FAILED in 0ms (1 error(s), 1 warning(s))
+            FAILED in 0ms (1 error(s), 1 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -112,7 +112,7 @@ class DiagnosticFormatterTest {
             |>    4 │ }
             
             ────────────────────────────────────────
-            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
+            FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -151,7 +151,7 @@ class DiagnosticFormatterTest {
                     │ 
             
             ────────────────────────────────────────
-            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
+            FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -200,7 +200,7 @@ class DiagnosticFormatterTest {
                   7 │ }
             
             ────────────────────────────────────────
-            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
+            FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -263,7 +263,7 @@ class DiagnosticFormatterTest {
                  14 │ }
             
             ────────────────────────────────────────
-            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
+            FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -309,7 +309,7 @@ class DiagnosticFormatterTest {
                   4 │ }
             
             ────────────────────────────────────────
-            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
+            FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -354,7 +354,7 @@ class DiagnosticFormatterTest {
                     = help: help annotation
             
             ────────────────────────────────────────
-            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
+            FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -392,7 +392,7 @@ class DiagnosticFormatterTest {
                   4 │ }
             
             ────────────────────────────────────────
-            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
+            FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -432,7 +432,7 @@ class DiagnosticFormatterTest {
                   4 │ }
             
             ────────────────────────────────────────
-            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
+            FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
@@ -475,7 +475,7 @@ class DiagnosticFormatterTest {
                   4 │ }
             
             ────────────────────────────────────────
-            BUILD FAILED in 0ms (1 error(s), 0 warning(s))
+            FAILED in 0ms (1 error(s), 0 warning(s))
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 

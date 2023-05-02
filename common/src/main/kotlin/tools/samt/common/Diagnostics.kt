@@ -34,10 +34,10 @@ data class SourceFile(
 
     // the content of the source file as a string
     val content: String,
-
+) {
     // each line of the source file
-    val sourceLines: List<String> = content.lines(),
-)
+    val sourceLines: List<String> = content.lines()
+}
 
 class DiagnosticException(message: DiagnosticMessage) : RuntimeException(message.message)
 

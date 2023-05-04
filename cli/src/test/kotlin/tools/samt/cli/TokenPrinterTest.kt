@@ -49,7 +49,7 @@ class TokenPrinterTest {
         val filePath = "/tmp/TokenPrinterTest.samt"
         val sourceFile = SourceFile(filePath, source)
         val diagnosticController = DiagnosticController("/tmp")
-        val diagnosticContext = diagnosticController.createContext(sourceFile)
+        val diagnosticContext = diagnosticController.getOrCreateContext(sourceFile)
         val stream = Lexer.scan(source.reader(), diagnosticContext)
         assertFalse(diagnosticContext.hasErrors(), "Expected no errors, but had errors")
         return stream

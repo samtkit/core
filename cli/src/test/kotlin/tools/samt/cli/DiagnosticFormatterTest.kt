@@ -45,7 +45,7 @@ class DiagnosticFormatterTest {
         val controller = DiagnosticController(baseDirectory)
         val source = ""
         val sourceFile = SourceFile(filePath, source)
-        val context = controller.createContext(sourceFile)
+        val context = controller.getOrCreateContext(sourceFile)
 
         context.error {
             message("some error")
@@ -484,7 +484,7 @@ class DiagnosticFormatterTest {
         val filePath = Path("/tmp", "DiagnosticFormatterTest.samt").absolutePathString()
         val sourceFile = SourceFile(filePath, source)
         val diagnosticController = DiagnosticController(baseDirectory)
-        val diagnosticContext = diagnosticController.createContext(sourceFile)
+        val diagnosticContext = diagnosticController.getOrCreateContext(sourceFile)
         val stream = Lexer.scan(source.reader(), diagnosticContext)
         val fileTree = Parser.parse(sourceFile, stream, diagnosticContext)
         assertFalse(diagnosticContext.hasErrors(), "Expected no errors, but had errors")

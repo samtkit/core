@@ -19,7 +19,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
 
       - name: Build CLI
-        run: ./gradlew --no-daemon :cli:shadowDistZip :cli:shadowDistTar
+        run: ./gradlew --no-daemon :cli:shadowDistZip :cli:shadowDistTar :language-server:shadowJar
 
       - name: Rename cli-shadow to cli
         run: |
@@ -32,4 +32,5 @@ jobs:
           files: |
             cli/build/distributions/cli.zip
             cli/build/distributions/cli.tar
+            language-server/build/libs/samt-ls.jar
           fail_on_unmatched_files: true

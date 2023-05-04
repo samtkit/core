@@ -19,7 +19,7 @@ internal fun dump(command: DumpCommand, terminal: Terminal, controller: Diagnost
     // attempt to parse each source file into an AST
     val fileNodes = buildList {
         for (source in sourceFiles) {
-            val context = controller.createContext(source)
+            val context = controller.getOrCreateContext(source)
 
             if (dumpAll || command.dumpTokens) {
                 // create duplicate scan because sequence can only be iterated once

@@ -16,7 +16,7 @@ internal fun compile(command: CompileCommand, controller: DiagnosticController) 
     // attempt to parse each source file into an AST
     val fileNodes = buildList {
         for (source in sourceFiles) {
-            val context = controller.createContext(source)
+            val context = controller.getOrCreateContext(source)
             val tokenStream = Lexer.scan(source.content.reader(), context)
 
             if (context.hasErrors()) {

@@ -2,6 +2,7 @@ package tools.samt.ls
 
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.services.*
+import tools.samt.common.*
 import java.io.Closeable
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
@@ -9,13 +10,14 @@ import kotlin.system.exitProcess
 
 class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     private lateinit var client: LanguageClient
-    private val textDocumentService = SamtTextDocumentService()
     private val logger = Logger.getLogger("SamtLanguageServer")
+    private val workspaces = mutableMapOf<String, SamtWorkspace>()
+    private val textDocumentService = SamtTextDocumentService(workspaces)
 
     override fun initialize(params: InitializeParams): CompletableFuture<InitializeResult> =
         CompletableFuture.supplyAsync {
+            buildSamtModel(params)
             val capabilities = ServerCapabilities().apply {
-                // TODO support pull-based diagnostics? diagnosticProvider = DiagnosticRegistrationOptions(true, false)
                 setTextDocumentSync(TextDocumentSyncKind.Full)
             }
             InitializeResult(capabilities)
@@ -43,5 +45,32 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
 
     override fun close() {
         shutdown().get()
+    }
+
+    private fun buildSamtModel(params: InitializeParams) {
+        params.workspaceFolders.forEach {
+            val path = it.uri.uriToPath()
+            workspaces[path] = buildWorkspace(path)
+        }
+    }
+
+    private fun buildWorkspace(workspacePath: String): SamtWorkspace {
+        val diagnosticController = DiagnosticController(workspacePath)
+        val sourceFiles = collectSamtFiles(workspacePath).readSamtSource(diagnosticController)
+        val workspace = SamtWorkspace(diagnosticController)
+        sourceFiles.asSequence().map(::parseFile).forEach(workspace::add)
+        workspace.buildSemanticModel()
+        return workspace
+    }
+
+    private fun pushDiagnostics() {
+        workspaces.values.flatMap { workspace ->
+            workspace.getAllMessages().map { (path, messages) ->
+                PublishDiagnosticsParams(
+                    path.pathToUri(),
+                    messages.map { it.toDiagnostic() }
+                )
+            }
+        }.forEach(client::publishDiagnostics)
     }
 }

@@ -56,7 +56,7 @@ class DiagnosticController(val workingDirectoryAbsolutePath: String) {
     /**
      * Creates a new diagnostic context for the given source file or returns already existing one.
      * */
-    fun createContext(source: SourceFile): DiagnosticContext {
+    fun getOrCreateContext(source: SourceFile): DiagnosticContext {
         val foundContext = contexts.find { it.source == source}
         if (foundContext != null) return foundContext
         return DiagnosticContext(source).also { contexts.add(it) }

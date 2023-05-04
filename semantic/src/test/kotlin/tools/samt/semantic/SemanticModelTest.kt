@@ -696,7 +696,7 @@ class SemanticModelTest {
         val fileTrees = sourceAndExpectedMessages.mapIndexed { index, (source) ->
             val filePath = "/tmp/SemanticModelTest-${index}.samt"
             val sourceFile = SourceFile(filePath, source)
-            val parseContext = diagnosticController.createContext(sourceFile)
+            val parseContext = diagnosticController.getOrCreateContext(sourceFile)
             val stream = Lexer.scan(source.reader(), parseContext)
             val fileTree = Parser.parse(sourceFile, stream, parseContext)
             assertFalse(parseContext.hasErrors(), "Expected no parse errors, but had errors: ${parseContext.messages}}")

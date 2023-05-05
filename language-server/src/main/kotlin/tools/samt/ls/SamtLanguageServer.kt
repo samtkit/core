@@ -6,6 +6,7 @@ import tools.samt.common.*
 import java.io.Closeable
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
+import kotlin.io.path.Path
 import kotlin.system.exitProcess
 
 class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
@@ -48,9 +49,11 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     }
 
     private fun buildSamtModel(params: InitializeParams) {
-        params.workspaceFolders.forEach {
-            val path = it.uri.uriToPath()
-            workspaces[path] = buildWorkspace(path)
+        val folders = params.workspaceFolders.map { it.uri.uriToPath() }
+        for (folder in folders) {
+            // if the folder is contained within another folder ignore it
+            if (folders.any { folder != it && Path(folder).startsWith(it) }) continue
+            workspaces[folder] = buildWorkspace(folder)
         }
     }
 

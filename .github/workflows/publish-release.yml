@@ -34,3 +34,5 @@ jobs:
             cli/build/distributions/cli.tar
             language-server/build/libs/samt-ls.jar
           fail_on_unmatched_files: true
+          draft: true
+          generate_release_notes: true

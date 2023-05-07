@@ -15,6 +15,7 @@ class ASTPrinterTest {
     fun `correctly formats an AST dump`() {
         val fileNode = parse("""
             import foo.bar.baz.*
+            import foo.bar.baz.A as B
 
             package test.stuff
 
@@ -23,8 +24,9 @@ class ASTPrinterTest {
               age: Integer(0..150)
             }
 
-            record B {}
+            enum E { A, B, C }
 
+            @Description("This is a service")
             service MyService {
               testmethod(foo: A): B
             }
@@ -40,44 +42,57 @@ class ASTPrinterTest {
             │   ├─IdentifierNode foo <1:8>
             │   ├─IdentifierNode bar <1:12>
             │   └─IdentifierNode baz <1:16>
-            ├─PackageDeclarationNode <3:1>
-            │ └─BundleIdentifierNode test.stuff <3:9>
-            │   ├─IdentifierNode test <3:9>
-            │   └─IdentifierNode stuff <3:14>
-            ├─RecordDeclarationNode <5:1>
-            │ ├─IdentifierNode A <5:8>
-            │ ├─RecordFieldNode <6:3>
-            │ │ ├─IdentifierNode name <6:3>
-            │ │ └─CallExpressionNode <6:9>
-            │ │   ├─BundleIdentifierNode String <6:9>
-            │ │   │ └─IdentifierNode String <6:9>
-            │ │   ├─RangeExpressionNode <6:16>
-            │ │   │ ├─IntegerNode 10 <6:16>
-            │ │   │ └─IntegerNode 20 <6:20>
-            │ │   └─CallExpressionNode <6:24>
-            │ │     ├─BundleIdentifierNode pattern <6:24>
-            │ │     │ └─IdentifierNode pattern <6:24>
-            │ │     └─StringNode "hehe" <6:32>
-            │ └─RecordFieldNode <7:3>
-            │   ├─IdentifierNode age <7:3>
-            │   └─CallExpressionNode <7:8>
-            │     ├─BundleIdentifierNode Integer <7:8>
-            │     │ └─IdentifierNode Integer <7:8>
-            │     └─RangeExpressionNode <7:16>
-            │       ├─IntegerNode 0 <7:16>
-            │       └─IntegerNode 150 <7:19>
-            ├─RecordDeclarationNode <10:1>
-            │ └─IdentifierNode B <10:8>
-            └─ServiceDeclarationNode <12:1>
-              ├─IdentifierNode MyService <12:9>
-              └─RequestResponseOperationNode <13:3>
-                ├─IdentifierNode testmethod <13:3>
-                ├─OperationParameterNode <13:14>
-                │ ├─IdentifierNode foo <13:14>
-                │ └─BundleIdentifierNode A <13:19>
-                │   └─IdentifierNode A <13:19>
-                └─BundleIdentifierNode B <13:23>
-                  └─IdentifierNode B <13:23>
+            ├─TypeImportNode <2:1>
+            │ ├─ImportBundleIdentifierNode foo.bar.baz.A <2:8>
+            │ │ ├─IdentifierNode foo <2:8>
+            │ │ ├─IdentifierNode bar <2:12>
+            │ │ ├─IdentifierNode baz <2:16>
+            │ │ └─IdentifierNode A <2:20>
+            │ └─IdentifierNode B <2:25>
+            ├─PackageDeclarationNode <4:1>
+            │ └─BundleIdentifierNode test.stuff <4:9>
+            │   ├─IdentifierNode test <4:9>
+            │   └─IdentifierNode stuff <4:14>
+            ├─RecordDeclarationNode <6:1>
+            │ ├─IdentifierNode A <6:8>
+            │ ├─RecordFieldNode <7:3>
+            │ │ ├─IdentifierNode name <7:3>
+            │ │ └─CallExpressionNode <7:9>
+            │ │   ├─BundleIdentifierNode String <7:9>
+            │ │   │ └─IdentifierNode String <7:9>
+            │ │   ├─RangeExpressionNode <7:16>
+            │ │   │ ├─IntegerNode 10 <7:16>
+            │ │   │ └─IntegerNode 20 <7:20>
+            │ │   └─CallExpressionNode <7:24>
+            │ │     ├─BundleIdentifierNode pattern <7:24>
+            │ │     │ └─IdentifierNode pattern <7:24>
+            │ │     └─StringNode "hehe" <7:32>
+            │ └─RecordFieldNode <8:3>
+            │   ├─IdentifierNode age <8:3>
+            │   └─CallExpressionNode <8:8>
+            │     ├─BundleIdentifierNode Integer <8:8>
+            │     │ └─IdentifierNode Integer <8:8>
+            │     └─RangeExpressionNode <8:16>
+            │       ├─IntegerNode 0 <8:16>
+            │       └─IntegerNode 150 <8:19>
+            ├─EnumDeclarationNode <11:1>
+            │ ├─IdentifierNode E <11:6>
+            │ ├─IdentifierNode A <11:10>
+            │ ├─IdentifierNode B <11:13>
+            │ └─IdentifierNode C <11:16>
+            └─ServiceDeclarationNode <14:1>
+              ├─IdentifierNode MyService <14:9>
+              ├─RequestResponseOperationNode <15:3>
+              │ ├─IdentifierNode testmethod <15:3>
+              │ ├─OperationParameterNode <15:14>
+              │ │ ├─IdentifierNode foo <15:14>
+              │ │ └─BundleIdentifierNode A <15:19>
+              │ │   └─IdentifierNode A <15:19>
+              │ └─BundleIdentifierNode B <15:23>
+              │   └─IdentifierNode B <15:23>
+              └─AnnotationNode <13:1>
+                ├─IdentifierNode Description <13:2>
+                └─StringNode "This is a service" <13:14>
         """.trimIndent().trim(), dumpWithoutColorCodes.trimIndent().trim())
     }
 

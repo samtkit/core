@@ -112,12 +112,13 @@ object DurationType : LiteralType {
 
 sealed interface CompoundType : Type
 
-sealed interface UserDefinedType : Type {
-    val definition: Node
+sealed interface UserDeclared {
+    val declaration: Node
 }
 
 data class ListType(
     val elementType: TypeReference,
+    val node: GenericSpecializationNode,
 ) : CompoundType {
     override val humanReadableName: String = "List<${elementType.humanReadableName}>"
 }
@@ -125,6 +126,7 @@ data class ListType(
 data class MapType(
     val keyType: TypeReference,
     val valueType: TypeReference,
+    val node: GenericSpecializationNode,
 ) : CompoundType {
     override val humanReadableName: String = "Map<${keyType.humanReadableName}, ${valueType.humanReadableName}>"
 }
@@ -132,11 +134,12 @@ data class MapType(
 data class RecordType(
     val name: String,
     val fields: List<Field>,
-    override val definition: RecordDeclarationNode,
-) : CompoundType, UserDefinedType {
+    override val declaration: RecordDeclarationNode,
+) : CompoundType, UserDeclared {
     data class Field(
         val name: String,
         var type: TypeReference,
+        val declaration: RecordFieldNode,
     )
 
     override val humanReadableName: String = name
@@ -145,37 +148,41 @@ data class RecordType(
 data class EnumType(
     val name: String,
     val values: List<String>,
-    override val definition: EnumDeclarationNode,
-) : CompoundType, UserDefinedType {
+    override val declaration: EnumDeclarationNode,
+) : CompoundType, UserDeclared {
     override val humanReadableName: String = name
 }
 
 data class ServiceType(
     val name: String,
     val operations: List<Operation>,
-    override val definition: ServiceDeclarationNode,
-) : CompoundType, UserDefinedType {
-    sealed class Operation(
-        val name: String,
-        val parameters: List<Parameter>,
-    ) {
+    override val declaration: ServiceDeclarationNode,
+) : CompoundType, UserDeclared {
+    sealed interface Operation : UserDeclared {
+        val name: String
+        val parameters: List<Parameter>
+        override val declaration: OperationNode
         data class Parameter(
             val name: String,
             var type: TypeReference,
-        )
+            override val declaration: OperationParameterNode,
+        ): UserDeclared
     }
 
-    class RequestResponseOperation(
-        name: String,
-        parameters: List<Parameter>,
+    data class RequestResponseOperation(
+        override val name: String,
+        override val parameters: List<Operation.Parameter>,
+        override val declaration: RequestResponseOperationNode,
         var returnType: TypeReference?,
         var raisesTypes: List<TypeReference>,
-    ) : Operation(name, parameters)
+        val isAsync: Boolean,
+    ) : Operation
 
-    class OnewayOperation(
-        name: String,
-        parameters: List<Parameter>,
-    ) : Operation(name, parameters)
+    data class OnewayOperation(
+        override val name: String,
+        override val parameters: List<Operation.Parameter>,
+        override val declaration: OnewayOperationNode,
+    ) : Operation
 
     override val humanReadableName: String = name
 }
@@ -184,12 +191,12 @@ data class ProviderType(
     val name: String,
     val implements: List<Implements>,
     val transport: Transport,
-    override val definition: ProviderDeclarationNode,
-) : CompoundType, UserDefinedType {
+    override val declaration: ProviderDeclarationNode,
+) : CompoundType, UserDeclared {
     data class Implements(
         var service: TypeReference,
         var operations: List<ServiceType.Operation>,
-        val definition: ProviderImplementsNode,
+        val node: ProviderImplementsNode,
     )
 
     data class Transport(
@@ -203,12 +210,12 @@ data class ProviderType(
 data class ConsumerType(
     var provider: TypeReference,
     var uses: List<Uses>,
-    override val definition: ConsumerDeclarationNode,
-) : CompoundType, UserDefinedType {
+    override val declaration: ConsumerDeclarationNode,
+) : CompoundType, UserDeclared {
     data class Uses(
         var service: TypeReference,
         var operations: List<ServiceType.Operation>,
-        val definition: ConsumerUsesNode,
+        val node: ConsumerUsesNode,
     )
 
     override val humanReadableName: String = "consumer for ${provider.humanReadableName}"
@@ -226,8 +233,11 @@ data class UnresolvedTypeReference(
 }
 
 data class ResolvedTypeReference(
-    val definition: ExpressionNode,
     val type: Type,
+    /** Includes only the type reference, e.g. "foo.bar.Baz", "Map" or "String" */
+    val typeNode: ExpressionNode,
+    /** Includes the full type reference, e.g. "List<String>? (1..100)" */
+    val fullNode: ExpressionNode = typeNode,
     val isOptional: Boolean = false,
     val constraints: List<Constraint> = emptyList(),
 ) : TypeReference {

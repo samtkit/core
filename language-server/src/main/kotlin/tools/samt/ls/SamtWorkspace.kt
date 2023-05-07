@@ -8,7 +8,8 @@ import java.net.URI
 
 class SamtWorkspace(private val parserController: DiagnosticController) : Iterable<FileInfo> {
     private val files = mutableMapOf<URI, FileInfo>()
-    private var samtPackage: Package? = null
+    var samtPackage: Package? = null
+        private set
     private var semanticController: DiagnosticController =
         DiagnosticController(parserController.workingDirectory)
 

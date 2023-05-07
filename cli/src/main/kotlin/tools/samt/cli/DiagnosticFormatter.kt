@@ -141,7 +141,7 @@ internal class DiagnosticFormatter(
 
         // -----> <file path>:<location>
         append(gray(" ---> "))
-        append(diagnosticController.workingDirectory.relativize(errorSourceFilePath))
+        append(errorSourceFilePath.toString())
         if (message.highlights.isNotEmpty()) {
             val firstHighlight = message.highlights.first()
             val firstHighlightLocation = firstHighlight.location

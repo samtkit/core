@@ -27,24 +27,24 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
         check(typeReference is ResolvedTypeReference)
         when (val type = typeReference.type) {
             is ServiceType -> {
-                controller.getOrCreateContext(typeReference.definition.location.source).error {
+                controller.getOrCreateContext(typeReference.typeNode.location.source).error {
                     // error message applies to both record fields and return types
                     message("Cannot use service '${type.name}' as type")
-                    highlight("service type not allowed here", typeReference.definition.location)
+                    highlight("service type not allowed here", typeReference.typeNode.location)
                 }
             }
 
             is ProviderType -> {
-                controller.getOrCreateContext(typeReference.definition.location.source).error {
+                controller.getOrCreateContext(typeReference.typeNode.location.source).error {
                     message("Cannot use provider '${type.name}' as type")
-                    highlight("provider type not allowed here", typeReference.definition.location)
+                    highlight("provider type not allowed here", typeReference.typeNode.location)
                 }
             }
 
             is PackageType -> {
-                controller.getOrCreateContext(typeReference.definition.location.source).error {
+                controller.getOrCreateContext(typeReference.typeNode.location.source).error {
                     message("Cannot use package '${type.packageName}' as type")
-                    highlight("package type not allowed here", typeReference.definition.location)
+                    highlight("package type not allowed here", typeReference.typeNode.location)
                 }
             }
 
@@ -64,7 +64,7 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
     private inline fun checkServiceType(typeReference: TypeReference, block: (serviceType: ServiceType) -> Unit) {
         check(typeReference is ResolvedTypeReference)
         if (typeReference.constraints.isNotEmpty()) {
-            controller.getOrCreateContext(typeReference.definition.location.source).error {
+            controller.getOrCreateContext(typeReference.fullNode.location.source).error {
                 message("Cannot have constraints on service")
                 for (constraint in typeReference.constraints) {
                     highlight("illegal constraint", constraint.node.location)
@@ -72,9 +72,9 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
             }
         }
         if (typeReference.isOptional) {
-            controller.getOrCreateContext(typeReference.definition.location.source).error {
+            controller.getOrCreateContext(typeReference.fullNode.location.source).error {
                 message("Cannot have optional service")
-                highlight("illegal optional", typeReference.definition.location)
+                highlight("illegal optional", typeReference.fullNode.location)
             }
         }
         when (val type = typeReference.type) {
@@ -84,9 +84,9 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
 
             is UnknownType -> Unit
             else -> {
-                controller.getOrCreateContext(typeReference.definition.location.source).error {
+                controller.getOrCreateContext(typeReference.typeNode.location.source).error {
                     message("Expected a service but got '${type.humanReadableName}'")
-                    highlight("illegal type", typeReference.definition.location)
+                    highlight("illegal type", typeReference.typeNode.location)
                 }
             }
         }
@@ -95,7 +95,7 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
     private inline fun checkProviderType(typeReference: TypeReference, block: (providerType: ProviderType) -> Unit) {
         check(typeReference is ResolvedTypeReference)
         if (typeReference.constraints.isNotEmpty()) {
-            controller.getOrCreateContext(typeReference.definition.location.source).error {
+            controller.getOrCreateContext(typeReference.fullNode.location.source).error {
                 message("Cannot have constraints on provider")
                 for (constraint in typeReference.constraints) {
                     highlight("illegal constraint", constraint.node.location)
@@ -103,9 +103,9 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
             }
         }
         if (typeReference.isOptional) {
-            controller.getOrCreateContext(typeReference.definition.location.source).error {
+            controller.getOrCreateContext(typeReference.fullNode.location.source).error {
                 message("Cannot have optional provider")
-                highlight("illegal optional", typeReference.definition.location)
+                highlight("illegal optional", typeReference.fullNode.location)
             }
         }
         when (val type = typeReference.type) {
@@ -115,9 +115,9 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
 
             is UnknownType -> Unit
             else -> {
-                controller.getOrCreateContext(typeReference.definition.location.source).error {
+                controller.getOrCreateContext(typeReference.typeNode.location.source).error {
                     message("Expected a provider but got '${type.humanReadableName}'")
-                    highlight("illegal type", typeReference.definition.location)
+                    highlight("illegal type", typeReference.typeNode.location)
                 }
             }
         }
@@ -143,24 +143,24 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
         val implementsTypes = mutableMapOf<ServiceType, Location>()
         provider.implements.forEach { implements ->
             checkServiceType(implements.service) { type ->
-                implementsTypes.putIfAbsent(type, implements.definition.location)?.let { existingLocation ->
-                    controller.getOrCreateContext(implements.definition.location.source).error {
+                implementsTypes.putIfAbsent(type, implements.node.location)?.let { existingLocation ->
+                    controller.getOrCreateContext(implements.node.location.source).error {
                         message("Service '${type.name}' already implemented")
-                        highlight("duplicate implements", implements.definition.location)
+                        highlight("duplicate implements", implements.node.location)
                         highlight("previous implements", existingLocation)
                     }
                     return@forEach
                 }
 
-                implements.operations = if (implements.definition.serviceOperationNames.isEmpty()) {
+                implements.operations = if (implements.node.serviceOperationNames.isEmpty()) {
                     type.operations
                 } else {
-                    implements.definition.serviceOperationNames.mapNotNull { serviceOperationName ->
+                    implements.node.serviceOperationNames.mapNotNull { serviceOperationName ->
                         val matchingOperation = type.operations.find { it.name == serviceOperationName.name }
                         if (matchingOperation != null) {
                             matchingOperation
                         } else {
-                            controller.getOrCreateContext(provider.definition.location.source).error {
+                            controller.getOrCreateContext(provider.declaration.location.source).error {
                                 message("Operation '${serviceOperationName.name}' not found in service '${type.name}'")
                                 highlight("unknown operation", serviceOperationName.location)
                             }
@@ -177,10 +177,10 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
         checkProviderType(consumer.provider) { providerType ->
             consumer.uses.forEach { uses ->
                 checkServiceType(uses.service) { type ->
-                    usesTypes.putIfAbsent(type, uses.definition.location)?.let { existingLocation ->
-                        controller.getOrCreateContext(uses.definition.location.source).error {
+                    usesTypes.putIfAbsent(type, uses.node.location)?.let { existingLocation ->
+                        controller.getOrCreateContext(uses.node.location.source).error {
                             message("Service '${type.name}' already used")
-                            highlight("duplicate uses", uses.definition.location)
+                            highlight("duplicate uses", uses.node.location)
                             highlight("previous uses", existingLocation)
                         }
                         return@forEach
@@ -189,28 +189,28 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
                     val matchingImplements =
                         providerType.implements.find { (it.service as ResolvedTypeReference).type == type }
                     if (matchingImplements == null) {
-                        controller.getOrCreateContext(uses.definition.location.source).error {
+                        controller.getOrCreateContext(uses.node.location.source).error {
                             message("Service '${type.name}' is not implemented by provider '${providerType.name}'")
-                            highlight("unavailable service", uses.definition.serviceName.location)
+                            highlight("unavailable service", uses.node.serviceName.location)
                         }
                         return@forEach
                     }
-                    uses.operations = if (uses.definition.serviceOperationNames.isEmpty()) {
+                    uses.operations = if (uses.node.serviceOperationNames.isEmpty()) {
                         matchingImplements.operations
                     } else {
-                        uses.definition.serviceOperationNames.mapNotNull { serviceOperationName ->
+                        uses.node.serviceOperationNames.mapNotNull { serviceOperationName ->
                             val matchingOperation =
                                 matchingImplements.operations.find { it.name == serviceOperationName.name }
                             if (matchingOperation != null) {
                                 matchingOperation
                             } else {
                                 if (type.operations.any { it.name == serviceOperationName.name }) {
-                                    controller.getOrCreateContext(uses.definition.location.source).error {
+                                    controller.getOrCreateContext(uses.node.location.source).error {
                                         message("Operation '${serviceOperationName.name}' in service '${type.name}' is not implemented by provider '${providerType.name}'")
                                         highlight("unavailable operation", serviceOperationName.location)
                                     }
                                 } else {
-                                    controller.getOrCreateContext(uses.definition.location.source).error {
+                                    controller.getOrCreateContext(uses.node.location.source).error {
                                         message("Operation '${serviceOperationName.name}' not found in service '${type.name}'")
                                         highlight("unknown operation", serviceOperationName.location)
                                     }

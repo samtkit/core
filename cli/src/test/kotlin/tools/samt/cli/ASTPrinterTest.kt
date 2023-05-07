@@ -36,7 +36,7 @@ class ASTPrinterTest {
         val dumpWithoutColorCodes = dump.replace(Regex("\u001B\\[[;\\d]*m"), "")
 
         assertEquals("""
-            FileNode /tmp/ASTPrinterTest.samt <1:1>
+            FileNode file:///tmp/ASTPrinterTest.samt <1:1>
             ├─WildcardImportNode <1:1>
             │ └─ImportBundleIdentifierNode foo.bar.baz.* <1:8>
             │   ├─IdentifierNode foo <1:8>

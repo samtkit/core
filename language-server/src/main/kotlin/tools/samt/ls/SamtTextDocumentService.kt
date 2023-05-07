@@ -86,6 +86,35 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
             return@supplyAsync Either.forRight(listOf(locationLink))
         }
 
+    override fun references(params: ReferenceParams): CompletableFuture<List<Location>> =
+        CompletableFuture.supplyAsync {
+            val path = params.textDocument.uri.toPathUri()
+            val workspace = getWorkspace(path)
+
+            val relevantFileInfo = workspace[path] ?: return@supplyAsync emptyList()
+            val relevantFileNode = relevantFileInfo.fileNode ?: return@supplyAsync emptyList()
+            val token = relevantFileInfo.tokens.findAt(params.position) ?: return@supplyAsync emptyList()
+
+            val globalPackage: Package = workspace.samtPackage ?: return@supplyAsync emptyList()
+
+            val typeLookup = SamtDeclarationLookup.analyze(relevantFileNode, globalPackage.resolveSubPackage(relevantFileInfo.fileNode.packageDeclaration.name))
+            val type = typeLookup[token.location] ?: return@supplyAsync emptyList()
+
+            val filesAndPackages = buildList {
+                for (fileInfo in workspace) {
+                    val fileNode: FileNode = fileInfo.fileNode ?: continue
+                    val samtPackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
+                    add(fileNode to samtPackage)
+                }
+            }
+
+            val typeReferencesLookup = SamtReferencesLookup.analyze(filesAndPackages)
+
+            val references = typeReferencesLookup[type] ?: emptyList()
+
+            return@supplyAsync references.map { Location(it.source.path.toString(), it.toRange()) }
+        }
+
     override fun semanticTokensFull(params: SemanticTokensParams): CompletableFuture<SemanticTokens> =
         CompletableFuture.supplyAsync {
             val path = params.textDocument.uri.toPathUri()

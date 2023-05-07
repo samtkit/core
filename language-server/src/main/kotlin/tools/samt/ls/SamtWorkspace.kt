@@ -27,7 +27,7 @@ class SamtWorkspace(private val parserController: DiagnosticController) : Iterab
         samtPackage = SemanticModelBuilder.build(mapNotNull { it.fileNode }, semanticController)
     }
 
-    fun getMessages(path: URI): List<DiagnosticMessage> {
+    private fun getMessages(path: URI): List<DiagnosticMessage> {
         val fileInfo = files[path] ?: return emptyList()
         return fileInfo.diagnosticContext.messages +
                 semanticController.getOrCreateContext(fileInfo.sourceFile).messages

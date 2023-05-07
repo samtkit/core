@@ -11,8 +11,8 @@ import tools.samt.parser.Parser
 class FileInfo(
     val diagnosticContext: DiagnosticContext,
     val sourceFile: SourceFile,
-    val tokens: List<Token>,
-    val fileNode: FileNode? = null
+    @Suppress("unused") val tokens: List<Token>,
+    val fileNode: FileNode? = null,
 )
 
 fun parseFile(sourceFile: SourceFile): FileInfo {

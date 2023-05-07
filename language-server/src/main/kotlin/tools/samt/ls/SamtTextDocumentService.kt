@@ -23,18 +23,18 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
         val path = params.textDocument.uri.toPathUri()
         val newText = params.contentChanges.single().text
         val fileInfo = parseFile(SourceFile(path, newText))
-        val workspaces = getWorkspaces(path)
+        val workspace = getWorkspace(path)
 
-        workspaces.forEach { workspace ->
-            workspace.add(fileInfo)
-            workspace.buildSemanticModel()
-            workspace.getAllMessages().forEach { (path, messages) ->
-                client.publishDiagnostics(PublishDiagnosticsParams(
+        workspace.add(fileInfo)
+        workspace.buildSemanticModel()
+        workspace.getAllMessages().forEach { (path, messages) ->
+            client.publishDiagnostics(
+                PublishDiagnosticsParams(
                     path.toString(),
                     messages.map { it.toDiagnostic() },
                     params.textDocument.version
-                ))
-            }
+                )
+            )
         }
     }
 
@@ -50,6 +50,6 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
         this.client = client
     }
 
-    private fun getWorkspaces(filePath: URI): List<SamtWorkspace> =
-        workspaces.values.filter { filePath in it }
+    private fun getWorkspace(filePath: URI): SamtWorkspace =
+        workspaces.values.first { filePath in it }
 }

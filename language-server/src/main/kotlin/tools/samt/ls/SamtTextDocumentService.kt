@@ -1,12 +1,15 @@
 package tools.samt.ls
 
 import org.eclipse.lsp4j.*
+import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.services.LanguageClient
 import org.eclipse.lsp4j.services.LanguageClientAware
 import org.eclipse.lsp4j.services.TextDocumentService
 import tools.samt.common.SourceFile
 import tools.samt.lexer.Token
 import tools.samt.parser.FileNode
+import tools.samt.parser.NamedDeclarationNode
+import tools.samt.parser.OperationNode
 import tools.samt.semantic.Package
 import java.net.URI
 import java.util.concurrent.CompletableFuture
@@ -49,6 +52,39 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
     override fun didSave(params: DidSaveTextDocumentParams) {
         logger.info("Saved document ${params.textDocument.uri}")
     }
+
+    override fun definition(params: DefinitionParams): CompletableFuture<Either<List<Location>, List<LocationLink>>> =
+        CompletableFuture.supplyAsync {
+            val path = params.textDocument.uri.toPathUri()
+            val workspace = getWorkspace(path)
+
+            val fileInfo = workspace[path] ?: return@supplyAsync Either.forRight(emptyList())
+
+            val fileNode: FileNode = fileInfo.fileNode ?: return@supplyAsync Either.forRight(emptyList())
+            val globalPackage: Package = workspace.samtPackage ?: return@supplyAsync Either.forRight(emptyList())
+
+            val token = fileInfo.tokens.findAt(params.position) ?: return@supplyAsync Either.forRight(emptyList())
+
+            val samtPackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
+
+            val typeLookup = SamtDeclarationLookup.analyze(fileNode, samtPackage)
+            val type = typeLookup[token.location] ?: return@supplyAsync Either.forRight(emptyList())
+
+            val definition = type.declaration
+            val location = definition.location
+
+            val targetLocation = when (definition) {
+                is NamedDeclarationNode -> definition.name.location
+                is OperationNode -> definition.name.location
+                else -> error("Unexpected definition type")
+            }
+            val locationLink = LocationLink().apply {
+                targetUri = location.source.path.toString()
+                targetRange = location.toRange()
+                targetSelectionRange = targetLocation.toRange()
+            }
+            return@supplyAsync Either.forRight(listOf(locationLink))
+        }
 
     override fun semanticTokensFull(params: SemanticTokensParams): CompletableFuture<SemanticTokens> =
         CompletableFuture.supplyAsync {

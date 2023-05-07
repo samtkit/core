@@ -28,6 +28,7 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
                     range = Either.forLeft(false)
                     full = Either.forLeft(true)
                 }
+                definitionProvider = Either.forLeft(true)
             }
             InitializeResult(capabilities)
         }

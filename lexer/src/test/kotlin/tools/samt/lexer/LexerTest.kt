@@ -2,10 +2,11 @@ package tools.samt.lexer
 
 import org.junit.jupiter.api.assertThrows
 import tools.samt.common.*
+import java.net.URI
 import kotlin.test.*
 
 class LexerTest {
-    private var diagnosticController = DiagnosticController("/tmp")
+    private var diagnosticController = DiagnosticController(URI("file:///tmp"))
 
     @Test
     fun `comment only file`() {
@@ -368,7 +369,7 @@ SAMT!""", stream.next()
     }
 
     private fun readTokenStream(source: String): Pair<Iterator<Token>, DiagnosticContext> {
-        val sourceFile = SourceFile("/tmp/test", source)
+        val sourceFile = SourceFile(URI("file:///tmp/test"), source)
         val context = diagnosticController.getOrCreateContext(sourceFile)
         return Pair(Lexer.scan(source.reader(), context).iterator(), context)
     }

@@ -5,6 +5,7 @@ import tools.samt.common.DiagnosticController
 import tools.samt.common.SourceFile
 import tools.samt.lexer.Lexer
 import tools.samt.parser.Parser
+import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -692,9 +693,9 @@ class SemanticModelTest {
     private fun parseAndCheck(
         vararg sourceAndExpectedMessages: Pair<String, List<String>>,
     ) {
-        val diagnosticController = DiagnosticController("/tmp")
-        val fileTrees = sourceAndExpectedMessages.mapIndexed { index, (source) ->
-            val filePath = "/tmp/SemanticModelTest-${index}.samt"
+        val diagnosticController = DiagnosticController(URI("file:///tmp"))
+        val fileTree = sourceAndExpectedMessages.mapIndexed { index, (source) ->
+            val filePath = URI("file:///tmp/SemanticModelTest-${index}.samt")
             val sourceFile = SourceFile(filePath, source)
             val parseContext = diagnosticController.getOrCreateContext(sourceFile)
             val stream = Lexer.scan(source.reader(), parseContext)
@@ -705,7 +706,7 @@ class SemanticModelTest {
 
         val parseMessageCount = diagnosticController.contexts.associate { it.source.content to it.messages.size }
 
-        SemanticModelBuilder.build(fileTrees, diagnosticController)
+        SemanticModelBuilder.build(fileTree, diagnosticController)
 
         for ((source, expectedMessages) in sourceAndExpectedMessages) {
             val messages = diagnosticController.contexts

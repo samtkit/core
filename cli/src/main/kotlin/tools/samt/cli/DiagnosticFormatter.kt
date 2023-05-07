@@ -5,7 +5,6 @@ import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.*
 import com.github.ajalt.mordant.terminal.Terminal
 import tools.samt.common.*
-import java.io.File
 
 internal class DiagnosticFormatter(
     private val diagnosticController: DiagnosticController,
@@ -119,11 +118,6 @@ internal class DiagnosticFormatter(
         DiagnosticSeverity.Info -> formatTextForSeverity("INFO:", severity, withBold = true)
     }
 
-    private fun formatFilePathRelativeToWorkingDirectory(filePath: String): String {
-        val workingDirectory = diagnosticController.workingDirectoryAbsolutePath
-        return filePath.removePrefix(workingDirectory).removePrefix(File.separator)
-    }
-
     private fun formatGlobalMessage(message: DiagnosticGlobalMessage): String = buildString {
         append(formatSeverityIndicator(message.severity))
         append(" ")
@@ -140,14 +134,14 @@ internal class DiagnosticFormatter(
         appendLine()
 
         val errorSourceFilePath = if (message.highlights.isNotEmpty()) {
-            message.highlights.first().location.source.absolutePath
+            message.highlights.first().location.source.path
         } else {
-            context.source.absolutePath
+            context.source.path
         }
 
         // -----> <file path>:<location>
         append(gray(" ---> "))
-        append(formatFilePathRelativeToWorkingDirectory(errorSourceFilePath))
+        append(diagnosticController.workingDirectory.relativize(errorSourceFilePath))
         if (message.highlights.isNotEmpty()) {
             val firstHighlight = message.highlights.first()
             val firstHighlightLocation = firstHighlight.location
@@ -173,8 +167,8 @@ internal class DiagnosticFormatter(
         require(highlights.isNotEmpty())
 
         // group highlights by source file
-        val mainSourceFileAbsolutePath = highlights.first().location.source.absolutePath
-        val highlightsBySourceFile = highlights.groupBy { it.location.source.absolutePath }
+        val mainSourceFileAbsolutePath = highlights.first().location.source.path
+        val highlightsBySourceFile = highlights.groupBy { it.location.source.path }
 
         // print the highlights for the main source file
         val mainSourceFileHighlights = highlightsBySourceFile.getValue(mainSourceFileAbsolutePath)

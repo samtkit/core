@@ -7,6 +7,6 @@ import tools.samt.common.readSamtSource
 import java.io.File
 
 internal fun List<String>.readSamtSourceFiles(controller: DiagnosticController): List<SourceFile> =
-    map { File(it) }.ifEmpty { collectSamtFiles(controller.workingDirectoryAbsolutePath) }
+    map { File(it) }.ifEmpty { collectSamtFiles(controller.workingDirectory) }
         .readSamtSource(controller)
 

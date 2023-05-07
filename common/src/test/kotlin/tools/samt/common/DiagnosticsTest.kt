@@ -1,13 +1,14 @@
 package tools.samt.common
 
 import org.junit.jupiter.api.assertThrows
+import java.net.URI
 import kotlin.test.*
 
 class DiagnosticsTest {
 
     @Test
     fun `global messages`() {
-        val controller = DiagnosticController("/tmp")
+        val controller = DiagnosticController(URI("file:///tmp"))
         controller.reportGlobalError("some error")
         controller.reportGlobalWarning("some warning")
         controller.reportGlobalInfo("some information")
@@ -29,8 +30,8 @@ class DiagnosticsTest {
 
     @Test
     fun `fatal error messages`() {
-        val controller = DiagnosticController("/tmp")
-        val sourcePath = "/tmp/sourceFile"
+        val controller = DiagnosticController(URI("file:///tmp"))
+        val sourcePath = URI("file:///tmp/sourceFile")
         val sourceCode = """
             import foo as bar
             package debug
@@ -58,8 +59,8 @@ class DiagnosticsTest {
 
     @Test
     fun `message highlights and annotations`() {
-        val controller = DiagnosticController("/tmp")
-        val sourcePath = "/tmp/sourceFile"
+        val controller = DiagnosticController(URI("file:///tmp"))
+        val sourcePath = URI("file:///tmp/sourceFile")
         val sourceCode = """
             import foo as bar
             package debug

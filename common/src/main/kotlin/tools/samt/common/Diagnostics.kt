@@ -1,5 +1,7 @@
 package tools.samt.common
 
+import java.net.URI
+
 enum class DiagnosticSeverity {
     Error, Warning, Info
 }
@@ -29,19 +31,19 @@ data class DiagnosticHighlight(
 )
 
 data class SourceFile(
-    // absolute path to the source file
-    val absolutePath: String,
+    /** Absolute path to the source file */
+    val path: URI,
 
-    // the content of the source file as a string
+    /** Content of the source file as a string */
     val content: String,
 ) {
-    // each line of the source file
+    /** Each line of the source file */
     val sourceLines: List<String> = content.lines()
 }
 
 class DiagnosticException(message: DiagnosticMessage) : RuntimeException(message.message)
 
-class DiagnosticController(val workingDirectoryAbsolutePath: String) {
+class DiagnosticController(val workingDirectory: URI) {
 
     /**
      * All diagnostic contexts, one for each source file.

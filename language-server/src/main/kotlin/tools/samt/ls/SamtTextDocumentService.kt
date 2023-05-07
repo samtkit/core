@@ -5,9 +5,10 @@ import org.eclipse.lsp4j.services.LanguageClient
 import org.eclipse.lsp4j.services.LanguageClientAware
 import org.eclipse.lsp4j.services.TextDocumentService
 import tools.samt.common.SourceFile
+import java.net.URI
 import java.util.logging.Logger
 
-class SamtTextDocumentService(private val workspaces: Map<String, SamtWorkspace>) : TextDocumentService,
+class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) : TextDocumentService,
     LanguageClientAware {
     private lateinit var client: LanguageClient
     private val logger = Logger.getLogger("SamtTextDocumentService")
@@ -19,7 +20,7 @@ class SamtTextDocumentService(private val workspaces: Map<String, SamtWorkspace>
     override fun didChange(params: DidChangeTextDocumentParams) {
         logger.info("Changed document ${params.textDocument.uri}")
 
-        val path = params.textDocument.uri.uriToPath()
+        val path = params.textDocument.uri.toPathUri()
         val newText = params.contentChanges.single().text
         val fileInfo = parseFile(SourceFile(path, newText))
         val workspaces = getWorkspaces(path)
@@ -29,7 +30,7 @@ class SamtTextDocumentService(private val workspaces: Map<String, SamtWorkspace>
             workspace.buildSemanticModel()
             workspace.getAllMessages().forEach { (path, messages) ->
                 client.publishDiagnostics(PublishDiagnosticsParams(
-                    path.pathToUri(),
+                    path.toString(),
                     messages.map { it.toDiagnostic() },
                     params.textDocument.version
                 ))
@@ -49,6 +50,6 @@ class SamtTextDocumentService(private val workspaces: Map<String, SamtWorkspace>
         this.client = client
     }
 
-    private fun getWorkspaces(filePath: String): List<SamtWorkspace> =
+    private fun getWorkspaces(filePath: URI): List<SamtWorkspace> =
         workspaces.values.filter { filePath in it }
 }

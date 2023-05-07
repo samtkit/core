@@ -24,7 +24,7 @@ internal fun dump(command: DumpCommand, terminal: Terminal, controller: Diagnost
             if (dumpAll || command.dumpTokens) {
                 // create duplicate scan because sequence can only be iterated once
                 val tokenStream = Lexer.scan(source.content.reader(), context)
-                terminal.println("Tokens for ${source.absolutePath}:")
+                terminal.println("Tokens for ${source.path}:")
                 terminal.println(TokenPrinter.dump(tokenStream))
                 // clear the diagnostic messages so that messages aren't duplicated
                 context.messages.clear()

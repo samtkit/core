@@ -4,6 +4,7 @@ import tools.samt.common.DiagnosticController
 import tools.samt.common.SourceFile
 import tools.samt.lexer.Lexer
 import tools.samt.lexer.Token
+import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -46,9 +47,9 @@ class TokenPrinterTest {
     }
 
     private fun parse(source: String): Sequence<Token> {
-        val filePath = "/tmp/TokenPrinterTest.samt"
+        val filePath = URI("file:///tmp/TokenPrinterTest.samt")
         val sourceFile = SourceFile(filePath, source)
-        val diagnosticController = DiagnosticController("/tmp")
+        val diagnosticController = DiagnosticController(URI("file:///tmp"))
         val diagnosticContext = diagnosticController.getOrCreateContext(sourceFile)
         val stream = Lexer.scan(source.reader(), diagnosticContext)
         assertFalse(diagnosticContext.hasErrors(), "Expected no errors, but had errors")

@@ -2,11 +2,12 @@ package tools.samt.common
 
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
+import java.net.URI
 import kotlin.test.*
 
 class LocationTest {
     private val dummySource = SourceFile(
-        "locations.samt", """
+        URI("file://locations.samt"), """
         import foo
         import bar
 

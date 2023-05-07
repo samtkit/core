@@ -505,7 +505,7 @@ class SemanticModelBuilder private constructor(
     companion object {
         fun build(files: List<FileNode>, controller: DiagnosticController): Package {
             // Sort by path to ensure deterministic order
-            return SemanticModelBuilder(files.sortedBy { it.sourceFile.absolutePath }, controller).build()
+            return SemanticModelBuilder(files.sortedBy { it.sourceFile.path }, controller).build()
         }
     }
 }

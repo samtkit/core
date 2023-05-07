@@ -4,15 +4,15 @@ import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.services.*
 import tools.samt.common.*
 import java.io.Closeable
+import java.net.URI
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
-import kotlin.io.path.Path
 import kotlin.system.exitProcess
 
 class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     private lateinit var client: LanguageClient
     private val logger = Logger.getLogger("SamtLanguageServer")
-    private val workspaces = mutableMapOf<String, SamtWorkspace>()
+    private val workspaces = mutableMapOf<URI, SamtWorkspace>()
     private val textDocumentService = SamtTextDocumentService(workspaces)
 
     override fun initialize(params: InitializeParams): CompletableFuture<InitializeResult> =
@@ -49,15 +49,15 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     }
 
     private fun buildSamtModel(params: InitializeParams) {
-        val folders = params.workspaceFolders.map { it.uri.uriToPath() }
+        val folders = params.workspaceFolders.map { it.uri.toPathUri() }
         for (folder in folders) {
             // if the folder is contained within another folder ignore it
-            if (folders.any { folder != it && Path(folder).startsWith(it) }) continue
+            if (folders.any { folder != it && folder.path.startsWith(it.path) }) continue
             workspaces[folder] = buildWorkspace(folder)
         }
     }
 
-    private fun buildWorkspace(workspacePath: String): SamtWorkspace {
+    private fun buildWorkspace(workspacePath: URI): SamtWorkspace {
         val diagnosticController = DiagnosticController(workspacePath)
         val sourceFiles = collectSamtFiles(workspacePath).readSamtSource(diagnosticController)
         val workspace = SamtWorkspace(diagnosticController)
@@ -70,7 +70,7 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
         workspaces.values.flatMap { workspace ->
             workspace.getAllMessages().map { (path, messages) ->
                 PublishDiagnosticsParams(
-                    path.pathToUri(),
+                    path.toString(),
                     messages.map { it.toDiagnostic() }
                 )
             }

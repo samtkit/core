@@ -1,7 +1,6 @@
 package tools.samt.ls
 
-private const val FILE_PROTOCOL = "file://"
+import java.net.URI
+import kotlin.io.path.toPath
 
-fun String.uriToPath(): String = removePrefix(FILE_PROTOCOL)
-
-fun String.pathToUri(): String  = if (startsWith(FILE_PROTOCOL)) this else "$FILE_PROTOCOL$this"
+fun String.toPathUri(): URI = URI(this).toPath().toUri()

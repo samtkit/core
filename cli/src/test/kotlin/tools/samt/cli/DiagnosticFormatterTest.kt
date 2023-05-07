@@ -7,8 +7,8 @@ import tools.samt.lexer.Lexer
 import tools.samt.parser.EnumDeclarationNode
 import tools.samt.parser.FileNode
 import tools.samt.parser.Parser
+import java.net.URI
 import kotlin.io.path.Path
-import kotlin.io.path.absolutePathString
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -16,7 +16,7 @@ import kotlin.test.assertFalse
 class DiagnosticFormatterTest {
     @Test
     fun `global messages`() {
-        val controller = DiagnosticController("/tmp")
+        val controller = DiagnosticController(URI("file:///tmp"))
         controller.reportGlobalError("This is a global error")
         controller.reportGlobalWarning("This is a global warning")
         controller.reportGlobalInfo("This is a global info")
@@ -40,8 +40,8 @@ class DiagnosticFormatterTest {
 
     @Test
     fun `file messages with no highlights`() {
-        val baseDirectory = Path("/tmp").absolutePathString()
-        val filePath = Path("/tmp", "test.txt").absolutePathString()
+        val baseDirectory = Path("/tmp").toUri()
+        val filePath = Path("/tmp", "test.txt").toUri()
         val controller = DiagnosticController(baseDirectory)
         val source = ""
         val sourceFile = SourceFile(filePath, source)
@@ -480,8 +480,8 @@ class DiagnosticFormatterTest {
     }
 
     private fun parse(source: String): Triple<FileNode, DiagnosticContext, DiagnosticController> {
-        val baseDirectory = Path("/tmp").absolutePathString()
-        val filePath = Path("/tmp", "DiagnosticFormatterTest.samt").absolutePathString()
+        val baseDirectory = Path("/tmp").toUri()
+        val filePath = Path("/tmp", "DiagnosticFormatterTest.samt").toUri()
         val sourceFile = SourceFile(filePath, source)
         val diagnosticController = DiagnosticController(baseDirectory)
         val diagnosticContext = diagnosticController.getOrCreateContext(sourceFile)

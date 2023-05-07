@@ -5,6 +5,7 @@ import tools.samt.common.SourceFile
 import tools.samt.lexer.Lexer
 import tools.samt.parser.FileNode
 import tools.samt.parser.Parser
+import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -81,9 +82,9 @@ class ASTPrinterTest {
     }
 
     private fun parse(source: String): FileNode {
-        val filePath = "/tmp/ASTPrinterTest.samt"
+        val filePath = URI("file:///tmp/ASTPrinterTest.samt")
         val sourceFile = SourceFile(filePath, source)
-        val diagnosticController = DiagnosticController("/tmp")
+        val diagnosticController = DiagnosticController(URI("file:///tmp"))
         val diagnosticContext = diagnosticController.getOrCreateContext(sourceFile)
         val stream = Lexer.scan(source.reader(), diagnosticContext)
         val fileTree = Parser.parse(sourceFile, stream, diagnosticContext)

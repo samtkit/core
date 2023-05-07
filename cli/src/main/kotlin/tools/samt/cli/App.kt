@@ -3,6 +3,7 @@ package tools.samt.cli
 import com.beust.jcommander.JCommander
 import com.github.ajalt.mordant.terminal.Terminal
 import tools.samt.common.DiagnosticController
+import kotlin.io.path.Path
 
 fun main(args: Array<String>) {
     val cliArgs = CliArgs()
@@ -24,7 +25,7 @@ fun main(args: Array<String>) {
 
     val terminal = Terminal()
 
-    val workingDirectory = System.getProperty("user.dir")
+    val workingDirectory = Path(System.getProperty("user.dir")).toUri()
 
     val controller = DiagnosticController(workingDirectory)
 

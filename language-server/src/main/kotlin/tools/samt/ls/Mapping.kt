@@ -18,7 +18,7 @@ fun DiagnosticMessage.toDiagnostic(): Diagnostic? {
     diagnostic.message = message
     diagnostic.relatedInformation = highlights.filter { it.message != null }.map {
         DiagnosticRelatedInformation(
-            Location("file://${it.location.source.absolutePath}", it.location.toRange()),
+            Location(it.location.source.path.toString(), it.location.toRange()),
             it.message
         )
     }

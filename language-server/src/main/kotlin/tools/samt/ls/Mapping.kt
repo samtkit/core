@@ -28,6 +28,6 @@ fun DiagnosticMessage.toDiagnostic(): Diagnostic? {
 fun SamtLocation.toRange(): Range {
     return Range(
         Position(start.row, start.col),
-        Position(start.row, end.col)
+        Position(end.row, end.col)
     )
 }

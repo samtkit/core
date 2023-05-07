@@ -30,7 +30,7 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
         val path = params.textDocument.uri.toPathUri()
         val newText = params.contentChanges.single().text
         val fileInfo = parseFile(SourceFile(path, newText))
-        val workspace = getWorkspace(path)
+        val workspace = getWorkspace(path) ?: return
 
         workspace.add(fileInfo)
         workspace.buildSemanticModel()
@@ -58,7 +58,7 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
             val path = params.textDocument.uri.toPathUri()
             val workspace = getWorkspace(path)
 
-            val fileInfo = workspace[path] ?: return@supplyAsync Either.forRight(emptyList())
+            val fileInfo = workspace?.get(path) ?: return@supplyAsync Either.forRight(emptyList())
 
             val fileNode: FileNode = fileInfo.fileNode ?: return@supplyAsync Either.forRight(emptyList())
             val globalPackage: Package = workspace.samtPackage ?: return@supplyAsync Either.forRight(emptyList())
@@ -89,7 +89,7 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
     override fun references(params: ReferenceParams): CompletableFuture<List<Location>> =
         CompletableFuture.supplyAsync {
             val path = params.textDocument.uri.toPathUri()
-            val workspace = getWorkspace(path)
+            val workspace = getWorkspace(path) ?: return@supplyAsync emptyList()
 
             val relevantFileInfo = workspace[path] ?: return@supplyAsync emptyList()
             val relevantFileNode = relevantFileInfo.fileNode ?: return@supplyAsync emptyList()
@@ -120,7 +120,7 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
             val path = params.textDocument.uri.toPathUri()
             val workspace = getWorkspace(path)
 
-            val fileInfo = workspace[path] ?: return@supplyAsync SemanticTokens(emptyList())
+            val fileInfo = workspace?.get(path) ?: return@supplyAsync SemanticTokens(emptyList())
 
             val tokens: List<Token> = fileInfo.tokens
             val fileNode: FileNode = fileInfo.fileNode ?: return@supplyAsync SemanticTokens(emptyList())
@@ -158,6 +158,6 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
         this.client = client
     }
 
-    private fun getWorkspace(filePath: URI): SamtWorkspace =
-        workspaces.values.first { filePath in it }
+    private fun getWorkspace(filePath: URI): SamtWorkspace? =
+        workspaces.values.singleOrNull { filePath in it }
 }

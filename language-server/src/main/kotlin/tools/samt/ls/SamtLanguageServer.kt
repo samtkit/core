@@ -1,8 +1,11 @@
 package tools.samt.ls
 
 import org.eclipse.lsp4j.*
+import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.services.*
-import tools.samt.common.*
+import tools.samt.common.DiagnosticController
+import tools.samt.common.collectSamtFiles
+import tools.samt.common.readSamtSource
 import java.io.Closeable
 import java.net.URI
 import java.util.concurrent.CompletableFuture
@@ -19,7 +22,12 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
         CompletableFuture.supplyAsync {
             buildSamtModel(params)
             val capabilities = ServerCapabilities().apply {
-                setTextDocumentSync(TextDocumentSyncKind.Full)
+                textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
+                semanticTokensProvider = SemanticTokensWithRegistrationOptions().apply {
+                    legend = SamtSemanticTokens.legend
+                    range = Either.forLeft(false)
+                    full = Either.forLeft(true)
+                }
             }
             InitializeResult(capabilities)
         }

@@ -10,7 +10,7 @@ import java.io.File
 import java.net.URL
 
 internal fun wrapper(command: WrapperCommand, terminal: Terminal, controller: DiagnosticController) {
-    val workingDirectory = File(controller.workingDirectoryAbsolutePath)
+    val workingDirectory = File(controller.workingDirectory)
     val dotSamtDirectory = File(workingDirectory, ".samt")
 
     if (command.init) {

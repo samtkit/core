@@ -24,18 +24,19 @@ sealed class NamedDeclarationNode(
 
 sealed class ImportNode(
     location: Location,
+    val name: BundleIdentifierNode,
 ) : StatementNode(location)
 
 class TypeImportNode(
     location: Location,
-    val name: BundleIdentifierNode,
+    name: BundleIdentifierNode,
     val alias: IdentifierNode?,
-) : ImportNode(location)
+) : ImportNode(location, name)
 
 class WildcardImportNode(
     location: Location,
-    val name: BundleIdentifierNode,
-) : ImportNode(location)
+    name: BundleIdentifierNode,
+) : ImportNode(location, name)
 
 class PackageDeclarationNode(
     location: Location,

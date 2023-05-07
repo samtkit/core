@@ -12,7 +12,7 @@ import tools.samt.parser.*
  * - Resolve all references to types
  * - Resolve all references to their declarations in the AST
  * */
-class SemanticModelBuilder(
+class SemanticModelBuilder private constructor(
     private val files: List<FileNode>,
     private val controller: DiagnosticController,
 ) {
@@ -29,7 +29,7 @@ class SemanticModelBuilder(
             block()
         } else {
             val existingType = parentPackage.types.getValue(statement.name.name)
-            controller.createContext(statement.location.source).error {
+            controller.getOrCreateContext(statement.location.source).error {
                 message("'${statement.name.name}' is already declared")
                 highlight("duplicate declaration", statement.name.location)
                 if (existingType is UserDefinedType) {
@@ -49,7 +49,7 @@ class SemanticModelBuilder(
             val name = identifierGetter(item).name
             val existingLocation = existingItems.putIfAbsent(name, item.location)
             if (existingLocation != null) {
-                controller.createContext(item.location.source).error {
+                controller.getOrCreateContext(item.location.source).error {
                     message("$what '$name' is defined more than once")
                     highlight("duplicate declaration", identifierGetter(item).location)
                     highlight("previous declaration", existingLocation)
@@ -88,7 +88,7 @@ class SemanticModelBuilder(
                         ensureNameIsAvailable(parentPackage, statement) {
                             reportDuplicates(statement.fields, "Record field") { it.name }
                             if (statement.extends.isNotEmpty()) {
-                                controller.createContext(statement.location.source).error {
+                                controller.getOrCreateContext(statement.location.source).error {
                                     message("Record extends are not yet supported")
                                     highlight("cannot extend other records", statement.extends.first().location)
                                 }
@@ -129,7 +129,7 @@ class SemanticModelBuilder(
 
                                     is RequestResponseOperationNode -> {
                                         if (operation.isAsync) {
-                                            controller.createContext(operation.location.source).error {
+                                            controller.getOrCreateContext(operation.location.source).error {
                                                 message("Async operations are not yet supported")
                                                 highlight("unsupported async operation", operation.location)
                                             }
@@ -179,7 +179,7 @@ class SemanticModelBuilder(
                     }
 
                     is TypeAliasNode -> {
-                        controller.createContext(statement.location.source).error {
+                        controller.getOrCreateContext(statement.location.source).error {
                             message("Type aliases are not yet supported")
                             highlight("unsupported feature", statement.location)
                         }
@@ -246,7 +246,7 @@ class SemanticModelBuilder(
                 }
 
                 null -> {
-                    controller.createContext(component.location.source).error {
+                    controller.getOrCreateContext(component.location.source).error {
                         message("Could not resolve reference '${component.name}'")
                         highlight("unresolved reference", component.location)
                     }
@@ -257,7 +257,7 @@ class SemanticModelBuilder(
                     if (iterator.hasNext()) {
                         // We resolved a non-package type but there are still components left
 
-                        controller.createContext(component.location.source).error {
+                        controller.getOrCreateContext(component.location.source).error {
                             message("Type '${component.name}' is not a package, cannot access sub-types")
                             highlight("must be a package", component.location)
                         }
@@ -285,7 +285,7 @@ class SemanticModelBuilder(
             file.imports.forEach { import ->
                 fun addImportedType(name: String, type: Type) {
                     putIfAbsent(name, type)?.let { existingType ->
-                        controller.createContext(file.sourceFile).error {
+                        controller.getOrCreateContext(file.sourceFile).error {
                             message("Import '$name' conflicts with locally defined type with same name")
                             highlight("conflicting import", import.location)
                             if (existingType is UserDefinedType) {
@@ -318,7 +318,7 @@ class SemanticModelBuilder(
                                     addImportedType(name, type)
                                 }
                             } else {
-                                controller.createContext(file.sourceFile).error {
+                                controller.getOrCreateContext(file.sourceFile).error {
                                     message("Import '${import.name.name}.*' must point to a package and not a type")
                                     highlight(
                                         "illegal wildcard import", import.location, suggestChange = "import ${
@@ -338,7 +338,7 @@ class SemanticModelBuilder(
             // Add built-in types
             fun addBuiltIn(name: String, type: Type) {
                 putIfAbsent(name, type)?.let { existingType ->
-                    controller.createContext(file.sourceFile).error {
+                    controller.getOrCreateContext(file.sourceFile).error {
                         message("Type '$name' shadows built-in type with same name")
                         if (existingType is UserDefinedType) {
                             val definition = existingType.definition
@@ -379,7 +379,7 @@ class SemanticModelBuilder(
                         return ResolvedTypeReference(expression, it)
                     }
 
-                    controller.createContext(expression.location.source).error {
+                    controller.getOrCreateContext(expression.location.source).error {
                         message("Type '${expression.name}' could not be resolved")
                         highlight("unresolved type", expression.location)
                     }
@@ -403,14 +403,14 @@ class SemanticModelBuilder(
                         }
 
                         null -> {
-                            controller.createContext(expression.location.source).error {
+                            controller.getOrCreateContext(expression.location.source).error {
                                 message("Type '${expression.name}' could not be resolved")
                                 highlight("unresolved type", expression.location)
                             }
                         }
 
                         else -> {
-                            controller.createContext(expression.location.source).error {
+                            controller.getOrCreateContext(expression.location.source).error {
                                 message("Type '${expression.components.first().name}' is not a package, cannot access sub-types")
                                 highlight("not a package", expression.components.first().location)
                             }
@@ -422,7 +422,7 @@ class SemanticModelBuilder(
                     val baseType = resolveExpression(expression.base)
                     val constraints = expression.arguments.mapNotNull { constraintBuilder.build(baseType.type, it) }
                     if (baseType.constraints.isNotEmpty()) {
-                        controller.createContext(expression.location.source).error {
+                        controller.getOrCreateContext(expression.location.source).error {
                             message("Cannot have nested constraints")
                             highlight("illegal nested constraint", expression.location)
                         }
@@ -460,7 +460,7 @@ class SemanticModelBuilder(
                             }
                         }
                     }
-                    controller.createContext(expression.location.source).error {
+                    controller.getOrCreateContext(expression.location.source).error {
                         message("Unsupported generic type")
                         highlight(expression.location)
                         help("Valid generic types are List<Value> and Map<Key, Value>")
@@ -470,7 +470,7 @@ class SemanticModelBuilder(
                 is OptionalDeclarationNode -> {
                     val baseType = resolveExpression(expression.base)
                     if (baseType.isOptional) {
-                        controller.createContext(expression.location.source).warn {
+                        controller.getOrCreateContext(expression.location.source).warn {
                             message("Type is already optional, ignoring '?'")
                             highlight("already optional", expression.base.location)
                         }
@@ -481,7 +481,7 @@ class SemanticModelBuilder(
                 is BooleanNode,
                 is NumberNode,
                 is StringNode,
-                -> controller.createContext(expression.location.source).error {
+                -> controller.getOrCreateContext(expression.location.source).error {
                     message("Cannot use literal value as type")
                     highlight("not a type expression", expression.location)
                 }
@@ -490,7 +490,7 @@ class SemanticModelBuilder(
                 is ArrayNode,
                 is RangeExpressionNode,
                 is WildcardNode,
-                -> controller.createContext(expression.location.source).error {
+                -> controller.getOrCreateContext(expression.location.source).error {
                     message("Invalid type expression")
                     highlight("not a type expression", expression.location)
                 }
@@ -505,7 +505,7 @@ class SemanticModelBuilder(
     companion object {
         fun build(files: List<FileNode>, controller: DiagnosticController): Package {
             // Sort by path to ensure deterministic order
-            return SemanticModelBuilder(files.sortedBy { it.sourceFile.absolutePath }, controller).build()
+            return SemanticModelBuilder(files.sortedBy { it.sourceFile.path }, controller).build()
         }
     }
 }

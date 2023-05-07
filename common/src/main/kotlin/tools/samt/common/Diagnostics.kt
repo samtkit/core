@@ -1,5 +1,7 @@
 package tools.samt.common
 
+import java.net.URI
+
 enum class DiagnosticSeverity {
     Error, Warning, Info
 }
@@ -29,19 +31,19 @@ data class DiagnosticHighlight(
 )
 
 data class SourceFile(
-    // absolute path to the source file
-    val absolutePath: String,
+    /** Absolute path to the source file */
+    val path: URI,
 
-    // the content of the source file as a string
+    /** Content of the source file as a string */
     val content: String,
 ) {
-    // each line of the source file
+    /** Each line of the source file */
     val sourceLines: List<String> = content.lines()
 }
 
 class DiagnosticException(message: DiagnosticMessage) : RuntimeException(message.message)
 
-class DiagnosticController(val workingDirectoryAbsolutePath: String) {
+class DiagnosticController(val workingDirectory: URI) {
 
     /**
      * All diagnostic contexts, one for each source file.
@@ -56,7 +58,7 @@ class DiagnosticController(val workingDirectoryAbsolutePath: String) {
     /**
      * Creates a new diagnostic context for the given source file or returns already existing one.
      * */
-    fun createContext(source: SourceFile): DiagnosticContext {
+    fun getOrCreateContext(source: SourceFile): DiagnosticContext {
         val foundContext = contexts.find { it.source == source}
         if (foundContext != null) return foundContext
         return DiagnosticContext(source).also { contexts.add(it) }
@@ -69,10 +71,10 @@ class DiagnosticController(val workingDirectoryAbsolutePath: String) {
         globalMessages.add(DiagnosticGlobalMessage(severity, message))
     }
 
-    fun hasMessages(): Boolean = contexts.any { it.hasMessages() } or globalMessages.isNotEmpty()
-    fun hasErrors(): Boolean = contexts.any { it.hasErrors() } or globalMessages.any { it.severity == DiagnosticSeverity.Error }
-    fun hasWarnings(): Boolean = contexts.any { it.hasWarnings() } or globalMessages.any { it.severity == DiagnosticSeverity.Warning }
-    fun hasInfos(): Boolean = contexts.any { it.hasInfos() } or globalMessages.any { it.severity == DiagnosticSeverity.Info }
+    fun hasMessages(): Boolean = contexts.any { it.hasMessages() } || globalMessages.isNotEmpty()
+    fun hasErrors(): Boolean = contexts.any { it.hasErrors() } || globalMessages.any { it.severity == DiagnosticSeverity.Error }
+    fun hasWarnings(): Boolean = contexts.any { it.hasWarnings() } || globalMessages.any { it.severity == DiagnosticSeverity.Warning }
+    fun hasInfos(): Boolean = contexts.any { it.hasInfos() } || globalMessages.any { it.severity == DiagnosticSeverity.Info }
 }
 
 class DiagnosticContext(
@@ -153,7 +155,6 @@ class DiagnosticMessageBuilder(
 
     fun build(): DiagnosticMessage {
         requireNotNull(message)
-        highlights.sortWith(compareBy({ it.location.start.row }, { it.location.start.col }))
         return DiagnosticMessage(severity, message!!, highlights, annotations)
     }
 }

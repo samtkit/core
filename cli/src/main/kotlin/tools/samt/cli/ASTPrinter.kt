@@ -56,7 +56,7 @@ internal object ASTPrinter {
     }
 
     private fun dumpInfo(node: Node): String? = when (node) {
-        is FileNode -> gray(node.sourceFile.absolutePath)
+        is FileNode -> gray(node.sourceFile.path.path)
         is RequestResponseOperationNode -> if (node.isAsync) red("async") else null
         is IdentifierNode -> yellow(node.name)
         is ImportBundleIdentifierNode -> yellow(node.name) + if (node.isWildcard) yellow(".*") else ""

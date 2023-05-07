@@ -19,12 +19,12 @@ internal fun dump(command: DumpCommand, terminal: Terminal, controller: Diagnost
     // attempt to parse each source file into an AST
     val fileNodes = buildList {
         for (source in sourceFiles) {
-            val context = controller.createContext(source)
+            val context = controller.getOrCreateContext(source)
 
             if (dumpAll || command.dumpTokens) {
                 // create duplicate scan because sequence can only be iterated once
                 val tokenStream = Lexer.scan(source.content.reader(), context)
-                terminal.println("Tokens for ${source.absolutePath}:")
+                terminal.println("Tokens for ${source.path}:")
                 terminal.println(TokenPrinter.dump(tokenStream))
                 // clear the diagnostic messages so that messages aren't duplicated
                 context.messages.clear()

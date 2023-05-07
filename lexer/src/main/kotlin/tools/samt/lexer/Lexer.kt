@@ -39,9 +39,7 @@ class Lexer private constructor(
             skipBlanks()
             resetStartPosition()
         }
-        while (true) {
-           yield(EndOfFileToken(windowLocation()))
-        }
+        yield(EndOfFileToken(windowLocation()))
     }
 
     private fun readToken(): Token? = when {
@@ -81,7 +79,7 @@ class Lexer private constructor(
         }
     }
 
-    private inline fun <reified T: StructureToken> readStructureToken(factory: (location: Location) -> T): StructureToken {
+    private inline fun <reified T : StructureToken> readStructureToken(factory: (location: Location) -> T): StructureToken {
         readNext()
         return factory(windowLocation())
     }
@@ -283,6 +281,7 @@ class Lexer private constructor(
                     skipLineComment()
                     return null
                 }
+
                 '*' -> {
                     skipCommentBlock()
                     return null
@@ -319,7 +318,13 @@ class Lexer private constructor(
                     if (current == '*') {
                         readNext()
                         nestedCommentDepth++
-                        commentOpenerPositionStack.add(Location(diagnostic.source, currentCharacterPosition, currentPosition))
+                        commentOpenerPositionStack.add(
+                            Location(
+                                diagnostic.source,
+                                currentCharacterPosition,
+                                currentPosition
+                            )
+                        )
                     }
                 }
 
@@ -404,24 +409,24 @@ class Lexer private constructor(
 
     companion object {
         val KEYWORDS: Map<String, (location: Location) -> StaticToken> = mapOf(
-                "record" to { RecordToken(it) },
-                "enum" to { EnumToken(it) },
-                "service" to { ServiceToken(it) },
-                "alias" to { AliasToken(it) },
-                "package" to { PackageToken(it) },
-                "import" to { ImportToken(it) },
-                "provide" to { ProvideToken(it) },
-                "consume" to { ConsumeToken(it) },
-                "transport" to { TransportToken(it) },
-                "implements" to { ImplementsToken(it) },
-                "uses" to { UsesToken(it) },
-                "extends" to { ExtendsToken(it) },
-                "as" to { AsToken(it) },
-                "async" to { AsyncToken(it) },
-                "oneway" to { OnewayToken(it) },
-                "raises" to { RaisesToken(it) },
-                "true" to { TrueToken(it) },
-                "false" to { FalseToken(it) },
+            "record" to { RecordToken(it) },
+            "enum" to { EnumToken(it) },
+            "service" to { ServiceToken(it) },
+            "alias" to { AliasToken(it) },
+            "package" to { PackageToken(it) },
+            "import" to { ImportToken(it) },
+            "provide" to { ProvideToken(it) },
+            "consume" to { ConsumeToken(it) },
+            "transport" to { TransportToken(it) },
+            "implements" to { ImplementsToken(it) },
+            "uses" to { UsesToken(it) },
+            "extends" to { ExtendsToken(it) },
+            "as" to { AsToken(it) },
+            "async" to { AsyncToken(it) },
+            "oneway" to { OnewayToken(it) },
+            "raises" to { RaisesToken(it) },
+            "true" to { TrueToken(it) },
+            "false" to { FalseToken(it) },
         )
 
         fun scan(reader: Reader, diagnostics: DiagnosticContext): Sequence<Token> {

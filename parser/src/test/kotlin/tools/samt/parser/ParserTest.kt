@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.assertThrows
 import tools.samt.common.*
 import tools.samt.lexer.Lexer
+import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -819,10 +820,10 @@ class ParserTest {
     }
 
     private fun parse(source: String): FileNode {
-        val filePath = "/tmp/ParserTest.samt"
+        val filePath = URI("file:///tmp/ParserTest.samt")
         val sourceFile = SourceFile(filePath, source)
-        val diagnosticController = DiagnosticController("/tmp")
-        val diagnosticContext = diagnosticController.createContext(sourceFile)
+        val diagnosticController = DiagnosticController(URI("file:///tmp"))
+        val diagnosticContext = diagnosticController.getOrCreateContext(sourceFile)
         val stream = Lexer.scan(source.reader(), diagnosticContext)
         val fileTree = Parser.parse(sourceFile, stream, diagnosticContext)
         assertFalse(diagnosticContext.hasErrors(), "Expected no errors, but had errors")
@@ -830,10 +831,10 @@ class ParserTest {
     }
 
     private fun parseWithRecoverableError(source: String): Pair<FileNode, DiagnosticContext> {
-        val filePath = "/tmp/ParserTest.samt"
+        val filePath = URI("file:///tmp/ParserTest.samt")
         val sourceFile = SourceFile(filePath, source)
-        val diagnosticController = DiagnosticController("/tmp")
-        val diagnosticContext = diagnosticController.createContext(sourceFile)
+        val diagnosticController = DiagnosticController(URI("file:///tmp"))
+        val diagnosticContext = diagnosticController.getOrCreateContext(sourceFile)
         val stream = Lexer.scan(source.reader(), diagnosticContext)
         val fileTree = Parser.parse(sourceFile, stream, diagnosticContext)
         assertTrue(diagnosticContext.hasErrors(), "Expected errors, but had no errors")
@@ -841,10 +842,10 @@ class ParserTest {
     }
 
     private fun parseWithFatalError(source: String): DiagnosticException {
-        val filePath = "/tmp/ParserTest.samt"
+        val filePath = URI("file:///tmp/ParserTest.samt")
         val sourceFile = SourceFile(filePath, source)
-        val diagnosticController = DiagnosticController("/tmp")
-        val diagnosticContext = diagnosticController.createContext(sourceFile)
+        val diagnosticController = DiagnosticController(URI("file:///tmp"))
+        val diagnosticContext = diagnosticController.getOrCreateContext(sourceFile)
         val stream = Lexer.scan(source.reader(), diagnosticContext)
         val exception = assertThrows<DiagnosticException> { Parser.parse(sourceFile, stream, diagnosticContext) }
         assertTrue(diagnosticContext.hasErrors(), "Expected errors, but had no errors")

@@ -71,10 +71,10 @@ class DiagnosticController(val workingDirectory: URI) {
         globalMessages.add(DiagnosticGlobalMessage(severity, message))
     }
 
-    fun hasMessages(): Boolean = contexts.any { it.hasMessages() } or globalMessages.isNotEmpty()
-    fun hasErrors(): Boolean = contexts.any { it.hasErrors() } or globalMessages.any { it.severity == DiagnosticSeverity.Error }
-    fun hasWarnings(): Boolean = contexts.any { it.hasWarnings() } or globalMessages.any { it.severity == DiagnosticSeverity.Warning }
-    fun hasInfos(): Boolean = contexts.any { it.hasInfos() } or globalMessages.any { it.severity == DiagnosticSeverity.Info }
+    fun hasMessages(): Boolean = contexts.any { it.hasMessages() } || globalMessages.isNotEmpty()
+    fun hasErrors(): Boolean = contexts.any { it.hasErrors() } || globalMessages.any { it.severity == DiagnosticSeverity.Error }
+    fun hasWarnings(): Boolean = contexts.any { it.hasWarnings() } || globalMessages.any { it.severity == DiagnosticSeverity.Warning }
+    fun hasInfos(): Boolean = contexts.any { it.hasInfos() } || globalMessages.any { it.severity == DiagnosticSeverity.Info }
 }
 
 class DiagnosticContext(

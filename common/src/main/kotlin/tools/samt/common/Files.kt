@@ -22,6 +22,11 @@ fun List<File>.readSamtSource(controller: DiagnosticController): List<SourceFile
                 continue
             }
 
+            if (!file.isFile) {
+                controller.reportGlobalError("'${file.path}' is not a file")
+                continue
+            }
+
             add(SourceFile(file.toPath().toUri(), content = file.readText()))
         }
     }

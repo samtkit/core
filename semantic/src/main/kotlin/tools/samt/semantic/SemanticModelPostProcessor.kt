@@ -67,7 +67,7 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
             controller.getOrCreateContext(typeReference.definition.location.source).error {
                 message("Cannot have constraints on service")
                 for (constraint in typeReference.constraints) {
-                    highlight("illegal constraint", constraint.definition.location)
+                    highlight("illegal constraint", constraint.node.location)
                 }
             }
         }
@@ -98,7 +98,7 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
             controller.getOrCreateContext(typeReference.definition.location.source).error {
                 message("Cannot have constraints on provider")
                 for (constraint in typeReference.constraints) {
-                    highlight("illegal constraint", constraint.definition.location)
+                    highlight("illegal constraint", constraint.node.location)
                 }
             }
         }

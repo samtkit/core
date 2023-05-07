@@ -4,7 +4,10 @@ import tools.samt.common.DiagnosticController
 import tools.samt.parser.*
 
 internal class ConstraintBuilder(private val controller: DiagnosticController) {
-    private fun createRange(expression: RangeExpressionNode): ResolvedTypeReference.Constraint.Range? {
+    private fun createRange(
+        expression: ExpressionNode,
+        argument: RangeExpressionNode,
+    ): ResolvedTypeReference.Constraint.Range? {
         fun resolveSide(expressionNode: ExpressionNode): Number? = when (expressionNode) {
             is NumberNode -> expressionNode.value
             is WildcardNode -> null
@@ -18,13 +21,13 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
             }
         }
 
-        val lower = resolveSide(expression.left)
-        val higher = resolveSide(expression.right)
+        val lower = resolveSide(argument.left)
+        val higher = resolveSide(argument.right)
 
         if (lower == null && higher == null) {
-            controller.getOrCreateContext(expression.location.source).error {
+            controller.getOrCreateContext(argument.location.source).error {
                 message("Range constraint must have at least one valid number")
-                highlight("invalid constraint", expression.location)
+                highlight("invalid constraint", argument.location)
                 help("A valid constraint would be range(1..10.5) or range(1..*)")
             }
             return null
@@ -33,22 +36,25 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
         if (lower is Double && higher is Double && lower > higher ||
             lower is Long && higher is Long && lower > higher
         ) {
-            controller.getOrCreateContext(expression.location.source)
+            controller.getOrCreateContext(argument.location.source)
                 .error {
                     message("Range constraint must have a lower bound lower than the upper bound")
-                    highlight("invalid constraint", expression.location)
+                    highlight("invalid constraint", argument.location)
                 }
             return null
         }
 
         return ResolvedTypeReference.Constraint.Range(
-            definition = expression,
+            node = expression,
             lowerBound = lower,
             upperBound = higher,
         )
     }
 
-    private fun createSize(expression: RangeExpressionNode): ResolvedTypeReference.Constraint.Size? {
+    private fun createSize(
+        expression: ExpressionNode,
+        argument: RangeExpressionNode,
+    ): ResolvedTypeReference.Constraint.Size? {
         fun resolveSide(expressionNode: ExpressionNode): Long? = when (expressionNode) {
             is IntegerNode -> expressionNode.value
             is WildcardNode -> null
@@ -63,47 +69,53 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
             }
         }
 
-        val lower = resolveSide(expression.left)
-        val higher = resolveSide(expression.right)
+        val lower = resolveSide(argument.left)
+        val higher = resolveSide(argument.right)
 
         if (lower == null && higher == null) {
-            controller.getOrCreateContext(expression.location.source).error {
+            controller.getOrCreateContext(argument.location.source).error {
                 message("Constraint parameters cannot both be wildcards")
-                highlight("invalid constraint", expression.location)
+                highlight("invalid constraint", argument.location)
                 help("A valid constraint would be range(1..10.5) or range(1..*)")
             }
             return null
         }
 
         if (lower != null && higher != null && lower > higher) {
-            controller.getOrCreateContext(expression.location.source).error {
+            controller.getOrCreateContext(argument.location.source).error {
                 message("Size constraint lower bound must be lower than or equal to the upper bound")
-                highlight("invalid constraint", expression.location)
+                highlight("invalid constraint", argument.location)
             }
             return null
         }
 
         return ResolvedTypeReference.Constraint.Size(
-            definition = expression,
+            node = expression,
             lowerBound = lower,
             upperBound = higher,
         )
     }
 
-    private fun createPattern(expression: StringNode): ResolvedTypeReference.Constraint.Pattern {
+    private fun createPattern(
+        expression: ExpressionNode,
+        argument: StringNode,
+    ): ResolvedTypeReference.Constraint.Pattern {
         // We will validate the pattern here in the future
-        return ResolvedTypeReference.Constraint.Pattern(expression, expression.value)
+        return ResolvedTypeReference.Constraint.Pattern(expression, argument.value)
     }
 
-    private fun createValue(expression: ExpressionNode): ResolvedTypeReference.Constraint.Value? {
-        return when (expression) {
-            is StringNode -> ResolvedTypeReference.Constraint.Value(expression, expression.value)
-            is NumberNode -> ResolvedTypeReference.Constraint.Value(expression, expression.value)
-            is BooleanNode -> ResolvedTypeReference.Constraint.Value(expression, expression.value)
+    private fun createValue(
+        expression: ExpressionNode,
+        argument: ExpressionNode,
+    ): ResolvedTypeReference.Constraint.Value? {
+        return when (argument) {
+            is StringNode -> ResolvedTypeReference.Constraint.Value(expression, argument.value)
+            is NumberNode -> ResolvedTypeReference.Constraint.Value(expression, argument.value)
+            is BooleanNode -> ResolvedTypeReference.Constraint.Value(expression, argument.value)
             else -> {
-                controller.getOrCreateContext(expression.location.source).error {
+                controller.getOrCreateContext(argument.location.source).error {
                     message("Value constraint must be a string, integer, float or boolean")
-                    highlight("invalid constraint", expression.location)
+                    highlight("invalid constraint", argument.location)
                     help("A valid constraint would be value(\"foo\"), value(42) or value(false)")
                 }
                 null
@@ -131,7 +143,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
                             }
                             return null
                         }
-                        return createRange(expression.arguments.first() as RangeExpressionNode)
+                        return createRange(expression, expression.arguments.first() as RangeExpressionNode)
                     }
 
                     "size" -> {
@@ -143,7 +155,10 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
                             }
                             return null
                         }
-                        return createSize(expression.arguments.first() as RangeExpressionNode)
+                        return createSize(
+                            expression = expression,
+                            argument = expression.arguments.first() as RangeExpressionNode,
+                        )
                     }
 
                     "pattern" -> {
@@ -155,7 +170,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
                             }
                             return null
                         }
-                        return createPattern(expression.arguments.first() as StringNode)
+                        return createPattern(expression, expression.arguments.first() as StringNode)
                     }
 
                     "value" -> {
@@ -166,7 +181,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
                             }
                             return null
                         }
-                        return createValue(expression.arguments.first())
+                        return createValue(expression, expression.arguments.first())
                     }
 
                     is String -> {
@@ -180,27 +195,29 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
                 }
             }
             // It might make sense to limit shorthand constraints to only the first argument
-            is RangeExpressionNode -> return if (baseType is StringType || baseType is ListType || baseType is MapType) createSize(
-                expression
-            ) else createRange(expression)
+            is RangeExpressionNode -> return if (baseType is StringType || baseType is ListType || baseType is MapType) {
+                createSize(expression = expression, argument = expression)
+            } else {
+                createRange(expression = expression, argument = expression)
+            }
 
             is NumberNode -> {
                 return if (expression is IntegerNode && (baseType is StringType || baseType is ListType || baseType is MapType)) {
                     ResolvedTypeReference.Constraint.Size(
-                        definition = expression,
+                        node = expression,
                         lowerBound = null,
                         upperBound = expression.value
                     )
                 } else {
                     ResolvedTypeReference.Constraint.Range(
-                        definition = expression,
+                        node = expression,
                         lowerBound = null,
                         upperBound = expression.value
                     )
                 }
             }
 
-            is StringNode -> return createPattern(expression)
+            is StringNode -> return createPattern(expression = expression, argument = expression)
             else -> Unit
         }
         controller.getOrCreateContext(expression.location.source).error {

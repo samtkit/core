@@ -249,10 +249,10 @@ data class ResolvedTypeReference(
 
     sealed interface Constraint {
         val humanReadableName: String
-        val definition: ExpressionNode
+        val node: ExpressionNode
 
         data class Range(
-            override val definition: ExpressionNode,
+            override val node: ExpressionNode,
             val lowerBound: Number?,
             val upperBound: Number?,
         ) : Constraint {
@@ -261,7 +261,7 @@ data class ResolvedTypeReference(
         }
 
         data class Size(
-            override val definition: ExpressionNode,
+            override val node: ExpressionNode,
             val lowerBound: Long?,
             val upperBound: Long?,
         ) : Constraint {
@@ -270,7 +270,7 @@ data class ResolvedTypeReference(
         }
 
         data class Pattern(
-            override val definition: ExpressionNode,
+            override val node: ExpressionNode,
             val pattern: String,
         ) : Constraint {
             override val humanReadableName: String
@@ -278,7 +278,7 @@ data class ResolvedTypeReference(
         }
 
         data class Value(
-            override val definition: ExpressionNode,
+            override val node: ExpressionNode,
             val value: Any,
         ) : Constraint {
             override val humanReadableName: String

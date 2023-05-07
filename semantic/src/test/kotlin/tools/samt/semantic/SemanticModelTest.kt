@@ -72,8 +72,9 @@ class SemanticModelTest {
                 enum B { }
 
                 service C { }
+                service D { }
                 provide C {
-                    implements C
+                    implements D
                     transport HTTP
                 }
             """.trimIndent()

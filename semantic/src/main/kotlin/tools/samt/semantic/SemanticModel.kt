@@ -1,7 +1,6 @@
 package tools.samt.semantic
 
 import tools.samt.common.DiagnosticController
-import tools.samt.common.Location
 import tools.samt.common.SourceFile
 import tools.samt.parser.*
 
@@ -17,49 +16,12 @@ class SemanticModelBuilder private constructor(
     private val controller: DiagnosticController,
 ) {
     private val global = Package(name = "")
-    private val constraintBuilder = ConstraintBuilder(controller)
+    private val preProcessor = SemanticModelPreProcessor(controller)
     private val postProcessor = SemanticModelPostProcessor(controller)
-
-    private inline fun ensureNameIsAvailable(
-        parentPackage: Package,
-        statement: NamedDeclarationNode,
-        block: () -> Unit,
-    ) {
-        if (statement.name !in parentPackage) {
-            block()
-        } else {
-            val existingType = parentPackage.types.getValue(statement.name.name)
-            controller.getOrCreateContext(statement.location.source).error {
-                message("'${statement.name.name}' is already declared")
-                highlight("duplicate declaration", statement.name.location)
-                if (existingType is UserDefinedType) {
-                    highlight("previous declaration", existingType.definition.location)
-                }
-            }
-        }
-    }
-
-    private inline fun <T : Node> reportDuplicates(
-        items: List<T>,
-        what: String,
-        identifierGetter: (node: T) -> IdentifierNode,
-    ) {
-        val existingItems = mutableMapOf<String, Location>()
-        for (item in items) {
-            val name = identifierGetter(item).name
-            val existingLocation = existingItems.putIfAbsent(name, item.location)
-            if (existingLocation != null) {
-                controller.getOrCreateContext(item.location.source).error {
-                    message("$what '$name' is defined more than once")
-                    highlight("duplicate declaration", identifierGetter(item).location)
-                    highlight("previous declaration", existingLocation)
-                }
-            }
-        }
-    }
+    private val referenceResolver = SemanticModelReferenceResolver(controller, global)
 
     private fun build(): Package {
-        buildPackages()
+        preProcessor.fillPackage(global, files)
 
         val fileScopeBySource = files.associate { it.sourceFile to createFileScope(it) }
 
@@ -70,134 +32,12 @@ class SemanticModelBuilder private constructor(
         return global
     }
 
-    private fun buildPackages() {
-        for (file in files) {
-            var parentPackage = global
-            for (component in file.packageDeclaration.name.components) {
-                var subPackage = parentPackage.subPackages.find { it.name == component.name }
-                if (subPackage == null) {
-                    subPackage = Package(component.name)
-                    parentPackage.subPackages.add(subPackage)
-                }
-                parentPackage = subPackage
-            }
-
-            for (statement in file.statements) {
-                when (statement) {
-                    is RecordDeclarationNode -> {
-                        ensureNameIsAvailable(parentPackage, statement) {
-                            reportDuplicates(statement.fields, "Record field") { it.name }
-                            if (statement.extends.isNotEmpty()) {
-                                controller.getOrCreateContext(statement.location.source).error {
-                                    message("Record extends are not yet supported")
-                                    highlight("cannot extend other records", statement.extends.first().location)
-                                }
-                            }
-                            val fields = statement.fields.map { field ->
-                                RecordType.Field(field.name.name, UnresolvedTypeReference(field.type))
-                            }
-                            parentPackage += RecordType(statement.name.name, fields, statement)
-                        }
-                    }
-
-                    is EnumDeclarationNode -> {
-                        ensureNameIsAvailable(parentPackage, statement) {
-                            reportDuplicates(statement.values, "Enum value") { it }
-                            val values = statement.values.map { it.name }
-                            parentPackage += EnumType(statement.name.name, values, statement)
-                        }
-                    }
-
-                    is ServiceDeclarationNode -> {
-                        ensureNameIsAvailable(parentPackage, statement) {
-                            reportDuplicates(statement.operations, "Operation") { it.name }
-                            val operations = statement.operations.map { operation ->
-                                reportDuplicates(operation.parameters, "Parameter") { it.name }
-                                val parameters = operation.parameters.map { parameter ->
-                                    ServiceType.Operation.Parameter(
-                                        name = parameter.name.name,
-                                        type = UnresolvedTypeReference(parameter.type)
-                                    )
-                                }
-                                when (operation) {
-                                    is OnewayOperationNode -> {
-                                        ServiceType.OnewayOperation(
-                                            name = operation.name.name,
-                                            parameters = parameters,
-                                        )
-                                    }
-
-                                    is RequestResponseOperationNode -> {
-                                        if (operation.isAsync) {
-                                            controller.getOrCreateContext(operation.location.source).error {
-                                                message("Async operations are not yet supported")
-                                                highlight("unsupported async operation", operation.location)
-                                            }
-                                        }
-                                        ServiceType.RequestResponseOperation(
-                                            name = operation.name.name,
-                                            parameters = parameters,
-                                            returnType = operation.returnType?.let { UnresolvedTypeReference(it) },
-                                            raisesTypes = operation.raises.map { UnresolvedTypeReference(it) },
-                                        )
-                                    }
-                                }
-                            }
-                            parentPackage += ServiceType(statement.name.name, operations, statement)
-                        }
-                    }
-
-                    is ProviderDeclarationNode -> {
-                        ensureNameIsAvailable(parentPackage, statement) {
-                            val implements = statement.implements.map { implements ->
-                                ProviderType.Implements(
-                                    UnresolvedTypeReference(implements.serviceName),
-                                    emptyList(),
-                                    implements
-                                )
-                            }
-                            val transport = ProviderType.Transport(
-                                name = statement.transport.protocolName.name,
-                                configuration = statement.transport.configuration
-                            )
-                            parentPackage += ProviderType(statement.name.name, implements, transport, statement)
-                        }
-                    }
-
-                    is ConsumerDeclarationNode -> {
-                        parentPackage += ConsumerType(
-                            provider = UnresolvedTypeReference(statement.providerName),
-                            uses = statement.usages.map {
-                                ConsumerType.Uses(
-                                    service = UnresolvedTypeReference(it.serviceName),
-                                    operations = emptyList(),
-                                    definition = it
-                                )
-                            },
-                            definition = statement
-                        )
-                    }
-
-                    is TypeAliasNode -> {
-                        controller.getOrCreateContext(statement.location.source).error {
-                            message("Type aliases are not yet supported")
-                            highlight("unsupported feature", statement.location)
-                        }
-                    }
-
-                    is PackageDeclarationNode,
-                    is ImportNode,
-                    -> Unit
-                }
-            }
-        }
-    }
-
     private fun resolveTypes(fileScopeBySource: Map<SourceFile, FileScope>) {
         fun TypeReference.resolve(): ResolvedTypeReference {
             check(this is UnresolvedTypeReference) { "Type reference must be unresolved" }
 
-            return resolveExpression(fileScopeBySource, expression)
+            val fileScope = fileScopeBySource.getValue(expression.location.source)
+            return referenceResolver.resolveAndLinkExpression(fileScope, expression)
         }
 
         for (subPackage in global.allSubPackages) {
@@ -234,51 +74,14 @@ class SemanticModelBuilder private constructor(
         }
     }
 
-    private fun resolveType(bundleIdentifierNode: BundleIdentifierNode) = resolveType(bundleIdentifierNode.components)
-    private fun resolveType(components: List<IdentifierNode>, start: Package = global): Type? {
-        var currentPackage = start
-        val iterator = components.listIterator()
-        while (iterator.hasNext()) {
-            val component = iterator.next()
-            when (val resolvedType = currentPackage.resolveType(component)) {
-                is PackageType -> {
-                    currentPackage = resolvedType.sourcePackage
-                }
-
-                null -> {
-                    controller.getOrCreateContext(component.location.source).error {
-                        message("Could not resolve reference '${component.name}'")
-                        highlight("unresolved reference", component.location)
-                    }
-                    return null
-                }
-
-                else -> {
-                    if (iterator.hasNext()) {
-                        // We resolved a non-package type but there are still components left
-
-                        controller.getOrCreateContext(component.location.source).error {
-                            message("Type '${component.name}' is not a package, cannot access sub-types")
-                            highlight("must be a package", component.location)
-                        }
-                        return null
-                    }
-                    return resolvedType
-                }
-            }
-        }
-
-        return PackageType(currentPackage)
-    }
-
     data class FileScope(val filePackage: PackageType, val typeLookup: Map<String, Type>)
 
     private fun createFileScope(file: FileNode): FileScope {
-        // Add all types from the file package
-        val filePackage = resolveType(file.packageDeclaration.name)
+        val filePackage = referenceResolver.resolveType(file.packageDeclaration.name)
         check(filePackage is PackageType)
 
         val typeLookup: Map<String, Type> = buildMap {
+            // Add all types from the file package
             putAll(filePackage.sourcePackage.types)
 
             // Add all imports to scope
@@ -288,8 +91,8 @@ class SemanticModelBuilder private constructor(
                         controller.getOrCreateContext(file.sourceFile).error {
                             message("Import '$name' conflicts with locally defined type with same name")
                             highlight("conflicting import", import.location)
-                            if (existingType is UserDefinedType) {
-                                highlight("local type with same name", existingType.definition.location)
+                            if (existingType is UserDeclared) {
+                                highlight("local type with same name", existingType.declaration.location)
                             }
                         }
                     }
@@ -297,8 +100,10 @@ class SemanticModelBuilder private constructor(
                 when (import) {
                     is TypeImportNode -> {
                         // Just import one type
-                        val type = resolveType(import.name)
+                        val type = referenceResolver.resolveType(import.name)
                         if (type != null) {
+                            filePackage.sourcePackage.linkType(import, type)
+
                             val name = if (import.alias != null) {
                                 import.alias!!.name
                             } else {
@@ -311,8 +116,9 @@ class SemanticModelBuilder private constructor(
 
                     is WildcardImportNode -> {
                         // Import all types from the package
-                        val type = resolveType(import.name)
+                        val type = referenceResolver.resolveType(import.name)
                         if (type != null) {
+                            filePackage.sourcePackage.linkType(import, type)
                             if (type is PackageType) {
                                 type.sourcePackage.types.forEach { (name, type) ->
                                     addImportedType(name, type)
@@ -340,8 +146,8 @@ class SemanticModelBuilder private constructor(
                 putIfAbsent(name, type)?.let { existingType ->
                     controller.getOrCreateContext(file.sourceFile).error {
                         message("Type '$name' shadows built-in type with same name")
-                        if (existingType is UserDefinedType) {
-                            val definition = existingType.definition
+                        if (existingType is UserDeclared) {
+                            val definition = existingType.declaration
                             if (definition is NamedDeclarationNode) {
                                 highlight("Shadows built-in type", definition.name.location)
                             } else {
@@ -365,141 +171,6 @@ class SemanticModelBuilder private constructor(
         }
 
         return FileScope(filePackage, typeLookup)
-    }
-
-    private fun resolveExpression(
-        fileScopes: Map<SourceFile, FileScope>,
-        rootExpression: ExpressionNode,
-    ): ResolvedTypeReference {
-        fun resolveExpression(expression: ExpressionNode): ResolvedTypeReference {
-            val scope = fileScopes.getValue(expression.location.source)
-            when (expression) {
-                is IdentifierNode -> {
-                    scope.typeLookup[expression.name]?.let {
-                        return ResolvedTypeReference(expression, it)
-                    }
-
-                    controller.getOrCreateContext(expression.location.source).error {
-                        message("Type '${expression.name}' could not be resolved")
-                        highlight("unresolved type", expression.location)
-                    }
-                }
-
-                is BundleIdentifierNode -> {
-                    // Bundle identifiers with one component are treated like normal identifiers
-                    if (expression.components.size == 1) {
-                        return resolveExpression(expression.components.first())
-                    }
-                    // Type is foo.bar.Baz
-                    // Resolve foo first, it must be a package
-                    when (val expectedPackageType = scope.typeLookup[expression.components.first().name]) {
-                        is PackageType -> {
-                            resolveType(
-                                expression.components.subList(1, expression.components.size),
-                                expectedPackageType.sourcePackage
-                            )?.let {
-                                return ResolvedTypeReference(expression, it)
-                            }
-                        }
-
-                        null -> {
-                            controller.getOrCreateContext(expression.location.source).error {
-                                message("Type '${expression.name}' could not be resolved")
-                                highlight("unresolved type", expression.location)
-                            }
-                        }
-
-                        else -> {
-                            controller.getOrCreateContext(expression.location.source).error {
-                                message("Type '${expression.components.first().name}' is not a package, cannot access sub-types")
-                                highlight("not a package", expression.components.first().location)
-                            }
-                        }
-                    }
-                }
-
-                is CallExpressionNode -> {
-                    val baseType = resolveExpression(expression.base)
-                    val constraints = expression.arguments.mapNotNull { constraintBuilder.build(baseType.type, it) }
-                    if (baseType.constraints.isNotEmpty()) {
-                        controller.getOrCreateContext(expression.location.source).error {
-                            message("Cannot have nested constraints")
-                            highlight("illegal nested constraint", expression.location)
-                        }
-                    }
-                    return baseType.copy(constraints = constraints)
-                }
-
-                is GenericSpecializationNode -> {
-                    val name = expression.base.let {
-                        when (it) {
-                            is IdentifierNode -> it.name
-                            is BundleIdentifierNode -> it.name
-                            else -> null
-                        }
-                    }
-                    when (name) {
-                        "List" -> {
-                            if (expression.arguments.size == 1) {
-                                return ResolvedTypeReference(
-                                    expression,
-                                    ListType(resolveExpression(expression.arguments[0]))
-                                )
-                            }
-                        }
-
-                        "Map" -> {
-                            if (expression.arguments.size == 2) {
-                                return ResolvedTypeReference(
-                                    expression,
-                                    MapType(
-                                        keyType = resolveExpression(expression.arguments[0]),
-                                        valueType = resolveExpression(expression.arguments[1])
-                                    )
-                                )
-                            }
-                        }
-                    }
-                    controller.getOrCreateContext(expression.location.source).error {
-                        message("Unsupported generic type")
-                        highlight(expression.location)
-                        help("Valid generic types are List<Value> and Map<Key, Value>")
-                    }
-                }
-
-                is OptionalDeclarationNode -> {
-                    val baseType = resolveExpression(expression.base)
-                    if (baseType.isOptional) {
-                        controller.getOrCreateContext(expression.location.source).warn {
-                            message("Type is already optional, ignoring '?'")
-                            highlight("already optional", expression.base.location)
-                        }
-                    }
-                    return baseType.copy(isOptional = true)
-                }
-
-                is BooleanNode,
-                is NumberNode,
-                is StringNode,
-                -> controller.getOrCreateContext(expression.location.source).error {
-                    message("Cannot use literal value as type")
-                    highlight("not a type expression", expression.location)
-                }
-
-                is ObjectNode,
-                is ArrayNode,
-                is RangeExpressionNode,
-                is WildcardNode,
-                -> controller.getOrCreateContext(expression.location.source).error {
-                    message("Invalid type expression")
-                    highlight("not a type expression", expression.location)
-                }
-            }
-
-            return ResolvedTypeReference(expression, UnknownType)
-        }
-
-        return resolveExpression(rootExpression)
     }
 
     companion object {

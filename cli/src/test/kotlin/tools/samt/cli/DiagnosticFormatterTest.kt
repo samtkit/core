@@ -8,7 +8,6 @@ import tools.samt.parser.EnumDeclarationNode
 import tools.samt.parser.FileNode
 import tools.samt.parser.Parser
 import java.net.URI
-import kotlin.io.path.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -40,8 +39,8 @@ class DiagnosticFormatterTest {
 
     @Test
     fun `file messages with no highlights`() {
-        val baseDirectory = Path("/tmp").toUri()
-        val filePath = Path("/tmp", "test.txt").toUri()
+        val baseDirectory = URI("file:///tmp")
+        val filePath = URI("file:///tmp/test.txt")
         val controller = DiagnosticController(baseDirectory)
         val source = ""
         val sourceFile = SourceFile(filePath, source)
@@ -65,15 +64,15 @@ class DiagnosticFormatterTest {
         assertEquals("""
             ────────────────────────────────────────
             ERROR: some error
-             ---> test.txt
+             ---> file:///tmp/test.txt
             
             ────────────────────────────────────────
             WARNING: some warning
-             ---> test.txt
+             ---> file:///tmp/test.txt
             
             ────────────────────────────────────────
             INFO: some info
-             ---> test.txt
+             ---> file:///tmp/test.txt
             
             ────────────────────────────────────────
             FAILED in 0ms (1 error(s), 1 warning(s))
@@ -104,7 +103,7 @@ class DiagnosticFormatterTest {
         assertEquals("""
             ────────────────────────────────────────
             ERROR: some error
-             ---> DiagnosticFormatterTest.samt:2:1
+             ---> file:///tmp/DiagnosticFormatterTest.samt:2:1
             
                   1 │ package debug
             |>    2 │ enum Test {
@@ -140,7 +139,7 @@ class DiagnosticFormatterTest {
         assertEquals("""
             ────────────────────────────────────────
             ERROR: some error
-             ---> DiagnosticFormatterTest.samt:2:1
+             ---> file:///tmp/DiagnosticFormatterTest.samt:2:1
             
                   1 │ package debug
             |>    2 │ enum Test {
@@ -183,7 +182,7 @@ class DiagnosticFormatterTest {
         assertEquals("""
             ────────────────────────────────────────
             ERROR: some error
-             ---> DiagnosticFormatterTest.samt:3:5
+             ---> file:///tmp/DiagnosticFormatterTest.samt:3:5
             
                   1 │ package debug
                   2 │ enum Test {
@@ -239,7 +238,7 @@ class DiagnosticFormatterTest {
         assertEquals("""
             ────────────────────────────────────────
             ERROR: some error
-             ---> DiagnosticFormatterTest.samt:3:5
+             ---> file:///tmp/DiagnosticFormatterTest.samt:3:5
             
                   1 │ package debug
                   2 │ enum Test {
@@ -293,7 +292,7 @@ class DiagnosticFormatterTest {
         assertEquals("""
             ────────────────────────────────────────
             ERROR: some error
-             ---> DiagnosticFormatterTest.samt:3:5
+             ---> file:///tmp/DiagnosticFormatterTest.samt:3:5
             
                   1 │ package debug
                   2 │ enum Test {
@@ -339,7 +338,7 @@ class DiagnosticFormatterTest {
         assertEquals("""
             ────────────────────────────────────────
             ERROR: some error
-             ---> DiagnosticFormatterTest.samt:3:5
+             ---> file:///tmp/DiagnosticFormatterTest.samt:3:5
             
                   1 │ package debug
                   2 │ enum Test {
@@ -382,7 +381,7 @@ class DiagnosticFormatterTest {
         assertEquals("""
             ────────────────────────────────────────
             ERROR: some error
-             ---> DiagnosticFormatterTest.samt:2:1
+             ---> file:///tmp/DiagnosticFormatterTest.samt:2:1
             
                   1 │ package debug
                   2 │ enum Test {
@@ -420,7 +419,7 @@ class DiagnosticFormatterTest {
         assertEquals("""
             ────────────────────────────────────────
             ERROR: some error
-             ---> DiagnosticFormatterTest.samt:2:1
+             ---> file:///tmp/DiagnosticFormatterTest.samt:2:1
             
                   1 │ package debug
                   2 │ enum Test {
@@ -461,7 +460,7 @@ class DiagnosticFormatterTest {
         assertEquals("""
             ────────────────────────────────────────
             ERROR: some error
-             ---> DiagnosticFormatterTest.samt:2:1
+             ---> file:///tmp/DiagnosticFormatterTest.samt:2:1
             
                   1 │ package debug
                   2 │ enum Test {
@@ -480,8 +479,8 @@ class DiagnosticFormatterTest {
     }
 
     private fun parse(source: String): Triple<FileNode, DiagnosticContext, DiagnosticController> {
-        val baseDirectory = Path("/tmp").toUri()
-        val filePath = Path("/tmp", "DiagnosticFormatterTest.samt").toUri()
+        val baseDirectory = URI("file:///tmp")
+        val filePath = URI("file:///tmp/DiagnosticFormatterTest.samt")
         val sourceFile = SourceFile(filePath, source)
         val diagnosticController = DiagnosticController(baseDirectory)
         val diagnosticContext = diagnosticController.getOrCreateContext(sourceFile)

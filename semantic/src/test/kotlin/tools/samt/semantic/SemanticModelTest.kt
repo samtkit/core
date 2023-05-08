@@ -275,6 +275,24 @@ class SemanticModelTest {
         }
 
         @Test
+        fun `cannot use same constraint multiple times`() {
+            val source = """
+                package tooManyConstraints
+
+                record Complex {
+                    string: String (pattern("a-z"), pattern("A-Z"))
+                    float: Float (1..100, range(1.5..*))
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf(
+                    "Error: Cannot have multiple constraints of the same type",
+                    "Error: Cannot have multiple constraints of the same type",
+                )
+            )
+        }
+
+        @Test
         fun `range must be valid`() {
             val source = """
                 package complex

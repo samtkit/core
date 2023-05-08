@@ -28,6 +28,7 @@ class SamtSemanticTokens private constructor() : SamtSemanticLookup<Location, Sa
                     Metadata(TokenType.type, TokenModifier.defaultLibrary)
             }
 
+            is AliasType -> this[location] = Metadata(TokenType.type)
             is ProviderType -> this[location] = Metadata(TokenType.type)
             is RecordType -> this[location] = Metadata(TokenType.`class`)
             is ServiceType -> this[location] = Metadata(TokenType.`interface`)

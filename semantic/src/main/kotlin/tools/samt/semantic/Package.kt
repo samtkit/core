@@ -12,6 +12,7 @@ class Package(val name: String) {
     val services: MutableList<ServiceType> = mutableListOf()
     val providers: MutableList<ProviderType> = mutableListOf()
     val consumers: MutableList<ConsumerType> = mutableListOf()
+    val aliases: MutableList<AliasType> = mutableListOf()
 
     val typeByNode: MutableMap<Node, Type> = mutableMapOf()
 
@@ -71,6 +72,12 @@ class Package(val name: String) {
     operator fun plusAssign(consumer: ConsumerType) {
         consumers.add(consumer)
         typeByNode[consumer.declaration] = consumer
+    }
+
+    operator fun plusAssign(alias: AliasType) {
+        aliases.add(alias)
+        types[alias.name] = alias
+        typeByNode[alias.declaration] = alias
     }
 
     operator fun contains(identifier: IdentifierNode): Boolean =

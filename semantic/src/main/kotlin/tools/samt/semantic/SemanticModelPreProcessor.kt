@@ -158,10 +158,12 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                     }
 
                     is TypeAliasNode -> {
-                        controller.getOrCreateContext(statement.location.source).error {
-                            message("Type aliases are not yet supported")
-                            highlight("unsupported feature", statement.location)
-                        }
+                        reportDuplicateDeclaration(parentPackage, statement)
+                        parentPackage += AliasType(
+                            name = statement.name.name,
+                            aliasedType = UnresolvedTypeReference(statement.type),
+                            declaration = statement
+                        )
                     }
 
                     is PackageDeclarationNode,

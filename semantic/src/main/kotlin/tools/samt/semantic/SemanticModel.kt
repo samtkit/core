@@ -26,10 +26,109 @@ class SemanticModelBuilder private constructor(
         val fileScopeBySource = files.associate { it.sourceFile to createFileScope(it) }
 
         resolveTypes(fileScopeBySource)
+        resolveAliases()
 
         postProcessor.process(global)
 
         return global
+    }
+
+    private fun resolveAliases() {
+        val workingSet = global.allSubPackages.flatMap { it.aliases }.toMutableSet()
+
+        do {
+            var didRemove = false
+            for (alias in workingSet.toList()) {
+                if (alias.fullyResolvedType != null) continue
+                val fullyResolvedType = getFullyResolvedType(alias.aliasedType)
+                if (fullyResolvedType != null) {
+                    alias.fullyResolvedType = fullyResolvedType
+                    workingSet.remove(alias)
+                    didRemove = true
+                }
+            }
+        } while (didRemove)
+
+        for (unresolvableAlias in workingSet) {
+            controller.getOrCreateContext(unresolvableAlias.declaration.location.source).error {
+                message("Could not resolve alias '${unresolvableAlias.name}', are there circular references?")
+                highlight("unresolved alias", unresolvableAlias.declaration.name.location)
+            }
+        }
+    }
+
+    private fun getFullyResolvedType(typeReference: TypeReference): ResolvedTypeReference? {
+        check(typeReference is ResolvedTypeReference)
+        fun merge(base: ResolvedTypeReference, inner: ResolvedTypeReference): ResolvedTypeReference {
+            if (base.isOptional && inner.isOptional) {
+                controller.getOrCreateContext(base.fullNode.location.source).warn {
+                    message("Type is already optional, ignoring '?'")
+                    highlight("duplicate optional", base.fullNode.location)
+                    highlight("declared optional here", inner.fullNode.location)
+                }
+            }
+            val overlappingConstraints = base.constraints.filter { baseConstraint -> inner.constraints.any { innerConstraint -> baseConstraint::class == innerConstraint::class } }
+            for (overlappingConstraint in overlappingConstraints) {
+                controller.getOrCreateContext(base.fullNode.location.source).error {
+                    message("Cannot have multiple constraints of the same type")
+                    val baseConstraint = base.constraints.first { it::class == overlappingConstraint::class }
+                    highlight("duplicate constraint", baseConstraint.node.location)
+
+                    val innerConstraint = base.constraints.first { it::class == overlappingConstraint::class }
+                    highlight("previously declared here", innerConstraint.node.location)
+                }
+            }
+            val mergedOptional = base.isOptional || inner.isOptional
+            val mergedConstraints = base.constraints + inner.constraints
+            return base.copy(type = inner.type, isOptional = mergedOptional, constraints = mergedConstraints)
+        }
+
+        return when (val type = typeReference.type) {
+            is LiteralType,
+            is EnumType,
+            is RecordType,
+            UnknownType -> typeReference
+            is AliasType -> type.fullyResolvedType?.let { merge(typeReference, it) }
+            is ListType -> {
+                val elementType = getFullyResolvedType(type.elementType)
+                if (elementType != null) {
+                    typeReference.copy(type = type.copy(elementType = elementType))
+                } else {
+                    null
+                }
+            }
+            is MapType -> {
+                val keyType = getFullyResolvedType(type.keyType)
+                val valueType = getFullyResolvedType(type.valueType)
+                if (keyType != null && valueType != null) {
+                    typeReference.copy(type = type.copy(keyType = keyType, valueType = valueType))
+                } else {
+                    null
+                }
+            }
+            is ServiceType -> {
+                controller.getOrCreateContext(typeReference.typeNode.location.source).error {
+                    message("Alias cannot reference service")
+                    highlight("alias", typeReference.typeNode.location)
+                }
+                typeReference
+            }
+            is ProviderType -> {
+                controller.getOrCreateContext(typeReference.typeNode.location.source).error {
+                    message("Alias cannot reference provider")
+                    highlight("alias", typeReference.typeNode.location)
+                }
+                typeReference
+            }
+            is PackageType -> {
+                controller.getOrCreateContext(typeReference.typeNode.location.source).error {
+                    message("Alias cannot reference package")
+                    highlight("alias", typeReference.typeNode.location)
+                }
+                typeReference
+            }
+            is ConsumerType -> error("Consumer type cannot be referenced by name, this should never happen")
+        }
     }
 
     private fun resolveTypes(fileScopeBySource: Map<SourceFile, FileScope>) {
@@ -41,6 +140,9 @@ class SemanticModelBuilder private constructor(
         }
 
         for (subPackage in global.allSubPackages) {
+            for (alias in subPackage.aliases) {
+                alias.aliasedType = alias.aliasedType.resolve()
+            }
             for (record in subPackage.records) {
                 for (field in record.fields) {
                     field.type = field.type.resolve()

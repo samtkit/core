@@ -63,20 +63,7 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
 
     private inline fun checkServiceType(typeReference: TypeReference, block: (serviceType: ServiceType) -> Unit) {
         check(typeReference is ResolvedTypeReference)
-        if (typeReference.constraints.isNotEmpty()) {
-            controller.getOrCreateContext(typeReference.fullNode.location.source).error {
-                message("Cannot have constraints on service")
-                for (constraint in typeReference.constraints) {
-                    highlight("illegal constraint", constraint.node.location)
-                }
-            }
-        }
-        if (typeReference.isOptional) {
-            controller.getOrCreateContext(typeReference.fullNode.location.source).error {
-                message("Cannot have optional service")
-                highlight("illegal optional", typeReference.fullNode.location)
-            }
-        }
+        checkBlankTypeReference(typeReference, "service")
         when (val type = typeReference.type) {
             is ServiceType -> {
                 block(type)
@@ -94,20 +81,7 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
 
     private inline fun checkProviderType(typeReference: TypeReference, block: (providerType: ProviderType) -> Unit) {
         check(typeReference is ResolvedTypeReference)
-        if (typeReference.constraints.isNotEmpty()) {
-            controller.getOrCreateContext(typeReference.fullNode.location.source).error {
-                message("Cannot have constraints on provider")
-                for (constraint in typeReference.constraints) {
-                    highlight("illegal constraint", constraint.node.location)
-                }
-            }
-        }
-        if (typeReference.isOptional) {
-            controller.getOrCreateContext(typeReference.fullNode.location.source).error {
-                message("Cannot have optional provider")
-                highlight("illegal optional", typeReference.fullNode.location)
-            }
-        }
+        checkBlankTypeReference(typeReference, "provider")
         when (val type = typeReference.type) {
             is ProviderType -> {
                 block(type)
@@ -121,6 +95,28 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
                 }
             }
         }
+    }
+
+    /** A blank type reference has no constraints or optional marker */
+    private fun checkBlankTypeReference(typeReference: ResolvedTypeReference, what: String): Boolean {
+        var isBlank = true
+        if (typeReference.constraints.isNotEmpty()) {
+            isBlank = false
+            controller.getOrCreateContext(typeReference.fullNode.location.source).error {
+                message("Cannot have constraints on $what")
+                for (constraint in typeReference.constraints) {
+                    highlight("illegal constraint", constraint.node.location)
+                }
+            }
+        }
+        if (typeReference.isOptional) {
+            isBlank = false
+            controller.getOrCreateContext(typeReference.fullNode.location.source).error {
+                message("Cannot have optional $what")
+                highlight("illegal optional", typeReference.fullNode.location)
+            }
+        }
+        return isBlank
     }
 
     private fun checkRecord(record: RecordType) {

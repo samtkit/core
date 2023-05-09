@@ -45,6 +45,11 @@ class SamtDeclarationLookup private constructor() : SamtSemanticLookup<Location,
         this[operation.declaration.name.location] = operation
     }
 
+    override fun markTypeAliasDeclaration(aliasType: AliasType) {
+        super.markTypeAliasDeclaration(aliasType)
+        this[aliasType.declaration.name.location] = aliasType
+    }
+
     companion object {
         fun analyze(fileNode: FileNode, samtPackage: Package) =
             SamtDeclarationLookup().also { it.analyze(fileNode, samtPackage) }

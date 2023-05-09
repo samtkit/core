@@ -13,7 +13,7 @@ dependencyResolutionManagement {
         val kotlin = "1.8.21"
         val shadow = "8.1.1"
         val jCommander = "1.82"
-        val mordant = "2.0.0-beta12"
+        val mordant = "2.0.0-beta13"
         val kotlinxSerialization = "1.5.0"
         val kover = "0.6.1"
         val lsp4j = "0.20.1"

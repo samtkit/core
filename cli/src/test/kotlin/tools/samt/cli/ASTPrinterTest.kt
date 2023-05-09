@@ -26,9 +26,20 @@ class ASTPrinterTest {
 
             enum E { A, B, C }
 
+            alias B : E
+
             @Description("This is a service")
             service MyService {
               testmethod(foo: A): B
+            }
+
+            provide MyEndpoint {
+              implements MyService
+              transport HTTP
+            }
+
+            consume MyEndpoint {
+              uses MyService
             }
         """.trimIndent())
 
@@ -80,19 +91,36 @@ class ASTPrinterTest {
             │ ├─IdentifierNode A <11:10>
             │ ├─IdentifierNode B <11:13>
             │ └─IdentifierNode C <11:16>
-            └─ServiceDeclarationNode <14:1>
-              ├─IdentifierNode MyService <14:9>
-              ├─RequestResponseOperationNode <15:3>
-              │ ├─IdentifierNode testmethod <15:3>
-              │ ├─OperationParameterNode <15:14>
-              │ │ ├─IdentifierNode foo <15:14>
-              │ │ └─BundleIdentifierNode A <15:19>
-              │ │   └─IdentifierNode A <15:19>
-              │ └─BundleIdentifierNode B <15:23>
-              │   └─IdentifierNode B <15:23>
-              └─AnnotationNode <13:1>
-                ├─IdentifierNode Description <13:2>
-                └─StringNode "This is a service" <13:14>
+            ├─TypeAliasNode <13:1>
+            │ ├─IdentifierNode B <13:7>
+            │ └─BundleIdentifierNode E <13:11>
+            │   └─IdentifierNode E <13:11>
+            ├─ServiceDeclarationNode <16:1>
+            │ ├─IdentifierNode MyService <16:9>
+            │ ├─RequestResponseOperationNode <17:3>
+            │ │ ├─IdentifierNode testmethod <17:3>
+            │ │ ├─OperationParameterNode <17:14>
+            │ │ │ ├─IdentifierNode foo <17:14>
+            │ │ │ └─BundleIdentifierNode A <17:19>
+            │ │ │   └─IdentifierNode A <17:19>
+            │ │ └─BundleIdentifierNode B <17:23>
+            │ │   └─IdentifierNode B <17:23>
+            │ └─AnnotationNode <15:1>
+            │   ├─IdentifierNode Description <15:2>
+            │   └─StringNode "This is a service" <15:14>
+            ├─ProviderDeclarationNode <20:1>
+            │ ├─IdentifierNode MyEndpoint <20:9>
+            │ ├─ProviderImplementsNode <21:3>
+            │ │ └─BundleIdentifierNode MyService <21:14>
+            │ │   └─IdentifierNode MyService <21:14>
+            │ └─ProviderTransportNode <22:3>
+            │   └─IdentifierNode HTTP <22:13>
+            └─ConsumerDeclarationNode <25:1>
+              ├─BundleIdentifierNode MyEndpoint <25:9>
+              │ └─IdentifierNode MyEndpoint <25:9>
+              └─ConsumerUsesNode <26:3>
+                └─BundleIdentifierNode MyService <26:8>
+                  └─IdentifierNode MyService <26:8>
         """.trimIndent().trim(), dumpWithoutColorCodes.trimIndent().trim())
     }
 

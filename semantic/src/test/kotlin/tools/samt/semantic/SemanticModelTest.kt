@@ -77,12 +77,16 @@ class SemanticModelTest {
                     implements D
                     transport HTTP
                 }
+
+                enum E { }
+                alias E : Int
             """.trimIndent()
             parseAndCheck(
                 source to listOf(
                     "Error: 'A' is already declared",
                     "Error: 'B' is already declared",
-                    "Error: 'C' is already declared"
+                    "Error: 'C' is already declared",
+                    "Error: 'E' is already declared",
                 )
             )
         }
@@ -266,6 +270,24 @@ class SemanticModelTest {
                     "Error: Constraint 'pattern(a-z)' is not allowed for type 'List<String>'",
                     "Error: Constraint 'size(1..100)' is not allowed for type 'Int'",
                     "Error: Constraint 'value(42)' is not allowed for type 'String'",
+                )
+            )
+        }
+
+        @Test
+        fun `cannot use same constraint multiple times`() {
+            val source = """
+                package tooManyConstraints
+
+                record Complex {
+                    string: String (pattern("a-z"), pattern("A-Z"))
+                    float: Float (1..100, range(1.5..*))
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf(
+                    "Error: Cannot have multiple constraints of the same type",
+                    "Error: Cannot have multiple constraints of the same type",
                 )
             )
         }
@@ -479,6 +501,49 @@ class SemanticModelTest {
     }
 
     @Nested
+    inner class Aliases {
+
+        @Test
+        fun `can use type aliases`() {
+            val source = """
+                package color
+
+                alias UShort: Int (0..256)
+
+                record Color {
+                    r: UShort
+                    g: UShort
+                    b: UShort
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to emptyList()
+            )
+        }
+
+        @Test
+        fun `cannot use type aliases with cyclic references`() {
+            val source = """
+                package color
+
+                alias A : Int
+                alias B : A // Int
+                alias C : B // Int
+                alias D : F // Cycle!
+                alias E : D // Cycle!
+                alias F : E // Cycle!
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf(
+                    "Error: Could not resolve alias 'D', are there circular references?",
+                    "Error: Could not resolve alias 'E', are there circular references?",
+                    "Error: Could not resolve alias 'F', are there circular references?",
+                )
+            )
+        }
+    }
+
+    @Nested
     inner class NotImplementedFeatures {
         @Test
         fun `cannot use extends keyword`() {
@@ -489,18 +554,6 @@ class SemanticModelTest {
             """.trimIndent()
             parseAndCheck(
                 source to listOf("Error: Record extends are not yet supported")
-            )
-        }
-
-        @Test
-        fun `cannot use type aliases`() {
-            val source = """
-                package color
-
-                alias Color: Int
-            """.trimIndent()
-            parseAndCheck(
-                source to listOf("Error: Type aliases are not yet supported")
             )
         }
 

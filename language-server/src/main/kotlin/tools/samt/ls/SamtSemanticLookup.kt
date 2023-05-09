@@ -32,6 +32,7 @@ abstract class SamtSemanticLookup<TKey, TValue> protected constructor() {
                 markTypeReference(type.valueType)
             }
 
+            is AliasType,
             is ConsumerType,
             is EnumType,
             is ProviderType,
@@ -61,10 +62,15 @@ abstract class SamtSemanticLookup<TKey, TValue> protected constructor() {
             is EnumDeclarationNode -> markEnumDeclaration(samtPackage.getTypeByNode(statement))
             is RecordDeclarationNode -> markRecordDeclaration(samtPackage.getTypeByNode(statement))
             is ServiceDeclarationNode -> markServiceDeclaration(samtPackage.getTypeByNode(statement))
-            is TypeAliasNode -> Unit
+            is TypeAliasNode -> markTypeAliasDeclaration(samtPackage.getTypeByNode(statement))
             is PackageDeclarationNode -> markPackageDeclaration(statement)
             is ImportNode -> markImport(statement,samtPackage.typeByNode[statement] ?: UnknownType)
         }
+    }
+
+    protected open fun markTypeAliasDeclaration(aliasType: AliasType) {
+        markAnnotations(aliasType.declaration.annotations)
+        markTypeReference(aliasType.aliasedType)
     }
 
     protected open fun markServiceDeclaration(serviceType: ServiceType) {

@@ -131,7 +131,18 @@ data class MapType(
     override val humanReadableName: String = "Map<${keyType.humanReadableName}, ${valueType.humanReadableName}>"
 }
 
-data class RecordType(
+class AliasType(
+    val name: String,
+    /** The type this alias stands for, could be another alias */
+    var aliasedType: TypeReference,
+    /** The fully resolved type, will not contain any type aliases anymore, just the underlying merged type */
+    var fullyResolvedType: ResolvedTypeReference? = null,
+    override val declaration: TypeAliasNode,
+) : CompoundType, UserDeclared {
+    override val humanReadableName: String = name
+}
+
+class RecordType(
     val name: String,
     val fields: List<Field>,
     override val declaration: RecordDeclarationNode,
@@ -145,7 +156,7 @@ data class RecordType(
     override val humanReadableName: String = name
 }
 
-data class EnumType(
+class EnumType(
     val name: String,
     val values: List<String>,
     override val declaration: EnumDeclarationNode,
@@ -153,7 +164,7 @@ data class EnumType(
     override val humanReadableName: String = name
 }
 
-data class ServiceType(
+class ServiceType(
     val name: String,
     val operations: List<Operation>,
     override val declaration: ServiceDeclarationNode,
@@ -169,7 +180,7 @@ data class ServiceType(
         ): UserDeclared
     }
 
-    data class RequestResponseOperation(
+    class RequestResponseOperation(
         override val name: String,
         override val parameters: List<Operation.Parameter>,
         override val declaration: RequestResponseOperationNode,
@@ -178,7 +189,7 @@ data class ServiceType(
         val isAsync: Boolean,
     ) : Operation
 
-    data class OnewayOperation(
+    class OnewayOperation(
         override val name: String,
         override val parameters: List<Operation.Parameter>,
         override val declaration: OnewayOperationNode,
@@ -187,32 +198,32 @@ data class ServiceType(
     override val humanReadableName: String = name
 }
 
-data class ProviderType(
+class ProviderType(
     val name: String,
     val implements: List<Implements>,
-    val transport: Transport,
+    @Suppress("unused") val transport: Transport,
     override val declaration: ProviderDeclarationNode,
 ) : CompoundType, UserDeclared {
-    data class Implements(
+    class Implements(
         var service: TypeReference,
         var operations: List<ServiceType.Operation>,
         val node: ProviderImplementsNode,
     )
 
-    data class Transport(
+    class Transport(
         val name: String,
-        val configuration: Any?,
+        @Suppress("unused") val configuration: Any?,
     )
 
     override val humanReadableName: String = name
 }
 
-data class ConsumerType(
+class ConsumerType(
     var provider: TypeReference,
     var uses: List<Uses>,
     override val declaration: ConsumerDeclarationNode,
 ) : CompoundType, UserDeclared {
-    data class Uses(
+    class Uses(
         var service: TypeReference,
         var operations: List<ServiceType.Operation>,
         val node: ConsumerUsesNode,

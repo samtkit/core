@@ -78,6 +78,17 @@ internal class SemanticModelReferenceResolver(
                         highlight("illegal nested constraint", expression.location)
                     }
                 }
+                for (constraintInstances in constraints.groupBy { it::class }.values) {
+                    if (constraintInstances.size > 1) {
+                        controller.getOrCreateContext(expression.location.source).error {
+                            message("Cannot have multiple constraints of the same type")
+                            highlight("first constraint", constraintInstances.first().node.location)
+                            for (duplicateConstraints in constraintInstances.drop(1)) {
+                                highlight("duplicate constraint", duplicateConstraints.node.location)
+                            }
+                        }
+                    }
+                }
                 return baseType.copy(constraints = constraints, fullNode = expression)
             }
 

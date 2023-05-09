@@ -61,11 +61,9 @@ internal fun dump(command: DumpCommand, terminal: Terminal, controller: Diagnost
     }
 
     // build up the semantic model from the AST
-    SemanticModelBuilder.build(fileNodes, controller)
+    val samtPackage = SemanticModelBuilder.build(fileNodes, controller)
 
     if (dumpAll || command.dumpTypes) {
-        terminal.println("Types:")
-        terminal.println("Not yet implemented")
-        // Type dumper will be added here
+        terminal.println(TypePrinter.dump(samtPackage))
     }
 }

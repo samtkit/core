@@ -1,5 +1,3 @@
-import tools.samt.examples.todo.TodoManager
-
 package tools.samt.examples.todo
 
 provide TodosFileInput {

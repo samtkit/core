@@ -35,7 +35,7 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
         }
 
     override fun initialized(params: InitializedParams) {
-        pushDiagnostics()
+        workspaces.values.forEach(client::publishWorkspaceDiagnostics)
     }
 
     override fun shutdown(): CompletableFuture<Any> = CompletableFuture.completedFuture(null)
@@ -74,16 +74,5 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
         sourceFiles.asSequence().map(::parseFile).forEach(workspace::add)
         workspace.buildSemanticModel()
         return workspace
-    }
-
-    private fun pushDiagnostics() {
-        workspaces.values.flatMap { workspace ->
-            workspace.getAllMessages().map { (path, messages) ->
-                PublishDiagnosticsParams(
-                    path.toString(),
-                    messages.map { it.toDiagnostic() }
-                )
-            }
-        }.forEach(client::publishDiagnostics)
     }
 }

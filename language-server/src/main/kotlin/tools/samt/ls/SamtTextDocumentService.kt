@@ -30,19 +30,11 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
         val path = params.textDocument.uri.toPathUri()
         val newText = params.contentChanges.single().text
         val fileInfo = parseFile(SourceFile(path, newText))
-        val workspace = getWorkspace(path) ?: return
+        val workspace = workspaces.getByFile(path) ?: return
 
         workspace.add(fileInfo)
         workspace.buildSemanticModel()
-        workspace.getAllMessages().forEach { (path, messages) ->
-            client.publishDiagnostics(
-                PublishDiagnosticsParams(
-                    path.toString(),
-                    messages.map { it.toDiagnostic() },
-                    params.textDocument.version
-                )
-            )
-        }
+        client.publishWorkspaceDiagnostics(workspace)
     }
 
     override fun didClose(params: DidCloseTextDocumentParams) {
@@ -56,7 +48,7 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
     override fun definition(params: DefinitionParams): CompletableFuture<Either<List<Location>, List<LocationLink>>> =
         CompletableFuture.supplyAsync {
             val path = params.textDocument.uri.toPathUri()
-            val workspace = getWorkspace(path)
+            val workspace = workspaces.getByFile(path)
 
             val fileInfo = workspace?.get(path) ?: return@supplyAsync Either.forRight(emptyList())
 
@@ -89,7 +81,7 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
     override fun references(params: ReferenceParams): CompletableFuture<List<Location>> =
         CompletableFuture.supplyAsync {
             val path = params.textDocument.uri.toPathUri()
-            val workspace = getWorkspace(path) ?: return@supplyAsync emptyList()
+            val workspace = workspaces.getByFile(path) ?: return@supplyAsync emptyList()
 
             val relevantFileInfo = workspace[path] ?: return@supplyAsync emptyList()
             val relevantFileNode = relevantFileInfo.fileNode ?: return@supplyAsync emptyList()
@@ -118,7 +110,7 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
     override fun semanticTokensFull(params: SemanticTokensParams): CompletableFuture<SemanticTokens> =
         CompletableFuture.supplyAsync {
             val path = params.textDocument.uri.toPathUri()
-            val workspace = getWorkspace(path)
+            val workspace = workspaces.getByFile(path)
 
             val fileInfo = workspace?.get(path) ?: return@supplyAsync SemanticTokens(emptyList())
 
@@ -157,7 +149,4 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
     override fun connect(client: LanguageClient) {
         this.client = client
     }
-
-    private fun getWorkspace(filePath: URI): SamtWorkspace? =
-        workspaces.values.singleOrNull { filePath in it }
 }

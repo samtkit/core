@@ -1,10 +1,14 @@
 package tools.samt.ls
 
+import org.eclipse.lsp4j.PublishDiagnosticsParams
+import org.eclipse.lsp4j.services.LanguageClient
 import tools.samt.common.DiagnosticController
 import tools.samt.common.DiagnosticMessage
 import tools.samt.semantic.Package
 import tools.samt.semantic.SemanticModelBuilder
 import java.net.URI
+import java.nio.file.Path
+import kotlin.io.path.toPath
 
 class SamtWorkspace(private val parserController: DiagnosticController) : Iterable<FileInfo> {
     private val files = mutableMapOf<URI, FileInfo>()
@@ -38,3 +42,18 @@ class SamtWorkspace(private val parserController: DiagnosticController) : Iterab
         getMessages(it)
     }
 }
+
+fun LanguageClient.publishWorkspaceDiagnostics(workspace: SamtWorkspace) {
+    workspace.getAllMessages().forEach { (path, messages) ->
+        publishDiagnostics(
+            PublishDiagnosticsParams(
+                path.toString(),
+                messages.map { it.toDiagnostic() }
+            )
+        )
+    }
+}
+
+fun Map<URI, SamtWorkspace>.getByFile(filePath: Path): SamtWorkspace? =
+    entries.firstOrNull { (uri) -> filePath.startsWith(uri.toPath()) }?.value
+fun Map<URI, SamtWorkspace>.getByFile(fileUri: URI): SamtWorkspace? = getByFile(fileUri.toPath())

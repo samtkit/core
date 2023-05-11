@@ -17,7 +17,7 @@ class SamtWorkspace(private val parserController: DiagnosticController) : Iterab
     private var semanticController: DiagnosticController =
         DiagnosticController(parserController.workingDirectory)
 
-    fun add(fileInfo: FileInfo) {
+    fun set(fileInfo: FileInfo) {
         files[fileInfo.sourceFile.path] = fileInfo
     }
 

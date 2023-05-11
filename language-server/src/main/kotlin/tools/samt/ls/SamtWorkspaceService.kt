@@ -27,7 +27,7 @@ class SamtWorkspaceService(private val workspaces: Map<URI, SamtWorkspace>) : Wo
             when (change.type) {
                 FileChangeType.Created, FileChangeType.Changed -> {
                     val sourceFile = SourceFile(uri, uri.toPath().readText())
-                    workspace.add(parseFile(sourceFile))
+                    workspace.set(parseFile(sourceFile))
                 }
                 FileChangeType.Deleted -> {
                     workspace.remove(uri)

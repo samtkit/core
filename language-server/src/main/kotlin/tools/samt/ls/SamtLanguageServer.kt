@@ -83,7 +83,7 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
         val diagnosticController = DiagnosticController(workspacePath)
         val sourceFiles = collectSamtFiles(workspacePath).readSamtSource(diagnosticController)
         val workspace = SamtWorkspace(diagnosticController)
-        sourceFiles.asSequence().map(::parseFile).forEach(workspace::add)
+        sourceFiles.asSequence().map(::parseFile).forEach(workspace::set)
         workspace.buildSemanticModel()
         return workspace
     }

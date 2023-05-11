@@ -32,7 +32,7 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
         val fileInfo = parseFile(SourceFile(path, newText))
         val workspace = workspaces.getByFile(path) ?: return
 
-        workspace.add(fileInfo)
+        workspace.set(fileInfo)
         workspace.buildSemanticModel()
         client.publishWorkspaceDiagnostics(workspace)
     }

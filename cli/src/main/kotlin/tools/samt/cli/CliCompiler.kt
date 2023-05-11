@@ -1,5 +1,7 @@
 package tools.samt.cli
 
+import com.github.ajalt.mordant.rendering.TextColors.*
+import tools.samt.codegen.Codegen
 import tools.samt.common.DiagnosticController
 import tools.samt.common.DiagnosticException
 import tools.samt.lexer.Lexer
@@ -40,7 +42,16 @@ internal fun compile(command: CompileCommand, controller: DiagnosticController) 
     }
 
     // build up the semantic model from the AST
-    SemanticModel.build(fileNodes, controller)
+    val model = SemanticModel.build(fileNodes, controller)
+
+    // if the semantic model failed to build, exit
+    if (controller.hasErrors()) {
+        return
+    }
 
     // Code Generators will be called here
+    val files = Codegen.generate(model, controller)
+    for (file in files) {
+        println("${yellow(file.filepath)}:\n${file.source}\n")
+    }
 }

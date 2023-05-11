@@ -5,4 +5,5 @@ plugins {
 dependencies {
     implementation(project(":common"))
     implementation(project(":parser"))
+    implementation(project(":semantic"))
 }

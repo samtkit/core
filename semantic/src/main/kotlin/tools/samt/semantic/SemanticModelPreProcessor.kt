@@ -47,7 +47,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
             for (component in file.packageDeclaration.name.components) {
                 var subPackage = parentPackage.subPackages.find { it.name == component.name }
                 if (subPackage == null) {
-                    subPackage = Package(component.name)
+                    subPackage = Package(component.name, parentPackage)
                     parentPackage.subPackages.add(subPackage)
                 }
                 parentPackage = subPackage
@@ -73,7 +73,8 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                         }
                         parentPackage += RecordType(
                             fields = fields,
-                            declaration = statement
+                            declaration = statement,
+                            parentPackage = parentPackage,
                         )
                     }
 
@@ -81,7 +82,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                         reportDuplicateDeclaration(parentPackage, statement)
                         reportDuplicates(statement.values, "Enum value") { it }
                         val values = statement.values.map { it.name }
-                        parentPackage += EnumType(values, statement)
+                        parentPackage += EnumType(values, statement, parentPackage)
                     }
 
                     is ServiceDeclarationNode -> {
@@ -123,7 +124,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                                 }
                             }
                         }
-                        parentPackage += ServiceType(operations, statement)
+                        parentPackage += ServiceType(operations, statement, parentPackage)
                     }
 
                     is ProviderDeclarationNode -> {
@@ -139,7 +140,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                             name = statement.transport.protocolName.name,
                             configuration = statement.transport.configuration
                         )
-                        parentPackage += ProviderType(implements, transport, statement)
+                        parentPackage += ProviderType(implements, transport, statement, parentPackage)
                     }
 
                     is ConsumerDeclarationNode -> {
@@ -152,7 +153,8 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                                     node = it
                                 )
                             },
-                            declaration = statement
+                            declaration = statement,
+                            parentPackage = parentPackage,
                         )
                     }
 
@@ -160,7 +162,8 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                         reportDuplicateDeclaration(parentPackage, statement)
                         parentPackage += AliasType(
                             aliasedType = UnresolvedTypeReference(statement.type),
-                            declaration = statement
+                            declaration = statement,
+                            parentPackage = parentPackage,
                         )
                     }
 

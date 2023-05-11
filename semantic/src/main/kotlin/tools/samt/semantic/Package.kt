@@ -2,7 +2,7 @@ package tools.samt.semantic
 
 import tools.samt.parser.*
 
-class Package(val name: String) {
+class Package(val name: String, val parent: Package?) {
     val subPackages: MutableList<Package> = mutableListOf()
 
     val records: MutableList<RecordType> = mutableListOf()
@@ -84,4 +84,12 @@ class Package(val name: String) {
 
     val allSubPackages: List<Package>
         get() = subPackages + subPackages.flatMap { it.allSubPackages }
+
+    val nameComponents: List<String>
+        get() = if (parent == null) {
+            require(name == "")
+            emptyList()
+        } else {
+            parent.nameComponents + name
+        }
 }

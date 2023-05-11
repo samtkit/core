@@ -113,6 +113,7 @@ object DurationType : LiteralType {
 sealed interface UserDeclaredNamedType : UserDeclared, Type {
     override val humanReadableName: String get() = name
     override val declaration: NamedDeclarationNode
+    val parentPackage: Package
     val name: String get() = declaration.name.name
 }
 
@@ -146,11 +147,13 @@ class AliasType(
     /** The fully resolved type, will not contain any type aliases anymore, just the underlying merged type */
     var fullyResolvedType: ResolvedTypeReference? = null,
     override val declaration: TypeAliasNode,
+    override val parentPackage: Package,
 ) : UserDeclaredNamedType, UserAnnotated
 
 class RecordType(
     val fields: List<Field>,
     override val declaration: RecordDeclarationNode,
+    override val parentPackage: Package,
 ) : UserDeclaredNamedType, UserAnnotated {
     class Field(
         val name: String,
@@ -162,11 +165,13 @@ class RecordType(
 class EnumType(
     val values: List<String>,
     override val declaration: EnumDeclarationNode,
+    override val parentPackage: Package,
 ) : UserDeclaredNamedType, UserAnnotated
 
 class ServiceType(
     val operations: List<Operation>,
     override val declaration: ServiceDeclarationNode,
+    override val parentPackage: Package,
 ) : UserDeclaredNamedType, UserAnnotated {
     sealed interface Operation : UserAnnotated {
         val name: String
@@ -200,6 +205,7 @@ class ProviderType(
     val implements: List<Implements>,
     @Suppress("unused") val transport: Transport,
     override val declaration: ProviderDeclarationNode,
+    override val parentPackage: Package,
 ) : UserDeclaredNamedType {
     class Implements(
         var service: TypeReference,
@@ -216,6 +222,7 @@ class ProviderType(
 class ConsumerType(
     var provider: TypeReference,
     var uses: List<Uses>,
+    val parentPackage: Package,
     override val declaration: ConsumerDeclarationNode,
 ) : Type, UserDeclared {
     class Uses(

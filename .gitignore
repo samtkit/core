@@ -14,5 +14,10 @@ build
 ehthumbs.db
 Thumbs.db
 
+# SAMT wrapper generated files #
+.samt
+samtw
+samtw.bat
+
 # Random files used for debugging
 specification/examples/debug.samt

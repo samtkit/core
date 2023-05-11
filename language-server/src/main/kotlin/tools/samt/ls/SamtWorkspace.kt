@@ -21,6 +21,10 @@ class SamtWorkspace(private val parserController: DiagnosticController) : Iterab
         files[fileInfo.sourceFile.path] = fileInfo
     }
 
+    fun remove(fileUri: URI) {
+        files.remove(fileUri)
+    }
+
     operator fun get(path: URI): FileInfo? = files[path]
 
     override fun iterator(): Iterator<FileInfo> = files.values.iterator()

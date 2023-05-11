@@ -17,6 +17,7 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     private val logger = Logger.getLogger("SamtLanguageServer")
     private val workspaces = mutableMapOf<URI, SamtWorkspace>()
     private val textDocumentService = SamtTextDocumentService(workspaces)
+    private val workspaceService = SamtWorkspaceService(workspaces)
 
     override fun initialize(params: InitializeParams): CompletableFuture<InitializeResult> =
         CompletableFuture.supplyAsync {
@@ -35,6 +36,16 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
         }
 
     override fun initialized(params: InitializedParams) {
+        val capability = "workspace/didChangeWatchedFiles"
+        client.registerCapability(RegistrationParams(listOf(
+            Registration(capability, capability, DidChangeWatchedFilesRegistrationOptions().apply {
+                watchers = listOf(
+                    FileSystemWatcher().apply {
+                        globPattern = Either.forLeft("**/*.samt")
+                    },
+                )
+            })
+        )))
         workspaces.values.forEach(client::publishWorkspaceDiagnostics)
     }
 
@@ -46,11 +57,12 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
 
     override fun getTextDocumentService(): TextDocumentService = textDocumentService
 
-    override fun getWorkspaceService(): WorkspaceService? = null
+    override fun getWorkspaceService(): WorkspaceService = workspaceService
 
     override fun connect(client: LanguageClient) {
         this.client = client
         textDocumentService.connect(client)
+        workspaceService.connect(client)
         logger.info("Connected to client")
     }
 

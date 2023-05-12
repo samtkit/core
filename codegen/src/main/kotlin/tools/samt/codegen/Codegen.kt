@@ -42,7 +42,7 @@ class Codegen private constructor(
             if (pack.hasTypes()) {
                 val packageSource = buildString {
                     val packageName = pack.nameComponents.joinToString(".")
-                    appendLine("package ${packageName}")
+                    appendLine("package $packageName")
                     appendLine()
 
                     pack.records.forEach {
@@ -81,7 +81,7 @@ class Codegen private constructor(
             if (isOptional) {
                 appendLine("    val ${field.name}: ${fullyQualifiedName},")
             } else {
-                appendLine("    val ${field.name}: ${fullyQualifiedName} = null,")
+                appendLine("    val ${field.name}: $fullyQualifiedName = null,")
             }
         }
         appendLine(")")
@@ -97,7 +97,7 @@ class Codegen private constructor(
 
     private fun generateAlias(alias: AliasType): String = buildString {
         val fullyQualifiedName = generateFullyQualifiedNameForTypeReference(alias.aliasedType)
-        appendLine("typealias ${alias.name} = ${fullyQualifiedName}")
+        appendLine("typealias ${alias.name} = $fullyQualifiedName")
     }
 
     private fun generateService(service: ServiceType): String = buildString {
@@ -125,7 +125,7 @@ class Codegen private constructor(
                 if (operation.returnType != null) {
                     val returnType = operation.returnType as ResolvedTypeReference
                     val returnName = generateFullyQualifiedNameForTypeReference(returnType)
-                    appendLine("    ): ${returnName}")
+                    appendLine("    ): $returnName")
                 } else {
                     appendLine("    )")
                 }

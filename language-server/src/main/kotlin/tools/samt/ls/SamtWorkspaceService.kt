@@ -8,6 +8,8 @@ import tools.samt.common.DiagnosticController
 import tools.samt.common.collectSamtFiles
 import tools.samt.common.readSamtSource
 import java.net.URI
+import kotlin.io.path.isDirectory
+import kotlin.io.path.toPath
 
 class SamtWorkspaceService(private val workspaces: Map<URI, SamtWorkspace>) : WorkspaceService, LanguageClientAware {
     private lateinit var client: LanguageClient
@@ -20,14 +22,7 @@ class SamtWorkspaceService(private val workspaces: Map<URI, SamtWorkspace>) : Wo
         for (change in params.changes) {
             val uri = change.uri.toPathUri()
             val workspace = workspaces.getByFile(uri) ?: continue
-            if (change.uri.endsWith(".samt")) {
-                when (change.type) {
-                    FileChangeType.Created, FileChangeType.Changed -> workspace.set(readAndParseFile(uri))
-                    FileChangeType.Deleted -> removeFile(workspace, uri)
-                    null -> error("Unexpected null value for change.type")
-                }
-
-            } else {
+            if (uri.toPath().isDirectory()) {
                 when (change.type) {
                     FileChangeType.Created -> {
                         val sourceFiles = collectSamtFiles(uri).readSamtSource(DiagnosticController(workspace.workingDirectory))
@@ -41,8 +36,15 @@ class SamtWorkspaceService(private val workspaces: Map<URI, SamtWorkspace>) : Wo
                     }
                     null -> error("Unexpected null value for change.type")
                 }
+                yield(workspace)
+            } else if (change.uri.endsWith(".samt")) {
+                when (change.type) {
+                    FileChangeType.Created, FileChangeType.Changed -> workspace.set(readAndParseFile(uri))
+                    FileChangeType.Deleted -> removeFile(workspace, uri)
+                    null -> error("Unexpected null value for change.type")
+                }
+                yield(workspace)
             }
-            yield(workspace)
         }
     }
 

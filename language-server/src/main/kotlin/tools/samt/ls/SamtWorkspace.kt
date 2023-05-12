@@ -16,6 +16,7 @@ class SamtWorkspace(private val parserController: DiagnosticController) : Iterab
         private set
     private var semanticController: DiagnosticController =
         DiagnosticController(parserController.workingDirectory)
+    val workingDirectory = parserController.workingDirectory
 
     fun set(fileInfo: FileInfo) {
         files[fileInfo.sourceFile.path] = fileInfo
@@ -58,6 +59,6 @@ fun LanguageClient.publishWorkspaceDiagnostics(workspace: SamtWorkspace) {
     }
 }
 
-fun Map<URI, SamtWorkspace>.getByFile(filePath: Path): SamtWorkspace? =
-    entries.firstOrNull { (uri) -> filePath.startsWith(uri.toPath()) }?.value
-fun Map<URI, SamtWorkspace>.getByFile(fileUri: URI): SamtWorkspace? = getByFile(fileUri.toPath())
+fun Map<*, SamtWorkspace>.getByFile(filePath: Path): SamtWorkspace? =
+    values.firstOrNull {  filePath.startsWith(it.workingDirectory.toPath()) }
+fun Map<*, SamtWorkspace>.getByFile(fileUri: URI): SamtWorkspace? = getByFile(fileUri.toPath())

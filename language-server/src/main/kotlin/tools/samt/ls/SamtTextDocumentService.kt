@@ -22,6 +22,13 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
 
     override fun didOpen(params: DidOpenTextDocumentParams) {
         logger.info("Opened document ${params.textDocument.uri}")
+        val path = params.textDocument.uri.toPathUri()
+        val workspace = workspaces.getByFile(path) ?: return
+        val text = params.textDocument.text
+
+        workspace.set(parseFile(SourceFile(path, text)))
+        workspace.buildSemanticModel()
+        client.publishWorkspaceDiagnostics(workspace)
     }
 
     override fun didChange(params: DidChangeTextDocumentParams) {
@@ -41,6 +48,7 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
         logger.info("Closed document ${params.textDocument.uri}")
         val path = params.textDocument.uri.toPathUri()
         val workspace = workspaces.getByFile(path) ?: return
+
         workspace.set(readAndParseFile(path))
         workspace.buildSemanticModel()
         client.publishWorkspaceDiagnostics(workspace)

@@ -39,6 +39,11 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) :
 
     override fun didClose(params: DidCloseTextDocumentParams) {
         logger.info("Closed document ${params.textDocument.uri}")
+        val path = params.textDocument.uri.toPathUri()
+        val workspace = workspaces.getByFile(path) ?: return
+        workspace.set(readAndParseFile(path))
+        workspace.buildSemanticModel()
+        client.publishWorkspaceDiagnostics(workspace)
     }
 
     override fun didSave(params: DidSaveTextDocumentParams) {

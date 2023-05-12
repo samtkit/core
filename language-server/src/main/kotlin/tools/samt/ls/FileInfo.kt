@@ -7,11 +7,14 @@ import tools.samt.lexer.Lexer
 import tools.samt.lexer.Token
 import tools.samt.parser.FileNode
 import tools.samt.parser.Parser
+import java.net.URI
+import kotlin.io.path.readText
+import kotlin.io.path.toPath
 
 class FileInfo(
     val diagnosticContext: DiagnosticContext,
     val sourceFile: SourceFile,
-    @Suppress("unused") val tokens: List<Token>,
+    val tokens: List<Token>,
     val fileNode: FileNode? = null,
 )
 
@@ -32,4 +35,9 @@ fun parseFile(sourceFile: SourceFile): FileInfo {
     }
 
     return FileInfo(diagnosticContext, sourceFile, tokens, fileNode)
+}
+
+fun readAndParseFile(uri: URI): FileInfo {
+    val sourceFile = SourceFile(uri, uri.toPath().readText())
+    return parseFile(sourceFile)
 }

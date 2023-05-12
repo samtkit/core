@@ -8,6 +8,7 @@ import tools.samt.common.collectSamtFiles
 import tools.samt.common.readSamtSource
 import java.io.Closeable
 import java.net.URI
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 import kotlin.system.exitProcess
@@ -29,6 +30,31 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
                     range = Either.forLeft(false)
                     full = Either.forLeft(true)
                 }
+                workspace = WorkspaceServerCapabilities().apply {
+                    fileOperations = FileOperationsServerCapabilities().apply {
+                        val samtFilter = FileOperationFilter().apply {
+                            pattern = FileOperationPattern().apply {
+                                glob = "**/*.samt"
+                                matches = FileOperationPatternKind.File
+                            }
+                        }
+                        val folderFilter = FileOperationFilter().apply {
+                            pattern = FileOperationPattern().apply {
+                                glob = "**"
+                                matches = FileOperationPatternKind.Folder
+                            }
+                        }
+                        didCreate = FileOperationOptions().apply {
+                            filters = listOf(samtFilter)
+                        }
+                        FileOperationOptions().apply {
+                            filters = listOf(samtFilter, folderFilter)
+                        }.let {
+                            didRename = it
+                            didDelete = it
+                        }
+                    }
+                }
                 definitionProvider = Either.forLeft(true)
                 referencesProvider = Either.forLeft(true)
             }
@@ -36,17 +62,8 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
         }
 
     override fun initialized(params: InitializedParams) {
-        val capability = "workspace/didChangeWatchedFiles"
-        client.registerCapability(RegistrationParams(listOf(
-            Registration(capability, capability, DidChangeWatchedFilesRegistrationOptions().apply {
-                watchers = listOf(
-                    FileSystemWatcher().apply {
-                        globPattern = Either.forLeft("**/*.samt")
-                    },
-                )
-            })
-        )))
-        workspaces.values.forEach(client::publishWorkspaceDiagnostics)
+        registerFileWatchCapability()
+        publishAllDiagnostics()
     }
 
     override fun shutdown(): CompletableFuture<Any> = CompletableFuture.completedFuture(null)
@@ -71,7 +88,7 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     }
 
     private fun buildSamtModel(params: InitializeParams) {
-        val folders = params.workspaceFolders.map { it.uri.toPathUri() }
+        val folders = params.workspaceFolders?.map { it.uri.toPathUri() }.orEmpty()
         for (folder in folders) {
             // if the folder is contained within another folder ignore it
             if (folders.any { folder != it && folder.path.startsWith(it.path) }) continue
@@ -86,5 +103,26 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
         sourceFiles.asSequence().map(::parseFile).forEach(workspace::set)
         workspace.buildSemanticModel()
         return workspace
+    }
+
+    private fun registerFileWatchCapability() {
+        val capability = "workspace/didChangeWatchedFiles"
+        client.registerCapability(RegistrationParams(listOf(
+            Registration(UUID.randomUUID().toString(), capability, DidChangeWatchedFilesRegistrationOptions().apply {
+                watchers = listOf(
+                    FileSystemWatcher().apply {
+                        globPattern = Either.forLeft("**/*.samt")
+                    },
+                    FileSystemWatcher().apply {
+                        globPattern = Either.forLeft("**/")
+                        kind = WatchKind.Create or WatchKind.Delete
+                    },
+                )
+            })
+        )))
+    }
+
+    private fun publishAllDiagnostics() {
+        workspaces.values.forEach(client::publishWorkspaceDiagnostics)
     }
 }

@@ -32,6 +32,11 @@ class SamtWorkspace(private val parserController: DiagnosticController) : Iterab
 
     operator fun contains(path: URI) = path in files
 
+    fun getFilesIn(directoryPath: URI): List<URI> {
+        val path = directoryPath.toPath()
+        return files.keys.filter { it.toPath().startsWith(path) }
+    }
+
     fun buildSemanticModel() {
         semanticController = DiagnosticController(parserController.workingDirectory)
         samtPackage = SemanticModelBuilder.build(mapNotNull { it.fileNode }, semanticController)

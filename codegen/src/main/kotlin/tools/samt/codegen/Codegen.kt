@@ -9,10 +9,8 @@ data class CodegenFile(val filepath: String, val source: String)
  * Proof of concept codegen for Kotlin code
  *
  * Todos:
- * - Emit services
  * - Emit providers
  * - Emit consumers
- * - Emit aliases
  * - Modular
  * - Extendable
  * - Configurable
@@ -35,10 +33,11 @@ class Codegen private constructor(
             check(pack.parent == null)
             check(pack.records.isEmpty())
             check(pack.enums.isEmpty())
+            check(pack.aliases.isEmpty())
+
             check(pack.services.isEmpty())
             check(pack.providers.isEmpty())
             check(pack.consumers.isEmpty())
-            check(pack.aliases.isEmpty())
         } else {
             if (pack.hasTypes()) {
                 val packageSource = buildString {
@@ -48,17 +47,18 @@ class Codegen private constructor(
 
                     pack.records.forEach {
                         appendLine(generateRecord(it))
-                        appendLine()
                     }
 
                     pack.enums.forEach {
                         appendLine(generateEnum(it))
-                        appendLine()
                     }
 
                     pack.aliases.forEach {
                         appendLine(generateAlias(it))
-                        appendLine()
+                    }
+
+                    pack.services.forEach {
+                        appendLine(generateService(it))
                     }
                 }
 
@@ -98,6 +98,53 @@ class Codegen private constructor(
     private fun generateAlias(alias: AliasType): String = buildString {
         val fullyQualifiedName = generateFullyQualifiedNameForTypeReference(alias.aliasedType)
         appendLine("typealias ${alias.name} = ${fullyQualifiedName}")
+    }
+
+    private fun generateService(service: ServiceType): String = buildString {
+        appendLine("interface ${service.name} {")
+        service.operations.forEach { operation ->
+            append(generateServiceOperation(operation))
+        }
+        appendLine("}")
+    }
+
+    private fun generateServiceOperation(operation: ServiceType.Operation): String = buildString {
+        when (operation) {
+            is ServiceType.RequestResponseOperation -> {
+                // method head
+                if (operation.isAsync) {
+                    appendLine("    suspend fun ${operation.name}(")
+                } else {
+                    appendLine("    fun ${operation.name}(")
+                }
+
+                // parameters
+                append(generateServiceOperationParameterList(operation.parameters))
+
+                // return type
+                if (operation.returnType != null) {
+                    val returnType = operation.returnType as ResolvedTypeReference
+                    val returnName = generateFullyQualifiedNameForTypeReference(returnType)
+                    appendLine("    ): ${returnName}")
+                } else {
+                    appendLine("    )")
+                }
+            }
+
+            is ServiceType.OnewayOperation -> {
+                appendLine("    fun ${operation.name}(")
+                append(generateServiceOperationParameterList(operation.parameters))
+                appendLine("    )")
+            }
+        }
+    }
+
+    private fun generateServiceOperationParameterList(parameters: List<ServiceType.Operation.Parameter>): String = buildString {
+        parameters.forEach { parameter ->
+            val type = parameter.type as ResolvedTypeReference
+            val fullyQualifiedName = generateFullyQualifiedNameForTypeReference(type)
+            appendLine("        ${parameter.name}: ${fullyQualifiedName},")
+        }
     }
 
     private fun generateFullyQualifiedNameForTypeReference(reference: TypeReference): String {

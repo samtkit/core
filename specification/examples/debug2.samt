@@ -12,3 +12,12 @@ record MyTestRecord {
     myShortString: ShortString?
     myColor: MyColor
 }
+
+service MyCoolService {
+    GetPersonByName(name: ShortString): Person?
+    async GetCarsOfPerson(name: ShortString): CarList
+
+    oneway UploadCar(car: Car?)
+
+    oneway SendPulse()
+}

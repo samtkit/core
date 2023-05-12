@@ -57,6 +57,26 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
                 checkModelType(type.valueType)
             }
 
+            is AliasType -> {
+                val underlyingTypeReference = type.fullyResolvedType ?: return
+                val underlyingType = underlyingTypeReference.type
+                if (underlyingType is ServiceType || underlyingType is ProviderType || underlyingType is PackageType) {
+                    controller.getOrCreateContext(typeReference.typeNode.location.source).error {
+                        message("Type alias refers to '${underlyingType.humanReadableName}', which cannot be used in this context")
+                        highlight("type alias", typeReference.typeNode.location)
+                        highlight("underlying type", underlyingTypeReference.typeNode.location)
+                    }
+                }
+
+                if (typeReference.isOptional && underlyingTypeReference.isOptional) {
+                    controller.getOrCreateContext(typeReference.typeNode.location.source).warn {
+                        message("Type alias refers to type which is already optional, ignoring '?'")
+                        highlight("duplicate optional", typeReference.fullNode.location)
+                        highlight("declared optional here", underlyingTypeReference.fullNode.location)
+                    }
+                }
+            }
+
             else -> Unit
         }
     }
@@ -67,6 +87,21 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
         when (val type = typeReference.type) {
             is ServiceType -> {
                 block(type)
+            }
+
+            is AliasType -> {
+                val aliasedTypeReference = type.fullyResolvedType ?: return
+                checkBlankTypeReference(aliasedTypeReference, "service")
+                val aliasedType = aliasedTypeReference.type
+                if (aliasedType is ServiceType) {
+                    block(aliasedType)
+                } else {
+                    controller.getOrCreateContext(typeReference.typeNode.location.source).error {
+                        message("Expected a service but type alias '${type.name}' points to '${aliasedType.humanReadableName}'")
+                        highlight("type alias", typeReference.typeNode.location)
+                        highlight("underlying type", aliasedTypeReference.typeNode.location)
+                    }
+                }
             }
 
             is UnknownType -> Unit
@@ -85,6 +120,21 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
         when (val type = typeReference.type) {
             is ProviderType -> {
                 block(type)
+            }
+
+            is AliasType -> {
+                val aliasedTypeReference = type.fullyResolvedType ?: return
+                checkBlankTypeReference(aliasedTypeReference, "provider")
+                val aliasedType = aliasedTypeReference.type
+                if (aliasedType is ProviderType) {
+                    block(aliasedType)
+                } else {
+                    controller.getOrCreateContext(typeReference.typeNode.location.source).error {
+                        message("Expected a provider but type alias '${type.name}' points to '${aliasedType.humanReadableName}'")
+                        highlight("type alias", typeReference.typeNode.location)
+                        highlight("underlying type", aliasedTypeReference.typeNode.location)
+                    }
+                }
             }
 
             is UnknownType -> Unit

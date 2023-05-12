@@ -30,7 +30,7 @@ internal class SemanticModelBuilder (
     private val files: List<FileNode>,
     private val controller: DiagnosticController,
 ) {
-    private val global = Package(name = "", null)
+    private val global = Package(name = "root", null)
     private val preProcessor = SemanticModelPreProcessor(controller)
     private val postProcessor = SemanticModelPostProcessor(controller)
     private val referenceResolver = SemanticModelReferenceResolver(controller, global)

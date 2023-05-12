@@ -6,7 +6,12 @@ import tools.samt.semantic.Package
 
 internal object TypePrinter {
     fun dump(samtPackage: Package): String = buildString {
-        appendLine(blue(samtPackage.name.ifEmpty { "<root>" }))
+        if (samtPackage.isRootPackage) {
+            appendLine(red("<root>"))
+        } else {
+            appendLine(blue(samtPackage.name))
+        }
+
         for (enum in samtPackage.enums) {
             appendLine(" ${bold("enum")} ${yellow(enum.name)}")
         }

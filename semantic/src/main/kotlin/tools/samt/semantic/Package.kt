@@ -45,51 +45,59 @@ class Package(val name: String, val parent: Package?) {
     }
 
     operator fun plusAssign(record: RecordType) {
+        require(!isRootPackage)
         records.add(record)
         types[record.name] = record
-        typeByNode[record.declaration] = record
+        linkType(record.declaration, record)
     }
 
     operator fun plusAssign(enum: EnumType) {
+        require(!isRootPackage)
         enums.add(enum)
         types[enum.name] = enum
-        typeByNode[enum.declaration] = enum
+        linkType(enum.declaration, enum)
     }
 
     operator fun plusAssign(service: ServiceType) {
+        require(!isRootPackage)
         services.add(service)
         types[service.name] = service
-        typeByNode[service.declaration] = service
+        linkType(service.declaration, service)
     }
 
     operator fun plusAssign(provider: ProviderType) {
+        require(!isRootPackage)
         providers.add(provider)
         types[provider.name] = provider
-        typeByNode[provider.declaration] = provider
+        linkType(provider.declaration, provider)
     }
 
     operator fun plusAssign(consumer: ConsumerType) {
+        require(!isRootPackage)
         consumers.add(consumer)
-        typeByNode[consumer.declaration] = consumer
+        linkType(consumer.declaration, consumer)
     }
 
     operator fun plusAssign(alias: AliasType) {
+        require(!isRootPackage)
         aliases.add(alias)
         types[alias.name] = alias
-        typeByNode[alias.declaration] = alias
+        linkType(alias.declaration, alias)
     }
 
     operator fun contains(identifier: IdentifierNode): Boolean =
         types.containsKey(identifier.name)
 
+    val isRootPackage: Boolean
+        get() = parent == null
+
     val allSubPackages: List<Package>
         get() = subPackages + subPackages.flatMap { it.allSubPackages }
 
     val nameComponents: List<String>
-        get() = if (parent == null) {
-            require(name == "")
-            emptyList()
+        get() = if (isRootPackage) {
+            emptyList() // root package
         } else {
-            parent.nameComponents + name
+            parent!!.nameComponents + name
         }
 }

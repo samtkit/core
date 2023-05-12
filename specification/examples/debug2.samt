@@ -1,0 +1,14 @@
+import debug.foo.bar.baz.*
+
+package debug.foo.bar.boz
+
+record MyTestRecord {
+    myPersonList: PersonList
+    myCarMap: CarMap
+    myGarageMap: GarageMap
+    myOtherPerson: OtherPerson
+    myOtherCar: OtherCar?
+    myOtherGarage: OtherGarage?
+    myShortString: ShortString?
+    myColor: MyColor
+}

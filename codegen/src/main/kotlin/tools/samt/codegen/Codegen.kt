@@ -17,7 +17,7 @@ data class CodegenFile(val filepath: String, val source: String)
  * - Extendable
  * - Configurable
  * */
-class Codegen(
+class Codegen private constructor(
     private val model: Package,
     private val controller: DiagnosticController
 ) {
@@ -29,66 +29,95 @@ class Codegen(
     }
 
     private fun generatePackage(pack: Package) {
-        pack.records.forEach { generateRecord(it) }
-        pack.enums.forEach { generateEnum(it) }
+
+        // root package cannot have any types declared in it, only sub-packages
+        if (pack.isRootPackage) {
+            check(pack.parent == null)
+            check(pack.records.isEmpty())
+            check(pack.enums.isEmpty())
+            check(pack.services.isEmpty())
+            check(pack.providers.isEmpty())
+            check(pack.consumers.isEmpty())
+            check(pack.aliases.isEmpty())
+        } else {
+            if (pack.hasTypes()) {
+                val packageSource = buildString {
+                    val packageName = pack.nameComponents.joinToString(".")
+                    appendLine("package ${packageName}")
+                    appendLine()
+
+                    pack.records.forEach {
+                        appendLine(generateRecord(it))
+                        appendLine()
+                    }
+
+                    pack.enums.forEach {
+                        appendLine(generateEnum(it))
+                        appendLine()
+                    }
+
+                    pack.aliases.forEach {
+                        appendLine(generateAlias(it))
+                        appendLine()
+                    }
+                }
+
+                val filePath = pack.nameComponents.joinToString("/") + ".kt"
+                val file = CodegenFile(filePath, packageSource)
+                emittedFiles.add(file)
+            }
+        }
+
         pack.subPackages.forEach { generatePackage(it) }
     }
 
-    private fun generateRecord(record: RecordType) {
-        val parentPackage = record.parentPackage
-        val packagePath = parentPackage.nameComponents.joinToString("/")
-        val filepath = "${packagePath}/${record.name}.kt"
+    private fun generateRecord(record: RecordType): String = buildString {
+        appendLine("class ${record.name}(")
+        record.fields.forEach { field ->
+            val type = field.type as ResolvedTypeReference
+            val fullyQualifiedName = generateFullyQualifiedNameForTypeReference(type)
+            val isOptional = type.isOptional
 
-        val source = buildString {
-            appendLine("package ${parentPackage.nameComponents.joinToString(".")}")
-
-            appendLine("class ${record.name} {")
-            record.fields.forEach { field ->
-                val fullyQualifiedName = generateFullyQualifiedNameForTypeReference(field.type)
-                appendLine("    val ${field.name}: ${fullyQualifiedName}")
+            if (isOptional) {
+                appendLine("    val ${field.name}: ${fullyQualifiedName},")
+            } else {
+                appendLine("    val ${field.name}: ${fullyQualifiedName} = null,")
             }
-            appendLine("}")
         }
-        emittedFiles.add(CodegenFile(filepath, source))
+        appendLine(")")
     }
 
-    private fun generateEnum(enum: EnumType) {
-        val parentPackage = enum.parentPackage
-        val packagePath = parentPackage.nameComponents.joinToString("/")
-        val filepath = "${packagePath}/${enum.name}.kt"
-
-        val source = buildString {
-            appendLine("package ${parentPackage.nameComponents.joinToString(".")}")
-
-            appendLine("enum ${enum.name} {")
-            enum.values.forEach {
-                appendLine("    ${it},")
-            }
-            appendLine("}")
+    private fun generateEnum(enum: EnumType): String = buildString {
+        appendLine("enum class ${enum.name} {")
+        enum.values.forEach {
+            appendLine("    ${it},")
         }
-        emittedFiles.add(CodegenFile(filepath, source))
+        appendLine("}")
+    }
+
+    private fun generateAlias(alias: AliasType): String = buildString {
+        val fullyQualifiedName = generateFullyQualifiedNameForTypeReference(alias.aliasedType)
+        appendLine("typealias ${alias.name} = ${fullyQualifiedName}")
     }
 
     private fun generateFullyQualifiedNameForTypeReference(reference: TypeReference): String {
         require(reference is ResolvedTypeReference) { "Expected type reference to be resolved" }
-
-        val reference: ResolvedTypeReference = reference
         val type = reference.type
 
         return buildString {
             val qualifiedName = when (type) {
                 is PackageType -> type.sourcePackage.nameComponents.joinToString(".")
-                is LiteralType -> type.humanReadableName
-                is ListType -> "List<${generateFullyQualifiedNameForTypeReference(type.elementType)}>"
-                is MapType -> "Map<${generateFullyQualifiedNameForTypeReference(type.keyType)}, ${generateFullyQualifiedNameForTypeReference(type.valueType)}>"
+                is LiteralType -> mapSamtLiteralTypeToNativeType(type)
+                is ListType -> mapSamtListTypeToNativeType(type.elementType)
+                is MapType -> mapSamtMapTypeToNativeType(type.keyType, type.valueType)
+
+                is UnknownType -> throw IllegalStateException("Expected type to be known")
 
                 is UserDeclared -> {
                     val parentPackage = type.parentPackage
                     val components = parentPackage.nameComponents + type.name
                     components.joinToString(".")
                 }
-
-                is UnknownType -> throw IllegalStateException("Expected type to be known")
             }
             append(qualifiedName)
 
@@ -96,6 +125,40 @@ class Codegen(
                 append("?")
             }
         }
+    }
+
+    private fun mapSamtLiteralTypeToNativeType(type: LiteralType): String = when (type) {
+        StringType -> "String"
+        BytesType -> "ByteArray"
+
+        IntType -> "Int"
+        LongType -> "Long"
+
+        FloatType -> "Float"
+        DoubleType -> "Double"
+
+        DecimalType -> "java.math.BigDecimal"
+        BooleanType -> "Boolean"
+
+        DateType -> "java.time.LocalDate"
+        DateTimeType -> "java.time.LocalDateTime"
+
+        DurationType -> "java.time.Duration"
+    }
+
+    private fun mapSamtListTypeToNativeType(elementType: TypeReference): String {
+        val element = generateFullyQualifiedNameForTypeReference(elementType)
+        return "List<${element}>"
+    }
+
+    private fun mapSamtMapTypeToNativeType(keyType: TypeReference, valueType: TypeReference): String {
+        val key = generateFullyQualifiedNameForTypeReference(keyType)
+        val value = generateFullyQualifiedNameForTypeReference(valueType)
+        return "Map<${key}, ${value}>"
+    }
+
+    private fun Package.hasTypes(): Boolean {
+        return records.isNotEmpty() || enums.isNotEmpty() || services.isNotEmpty() || providers.isNotEmpty() || consumers.isNotEmpty() || aliases.isNotEmpty()
     }
 
     companion object {

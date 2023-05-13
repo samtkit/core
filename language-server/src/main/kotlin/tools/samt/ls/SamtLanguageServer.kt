@@ -3,9 +3,6 @@ package tools.samt.ls
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.services.*
-import tools.samt.common.DiagnosticController
-import tools.samt.common.collectSamtFiles
-import tools.samt.common.readSamtSource
 import java.io.Closeable
 import java.net.URI
 import java.util.*
@@ -31,6 +28,10 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
                     full = Either.forLeft(true)
                 }
                 workspace = WorkspaceServerCapabilities().apply {
+                    workspaceFolders = WorkspaceFoldersOptions().apply {
+                        supported = true
+                        changeNotifications = Either.forRight(true)
+                    }
                     fileOperations = FileOperationsServerCapabilities().apply {
                         val samtFilter = FileOperationFilter().apply {
                             pattern = FileOperationPattern().apply {
@@ -92,17 +93,8 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
         for (folder in folders) {
             // if the folder is contained within another folder ignore it
             if (folders.any { folder != it && folder.path.startsWith(it.path) }) continue
-            workspaces[folder] = buildWorkspace(folder)
+            workspaces[folder] = SamtWorkspace.createFromDirectory(folder)
         }
-    }
-
-    private fun buildWorkspace(workspacePath: URI): SamtWorkspace {
-        val diagnosticController = DiagnosticController(workspacePath)
-        val sourceFiles = collectSamtFiles(workspacePath).readSamtSource(diagnosticController)
-        val workspace = SamtWorkspace(diagnosticController)
-        sourceFiles.asSequence().map(::parseFile).forEach(workspace::set)
-        workspace.buildSemanticModel()
-        return workspace
     }
 
     private fun registerFileWatchCapability() {

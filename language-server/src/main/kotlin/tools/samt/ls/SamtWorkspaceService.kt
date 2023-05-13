@@ -11,7 +11,7 @@ import java.net.URI
 import kotlin.io.path.isDirectory
 import kotlin.io.path.toPath
 
-class SamtWorkspaceService(private val workspaces: Map<URI, SamtWorkspace>) : WorkspaceService, LanguageClientAware {
+class SamtWorkspaceService(private val workspaces: MutableMap<URI, SamtWorkspace>) : WorkspaceService, LanguageClientAware {
     private lateinit var client: LanguageClient
 
     override fun didChangeConfiguration(params: DidChangeConfigurationParams?) {
@@ -98,6 +98,23 @@ class SamtWorkspaceService(private val workspaces: Map<URI, SamtWorkspace>) : Wo
                 workspace.getFilesIn(uri).forEach { removeFile(workspace, it) }
             }
             yield(workspace)
+        }
+    }
+
+    override fun didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
+        val event = params.event
+        for (added in event.added) {
+            val folder = added.uri.toPathUri()
+            val workspace = SamtWorkspace.createFromDirectory(folder)
+            workspaces[folder] = workspace
+            workspace.buildSemanticModel()
+            client.publishWorkspaceDiagnostics(workspace)
+        }
+        for (removed in event.removed) {
+            val workspace = workspaces.remove(removed.uri.toPathUri())
+            workspace?.forEach {
+                client.publishDiagnostics(PublishDiagnosticsParams(it.path.toString(), emptyList()))
+            }
         }
     }
 

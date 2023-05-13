@@ -203,7 +203,7 @@ class ServiceType(
 
 class ProviderType(
     val implements: List<Implements>,
-    @Suppress("unused") val transport: Transport,
+    val transport: Transport,
     override val declaration: ProviderDeclarationNode,
     override val parentPackage: Package,
 ) : UserDeclaredNamedType {
@@ -215,7 +215,7 @@ class ProviderType(
 
     class Transport(
         val name: String,
-        @Suppress("unused") val configuration: Any?,
+        val configuration: ObjectNode?,
     )
 }
 

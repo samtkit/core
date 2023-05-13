@@ -17,7 +17,7 @@ data class CodegenFile(val filepath: String, val source: String)
  * */
 class Codegen private constructor(
     private val model: Package,
-    private val controller: DiagnosticController
+    private val controller: DiagnosticController,
 ) {
     private val emittedFiles = mutableListOf<CodegenFile>()
 
@@ -39,7 +39,7 @@ class Codegen private constructor(
             check(pack.providers.isEmpty())
             check(pack.consumers.isEmpty())
         } else {
-            if (pack.hasTypes()) {
+            if (pack.hasModelTypes()) {
                 val packageSource = buildString {
                     val packageName = pack.nameComponents.joinToString(".")
                     appendLine("package $packageName")
@@ -66,6 +66,33 @@ class Codegen private constructor(
                 val file = CodegenFile(filePath, packageSource)
                 emittedFiles.add(file)
             }
+
+            if (pack.hasProviderTypes()) {
+
+
+                pack.providers.forEach {
+                    val packageSource = buildString {
+                        val packageName = pack.nameComponents.joinToString(".")
+                        appendLine("package $packageName")
+                        appendLine()
+
+                        appendLine(generateProvider(it))
+                    }
+
+                    val filePath = pack.nameComponents.joinToString("/") + "_${it.name}" + ".kt"
+                    val file = CodegenFile(filePath, packageSource)
+                    emittedFiles.add(file)
+                }
+                val packageSource = buildString {
+                    val packageName = pack.nameComponents.joinToString(".")
+                    appendLine("package $packageName")
+                    appendLine()
+
+                    pack.providers.forEach {
+                        appendLine(generateProvider(it))
+                    }
+                }
+            }
         }
 
         pack.subPackages.forEach { generatePackage(it) }
@@ -79,9 +106,9 @@ class Codegen private constructor(
             val isOptional = type.isOptional
 
             if (isOptional) {
-                appendLine("    val ${field.name}: ${fullyQualifiedName},")
-            } else {
                 appendLine("    val ${field.name}: $fullyQualifiedName = null,")
+            } else {
+                appendLine("    val ${field.name}: $fullyQualifiedName,")
             }
         }
         appendLine(")")
@@ -139,12 +166,139 @@ class Codegen private constructor(
         }
     }
 
-    private fun generateServiceOperationParameterList(parameters: List<ServiceType.Operation.Parameter>): String = buildString {
-        parameters.forEach { parameter ->
-            val type = parameter.type as ResolvedTypeReference
-            val fullyQualifiedName = generateFullyQualifiedNameForTypeReference(type)
-            appendLine("        ${parameter.name}: ${fullyQualifiedName},")
+    private fun generateServiceOperationParameterList(parameters: List<ServiceType.Operation.Parameter>): String =
+        buildString {
+            parameters.forEach { parameter ->
+                val type = parameter.type as ResolvedTypeReference
+                val fullyQualifiedName = generateFullyQualifiedNameForTypeReference(type)
+                appendLine("        ${parameter.name}: ${fullyQualifiedName},")
+            }
         }
+
+    data class ProviderInfo(val implements: ProviderType.Implements) {
+        val reference = implements.service as ResolvedTypeReference
+        val service = reference.type as ServiceType
+        val serviceArgumentName = service.name.replaceFirstChar { it.lowercase() }
+    }
+
+    private fun generateProvider(provider: ProviderType): String = buildString {
+        check(provider.transport.name == "HTTP") { "Only HTTP transport is supported, this needs to be refactored later" }
+
+        appendLine("import io.ktor.http.*")
+        appendLine("import io.ktor.serialization.kotlinx.json.*")
+        appendLine("import io.ktor.server.plugins.contentnegotiation.*")
+        appendLine("import io.ktor.server.response.*")
+        appendLine("import io.ktor.server.application.*")
+        appendLine("import io.ktor.server.request.*")
+        appendLine("import io.ktor.server.routing.*")
+        appendLine("import kotlinx.serialization.json.*")
+        appendLine()
+
+        val implementedServices = provider.implements.map { ProviderInfo(it) }
+        val serviceArguments = implementedServices.joinToString { info ->
+            "${info.serviceArgumentName}: ${generateFullyQualifiedNameForTypeReference(info.reference)}"
+        }
+        appendLine("fun Routing.route${provider.name}($serviceArguments) {")
+        implementedServices.forEach { info ->
+            appendProviderOperations(info)
+        }
+        appendLine("}")
+    }
+
+    private fun StringBuilder.appendProviderOperations(info: ProviderInfo) {
+        info.implements.operations.forEach { operation ->
+            when (operation) {
+                is ServiceType.RequestResponseOperation -> {
+                    // TODO Config: HTTP method?
+                    // TODO Config: URL?
+                    appendLine("    post(\"/${operation.name}\") {")
+                    appendLine("        val bodyAsText = call.receiveText()")
+                    appendLine("        val body = Json.parseToJsonElement(bodyAsText)\n")
+                    appendLine()
+
+                    operation.parameters.forEach { parameter ->
+                        // TODO Config: From Body / from Query / from Path etc.
+                        // TODO error and null handling
+                        // TODO complexer data types than string
+
+                        val typeRef = parameter.type.extractFullType()
+                        if (typeRef.isOptional) {
+                            appendLine("        val ${parameter.name} = body.jsonObject[\"${parameter.name}\"]?.jsonPrimitive?.contentOrNull")
+                        } else {
+                            appendLine("        val ${parameter.name} = body.jsonObject.getValue(\"${parameter.name}\").jsonPrimitive.content")
+                        }
+                    }
+                    appendLine()
+
+                    operation.parameters.forEach { parameter ->
+                        // TODO constraints within map or list
+                        val constraints = parameter.type.extractConstraints()
+                        constraints.forEach { constraint ->
+                            appendLine("        // TODO validate ${parameter.name} against ${constraint.humanReadableName}")
+                        }
+                    }
+                    appendLine()
+
+                    appendLine("        val response = ${info.serviceArgumentName}.${operation.name}(${operation.parameters.joinToString { it.name }})")
+
+                    // TODO Config: HTTP status code
+
+                    // TODO serialize response correctly
+                    // TODO validate response
+                    appendLine("        call.respond(response)")
+                    appendLine("    }")
+                }
+
+                is ServiceType.OnewayOperation -> {
+                    // TODO Config: HTTP method?
+                    // TODO Config: URL?
+                    appendLine("    post(\"/${operation.name}\") {")
+                    appendLine("        val bodyAsText = call.receiveText()")
+                    appendLine("        val body = Json.parseToJsonElement(bodyAsText)\n")
+                    appendLine()
+
+                    operation.parameters.forEach { parameter ->
+                        // TODO Config: From Body / from Query / from Path etc.
+                        // TODO error and null handling
+                        // TODO complexer data types than string
+
+                        val typeRef = parameter.type.extractFullType()
+                        if (typeRef.isOptional) {
+                            appendLine("        val ${parameter.name} = body.jsonObject[\"${parameter.name}\"]?.jsonPrimitive?.contentOrNull")
+                        } else {
+                            appendLine("        val ${parameter.name} = body.jsonObject.getValue(\"${parameter.name}\").jsonPrimitive.content")
+                        }
+                    }
+                    appendLine()
+
+                    operation.parameters.forEach { parameter ->
+                        // TODO constraints within map or list
+                        val constraints = parameter.type.extractConstraints()
+                        constraints.forEach { constraint ->
+                            appendLine("        // TODO validate ${parameter.name} against ${constraint.humanReadableName}")
+                        }
+                    }
+                    appendLine()
+
+                    // TODO call asynchronously
+                    appendLine("        ${info.serviceArgumentName}.${operation.name}(${operation.parameters.joinToString { it.name }})")
+
+                    appendLine("        call.respond(HttpStatusCode.NoContent)")
+                    appendLine("    }")
+                }
+            }
+        }
+    }
+
+    private fun TypeReference.extractConstraints(): List<ResolvedTypeReference.Constraint> {
+        check(this is ResolvedTypeReference) { "Expected type reference to be resolved" }
+        // TODO verify workst with aliases
+        return constraints
+    }
+
+    private fun TypeReference.extractFullType(): ResolvedTypeReference {
+        check(this is ResolvedTypeReference) { "Expected type reference to be resolved" }
+        return if (type is AliasType) (type as AliasType).fullyResolvedType!! else this
     }
 
     private fun generateFullyQualifiedNameForTypeReference(reference: TypeReference): String {
@@ -204,8 +358,12 @@ class Codegen private constructor(
         return "Map<${key}, ${value}>"
     }
 
-    private fun Package.hasTypes(): Boolean {
-        return records.isNotEmpty() || enums.isNotEmpty() || services.isNotEmpty() || providers.isNotEmpty() || consumers.isNotEmpty() || aliases.isNotEmpty()
+    private fun Package.hasModelTypes(): Boolean {
+        return records.isNotEmpty() || enums.isNotEmpty() || services.isNotEmpty() || aliases.isNotEmpty()
+    }
+
+    private fun Package.hasProviderTypes(): Boolean {
+        return providers.isNotEmpty()
     }
 
     companion object {

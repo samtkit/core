@@ -15,7 +15,7 @@ dependencyResolutionManagement {
         val jCommander = "1.82"
         val mordant = "2.0.0-beta13"
         val kotlinxSerialization = "1.5.0"
-        val kover = "0.6.1"
+        val kover = "0.7.0-Beta"
         val lsp4j = "0.20.1"
 
         create("libs") {

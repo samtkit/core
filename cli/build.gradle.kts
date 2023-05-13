@@ -3,6 +3,7 @@ plugins {
     id("samt-core.kotlin-conventions")
     alias(libs.plugins.shadow)
     kotlin("plugin.serialization")
+    alias(libs.plugins.kover)
 }
 
 dependencies {

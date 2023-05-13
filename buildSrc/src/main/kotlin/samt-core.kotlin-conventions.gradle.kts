@@ -3,7 +3,8 @@ plugins {
     kotlin("plugin.serialization") apply false
 }
 
-apply(plugin = "kover")
+// does not work with Kover 0.7.0-Beta for some reason
+//apply(plugin = "kover")
 
 kotlin {
     jvmToolchain(17)

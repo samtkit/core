@@ -6,15 +6,22 @@ repositories {
     mavenCentral()
 }
 
-koverMerged {
-    enable()
-    htmlReport {}
-    xmlReport {}
-    verify {
-        rule {
-            name = "Minimal line coverage rate in percent"
-            bound {
-                minValue = 80
+dependencies {
+    kover(project(":common"))
+    kover(project(":lexer"))
+    kover(project(":parser"))
+    kover(project(":semantic"))
+    kover(project(":cli"))
+    kover(project(":language-server"))
+}
+
+koverReport {
+    defaults {
+        verify {
+            rule {
+                bound {
+                    minValue = 80
+                }
             }
         }
     }

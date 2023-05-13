@@ -12,10 +12,10 @@ import kotlin.io.path.readText
 import kotlin.io.path.toPath
 
 class FileInfo(
-    val diagnosticContext: DiagnosticContext,
-    val sourceFile: SourceFile,
-    val tokens: List<Token>,
-    val fileNode: FileNode? = null,
+        val diagnosticContext: DiagnosticContext,
+        val sourceFile: SourceFile,
+        val tokens: List<Token> = emptyList(),
+        val fileNode: FileNode? = null,
 )
 
 val FileInfo.path get() = sourceFile.path
@@ -23,7 +23,11 @@ val FileInfo.path get() = sourceFile.path
 fun parseFile(sourceFile: SourceFile): FileInfo {
     val diagnosticContext = DiagnosticContext(sourceFile)
 
-    val tokens = Lexer.scan(sourceFile.content.reader(), diagnosticContext).toList()
+    val tokens = try {
+        Lexer.scan(sourceFile.content.reader(), diagnosticContext).toList()
+    } catch (e: DiagnosticException) {
+        return FileInfo(diagnosticContext, sourceFile)
+    }
 
     if (diagnosticContext.hasErrors()) {
         return FileInfo(diagnosticContext, sourceFile, tokens)

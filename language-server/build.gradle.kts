@@ -2,6 +2,7 @@ plugins {
     application
     id("samt-core.kotlin-conventions")
     alias(libs.plugins.shadow)
+    alias(libs.plugins.kover)
 }
 
 dependencies {

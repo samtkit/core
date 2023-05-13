@@ -21,4 +21,4 @@ jobs:
         uses: gradle/gradle-build-action@v2
 
       - name: Verify
-        run: ./gradlew --no-daemon koverMergedVerify
+        run: ./gradlew --no-daemon koverVerify

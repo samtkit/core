@@ -1,7 +1,5 @@
 package tools.samt.ls
 
-import org.eclipse.lsp4j.PublishDiagnosticsParams
-import org.eclipse.lsp4j.services.LanguageClient
 import tools.samt.common.DiagnosticController
 import tools.samt.common.DiagnosticMessage
 import tools.samt.common.collectSamtFiles
@@ -9,16 +7,12 @@ import tools.samt.common.readSamtSource
 import tools.samt.semantic.Package
 import tools.samt.semantic.SemanticModelBuilder
 import java.net.URI
-import java.nio.file.Path
-import kotlin.io.path.toPath
 
-class SamtFolder (private val parserController: DiagnosticController) : Iterable<FileInfo> {
+class SamtFolder (val path: URI) : Iterable<FileInfo> {
     private val files = mutableMapOf<URI, FileInfo>()
-    var samtPackage: Package? = null
+    var globalPackage: Package? = null
         private set
-    private var semanticController: DiagnosticController =
-        DiagnosticController(parserController.workingDirectory)
-    val workingDirectory = parserController.workingDirectory
+    private var semanticController: DiagnosticController = DiagnosticController(path)
 
     fun set(fileInfo: FileInfo) {
         files[fileInfo.sourceFile.path] = fileInfo
@@ -35,13 +29,12 @@ class SamtFolder (private val parserController: DiagnosticController) : Iterable
     operator fun contains(path: URI) = path in files
 
     fun getFilesIn(directoryPath: URI): List<URI> {
-        val path = directoryPath.toPath()
-        return files.keys.filter { it.toPath().startsWith(path) }
+        return files.keys.filter { it.startsWith(directoryPath) }
     }
 
     fun buildSemanticModel() {
-        semanticController = DiagnosticController(parserController.workingDirectory)
-        samtPackage = SemanticModelBuilder.build(mapNotNull { it.fileNode }, semanticController)
+        semanticController = DiagnosticController(path)
+        globalPackage = SemanticModelBuilder.build(mapNotNull { it.fileNode }, semanticController)
     }
 
     private fun getMessages(path: URI): List<DiagnosticMessage> {
@@ -55,10 +48,10 @@ class SamtFolder (private val parserController: DiagnosticController) : Iterable
     }
 
     companion object {
-        fun createFromDirectory(folder: URI): SamtFolder {
-            val controller = DiagnosticController(folder)
-            val workspace = SamtFolder(controller)
-            val sourceFiles = collectSamtFiles(folder).readSamtSource(controller)
+        fun createFromDirectory(path: URI): SamtFolder {
+            val controller = DiagnosticController(path)
+            val workspace = SamtFolder(path)
+            val sourceFiles = collectSamtFiles(path).readSamtSource(controller)
             sourceFiles.forEach {
                 workspace.set(parseFile(it))
             }
@@ -66,18 +59,3 @@ class SamtFolder (private val parserController: DiagnosticController) : Iterable
         }
     }
 }
-
-fun LanguageClient.publishWorkspaceDiagnostics(workspace: SamtFolder) {
-    workspace.getAllMessages().forEach { (path, messages) ->
-        publishDiagnostics(
-            PublishDiagnosticsParams(
-                path.toString(),
-                messages.map { it.toDiagnostic() }
-            )
-        )
-    }
-}
-
-fun Map<*, SamtFolder>.getByFile(filePath: Path): SamtFolder? =
-    values.firstOrNull {  filePath.startsWith(it.workingDirectory.toPath()) }
-fun Map<*, SamtFolder>.getByFile(fileUri: URI): SamtFolder? = getByFile(fileUri.toPath())

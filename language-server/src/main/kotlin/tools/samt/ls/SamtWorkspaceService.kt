@@ -11,125 +11,94 @@ import java.net.URI
 import kotlin.io.path.isDirectory
 import kotlin.io.path.toPath
 
-class SamtWorkspaceService(private val workspaces: MutableMap<URI, SamtFolder>) : WorkspaceService, LanguageClientAware {
+class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceService, LanguageClientAware {
     private lateinit var client: LanguageClient
 
     override fun didChangeConfiguration(params: DidChangeConfigurationParams?) {
         TODO("Not yet implemented")
     }
 
-    override fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams) = updateWorkspaces {
+    override fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams) {
         for (change in params.changes) {
-            val uri = change.uri.toPathUri()
-            val workspace = workspaces.getByFile(uri) ?: continue
-            if (uri.toPath().isDirectory()) {
+            val path = change.uri.toPathUri()
+            if (path.toPath().isDirectory()) {
                 when (change.type) {
-                    FileChangeType.Created -> {
-                        val sourceFiles = collectSamtFiles(uri).readSamtSource(DiagnosticController(workspace.workingDirectory))
-                        sourceFiles.forEach {
-                            workspace.set(parseFile(it))
-                        }
-                    }
-                    FileChangeType.Changed -> {}
+                    FileChangeType.Created -> parseFilesInDirectory(path).forEach(workspace::setFile)
+                    FileChangeType.Changed -> error("Directory changes should not be watched")
                     FileChangeType.Deleted -> {
-                        workspace.getFilesIn(uri).forEach { removeFile(workspace, it) }
+                        workspace.removeDirectory(path)
                     }
                     null -> error("Unexpected null value for change.type")
                 }
-                yield(workspace)
             } else if (change.uri.endsWith(".samt")) {
                 when (change.type) {
-                    FileChangeType.Created, FileChangeType.Changed -> workspace.set(readAndParseFile(uri))
-                    FileChangeType.Deleted -> removeFile(workspace, uri)
+                    FileChangeType.Created, FileChangeType.Changed -> workspace.setFile(readAndParseFile(path))
+                    FileChangeType.Deleted -> workspace.removeFile(path)
                     null -> error("Unexpected null value for change.type")
                 }
-                yield(workspace)
             }
         }
+        client.updateWorkspace(workspace)
     }
 
-    override fun didCreateFiles(params: CreateFilesParams) = updateWorkspaces {
+    override fun didCreateFiles(params: CreateFilesParams) {
         for (file in params.files) {
-            val uri = file.uri.toPathUri()
-            val workspace = workspaces.getByFile(uri) ?: continue
-            workspace.set(readAndParseFile(uri))
-            yield(workspace)
+            val path = file.uri.toPathUri()
+            workspace.setFile(readAndParseFile(path))
         }
+        client.updateWorkspace(workspace)
     }
 
-    override fun didRenameFiles(params: RenameFilesParams) = updateWorkspaces {
+    override fun didRenameFiles(params: RenameFilesParams)  {
         for (file in params.files) {
-            val oldUri = file.oldUri.toPathUri()
-            val newUri = file.newUri.toPathUri()
-            val oldWorkspace = workspaces.getByFile(oldUri)
-            val newWorkspace = workspaces.getByFile(newUri)
-            if (file.oldUri.endsWith(".samt")) {
-                oldWorkspace?.let {
-                    removeFile(it, oldUri)
-                    yield(it)
-                }
-                newWorkspace?.let {
-                    it.set(readAndParseFile(newUri))
-                    yield(it)
-                }
+            val oldPath = file.oldUri.toPathUri()
+            val newPath = file.newUri.toPathUri()
+            if (newPath.toPath().isDirectory()) {
+                workspace.removeDirectory(oldPath)
+                parseFilesInDirectory(newPath).forEach(workspace::setFile)
             } else {
-                oldWorkspace?.let { workspace ->
-                    workspace.getFilesIn(oldUri).forEach { removeFile(workspace, it) }
-                    yield(workspace)
-                }
-                newWorkspace?.let { workspace ->
-                    val sourceFiles = collectSamtFiles(newUri).readSamtSource(DiagnosticController(workspace.workingDirectory))
-                    sourceFiles.forEach {
-                        workspace.set(parseFile(it))
-                    }
-                    yield(workspace)
+                workspace.removeFile(oldPath)
+                if (file.newUri.endsWith(".samt")) {
+                    workspace.setFile(readAndParseFile(newPath))
                 }
             }
         }
+        client.updateWorkspace(workspace)
     }
 
-    override fun didDeleteFiles(params: DeleteFilesParams) = updateWorkspaces {
+    override fun didDeleteFiles(params: DeleteFilesParams) {
         for (file in params.files) {
-            val uri = file.uri.toPathUri()
-            val workspace = workspaces.getByFile(uri) ?: continue
-            if (file.uri.endsWith(".samt")) {
-                removeFile(workspace, uri)
+            val path = file.uri.toPathUri()
+            if (path.toPath().isDirectory()) {
+                workspace.removeDirectory(path)
             } else {
-                workspace.getFilesIn(uri).forEach { removeFile(workspace, it) }
+                workspace.removeFile(path)
             }
-            yield(workspace)
         }
+        client.updateWorkspace(workspace)
     }
 
     override fun didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
         val event = params.event
         for (added in event.added) {
-            val folder = added.uri.toPathUri()
-            val workspace = SamtFolder.createFromDirectory(folder)
-            workspaces[folder] = workspace
-            workspace.buildSemanticModel()
-            client.publishWorkspaceDiagnostics(workspace)
+            val path = added.uri.toPathUri()
+            val folder = SamtFolder.createFromDirectory(path)
+            workspace.addFolder(folder)
+            folder.buildSemanticModel()
         }
         for (removed in event.removed) {
-            val workspace = workspaces.remove(removed.uri.toPathUri())
-            workspace?.forEach {
-                client.publishDiagnostics(PublishDiagnosticsParams(it.path.toString(), emptyList()))
-            }
+            workspace.removeFolder(removed.uri.toPathUri())
         }
+        client.updateWorkspace(workspace)
     }
 
     override fun connect(client: LanguageClient) {
         this.client = client
     }
 
-    private fun updateWorkspaces(block: suspend SequenceScope<SamtFolder>.() -> Unit): Unit =
-        sequence(block).toSet().forEach {
-            it.buildSemanticModel()
-            client.publishWorkspaceDiagnostics(it)
-        }
-
-    private fun removeFile(workspace: SamtFolder, file: URI) {
-        workspace.remove(file)
-        client.publishDiagnostics(PublishDiagnosticsParams(file.toString(), emptyList()))
+    private fun parseFilesInDirectory(path: URI): List<FileInfo> {
+        val folderPath  = checkNotNull(workspace.getFolderSnapshot(path)).path
+        val sourceFiles = collectSamtFiles(path).readSamtSource(DiagnosticController(folderPath))
+        return sourceFiles.map(::parseFile)
     }
 }

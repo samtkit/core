@@ -11,11 +11,10 @@ import tools.samt.parser.FileNode
 import tools.samt.parser.NamedDeclarationNode
 import tools.samt.parser.OperationNode
 import tools.samt.semantic.Package
-import java.net.URI
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 
-class SamtTextDocumentService(private val workspaces: Map<URI, SamtFolder>) : TextDocumentService,
+class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocumentService,
     LanguageClientAware {
     private lateinit var client: LanguageClient
     private val logger = Logger.getLogger("SamtTextDocumentService")
@@ -23,12 +22,10 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtFolder>) : Te
     override fun didOpen(params: DidOpenTextDocumentParams) {
         logger.info("Opened document ${params.textDocument.uri}")
         val path = params.textDocument.uri.toPathUri()
-        val workspace = workspaces.getByFile(path) ?: return
         val text = params.textDocument.text
 
-        workspace.set(parseFile(SourceFile(path, text)))
-        workspace.buildSemanticModel()
-        client.publishWorkspaceDiagnostics(workspace)
+        workspace.setFile(parseFile(SourceFile(path, text)))
+        client.updateWorkspace(workspace)
     }
 
     override fun didChange(params: DidChangeTextDocumentParams) {
@@ -37,21 +34,17 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtFolder>) : Te
         val path = params.textDocument.uri.toPathUri()
         val newText = params.contentChanges.single().text
         val fileInfo = parseFile(SourceFile(path, newText))
-        val workspace = workspaces.getByFile(path) ?: return
 
-        workspace.set(fileInfo)
-        workspace.buildSemanticModel()
-        client.publishWorkspaceDiagnostics(workspace)
+        workspace.setFile(fileInfo)
+        client.updateWorkspace(workspace)
     }
 
     override fun didClose(params: DidCloseTextDocumentParams) {
         logger.info("Closed document ${params.textDocument.uri}")
         val path = params.textDocument.uri.toPathUri()
-        val workspace = workspaces.getByFile(path) ?: return
 
-        workspace.set(readAndParseFile(path))
-        workspace.buildSemanticModel()
-        client.publishWorkspaceDiagnostics(workspace)
+        workspace.setFile(readAndParseFile(path))
+        client.updateWorkspace(workspace)
     }
 
     override fun didSave(params: DidSaveTextDocumentParams) {
@@ -61,12 +54,11 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtFolder>) : Te
     override fun definition(params: DefinitionParams): CompletableFuture<Either<List<Location>, List<LocationLink>>> =
         CompletableFuture.supplyAsync {
             val path = params.textDocument.uri.toPathUri()
-            val workspace = workspaces.getByFile(path)
 
-            val fileInfo = workspace?.get(path) ?: return@supplyAsync Either.forRight(emptyList())
+            val fileInfo = workspace.getFile(path) ?: return@supplyAsync Either.forRight(emptyList())
 
             val fileNode: FileNode = fileInfo.fileNode ?: return@supplyAsync Either.forRight(emptyList())
-            val globalPackage: Package = workspace.samtPackage ?: return@supplyAsync Either.forRight(emptyList())
+            val globalPackage: Package = workspace.getRootPackage(path) ?: return@supplyAsync Either.forRight(emptyList())
 
             val token = fileInfo.tokens.findAt(params.position) ?: return@supplyAsync Either.forRight(emptyList())
 
@@ -94,19 +86,19 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtFolder>) : Te
     override fun references(params: ReferenceParams): CompletableFuture<List<Location>> =
         CompletableFuture.supplyAsync {
             val path = params.textDocument.uri.toPathUri()
-            val workspace = workspaces.getByFile(path) ?: return@supplyAsync emptyList()
 
-            val relevantFileInfo = workspace[path] ?: return@supplyAsync emptyList()
+            val relevantFileInfo = workspace.getFile(path) ?: return@supplyAsync emptyList()
             val relevantFileNode = relevantFileInfo.fileNode ?: return@supplyAsync emptyList()
             val token = relevantFileInfo.tokens.findAt(params.position) ?: return@supplyAsync emptyList()
 
-            val globalPackage: Package = workspace.samtPackage ?: return@supplyAsync emptyList()
+            val (_, files, globalPackage) = workspace.getFolderSnapshot(path) ?: return@supplyAsync emptyList()
+            if (globalPackage == null) return@supplyAsync emptyList()
 
             val typeLookup = SamtDeclarationLookup.analyze(relevantFileNode, globalPackage.resolveSubPackage(relevantFileInfo.fileNode.packageDeclaration.name))
             val type = typeLookup[token.location] ?: return@supplyAsync emptyList()
 
             val filesAndPackages = buildList {
-                for (fileInfo in workspace) {
+                for (fileInfo in files) {
                     val fileNode: FileNode = fileInfo.fileNode ?: continue
                     val samtPackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
                     add(fileNode to samtPackage)
@@ -123,13 +115,12 @@ class SamtTextDocumentService(private val workspaces: Map<URI, SamtFolder>) : Te
     override fun semanticTokensFull(params: SemanticTokensParams): CompletableFuture<SemanticTokens> =
         CompletableFuture.supplyAsync {
             val path = params.textDocument.uri.toPathUri()
-            val workspace = workspaces.getByFile(path)
 
-            val fileInfo = workspace?.get(path) ?: return@supplyAsync SemanticTokens(emptyList())
+            val fileInfo = workspace.getFile(path) ?: return@supplyAsync SemanticTokens(emptyList())
 
             val tokens: List<Token> = fileInfo.tokens
             val fileNode: FileNode = fileInfo.fileNode ?: return@supplyAsync SemanticTokens(emptyList())
-            val globalPackage: Package = workspace.samtPackage ?: return@supplyAsync SemanticTokens(emptyList())
+            val globalPackage: Package = workspace.getFolderSnapshot(path)?.globalPackage ?: return@supplyAsync SemanticTokens(emptyList())
             val samtPackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
 
             val semanticTokens = SamtSemanticTokens.analyze(fileNode, samtPackage)

@@ -4,7 +4,6 @@ import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.services.*
 import java.io.Closeable
-import java.net.URI
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
@@ -13,9 +12,9 @@ import kotlin.system.exitProcess
 class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     private lateinit var client: LanguageClient
     private val logger = Logger.getLogger("SamtLanguageServer")
-    private val workspaces = mutableMapOf<URI, SamtFolder>()
-    private val textDocumentService = SamtTextDocumentService(workspaces)
-    private val workspaceService = SamtWorkspaceService(workspaces)
+    private val workspace = SamtWorkspace()
+    private val textDocumentService = SamtTextDocumentService(workspace)
+    private val workspaceService = SamtWorkspaceService(workspace)
 
     override fun initialize(params: InitializeParams): CompletableFuture<InitializeResult> =
         CompletableFuture.supplyAsync {
@@ -64,7 +63,7 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
 
     override fun initialized(params: InitializedParams) {
         registerFileWatchCapability()
-        publishAllDiagnostics()
+        client.updateWorkspace(workspace)
     }
 
     override fun shutdown(): CompletableFuture<Any> = CompletableFuture.completedFuture(null)
@@ -91,9 +90,7 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     private fun buildSamtModel(params: InitializeParams) {
         val folders = params.workspaceFolders?.map { it.uri.toPathUri() }.orEmpty()
         for (folder in folders) {
-            // if the folder is contained within another folder ignore it
-            if (folders.any { folder != it && folder.path.startsWith(it.path) }) continue
-            workspaces[folder] = SamtFolder.createFromDirectory(folder)
+            workspace.addFolder(SamtFolder.createFromDirectory(folder))
         }
     }
 
@@ -112,9 +109,5 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
                 )
             })
         )))
-    }
-
-    private fun publishAllDiagnostics() {
-        workspaces.values.forEach(client::publishWorkspaceDiagnostics)
     }
 }

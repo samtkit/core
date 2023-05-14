@@ -15,7 +15,7 @@ import java.net.URI
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 
-class SamtTextDocumentService(private val workspaces: Map<URI, SamtWorkspace>) : TextDocumentService,
+class SamtTextDocumentService(private val workspaces: Map<URI, SamtFolder>) : TextDocumentService,
     LanguageClientAware {
     private lateinit var client: LanguageClient
     private val logger = Logger.getLogger("SamtTextDocumentService")

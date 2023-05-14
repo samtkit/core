@@ -11,7 +11,7 @@ import java.net.URI
 import kotlin.io.path.isDirectory
 import kotlin.io.path.toPath
 
-class SamtWorkspaceService(private val workspaces: MutableMap<URI, SamtWorkspace>) : WorkspaceService, LanguageClientAware {
+class SamtWorkspaceService(private val workspaces: MutableMap<URI, SamtFolder>) : WorkspaceService, LanguageClientAware {
     private lateinit var client: LanguageClient
 
     override fun didChangeConfiguration(params: DidChangeConfigurationParams?) {
@@ -105,7 +105,7 @@ class SamtWorkspaceService(private val workspaces: MutableMap<URI, SamtWorkspace
         val event = params.event
         for (added in event.added) {
             val folder = added.uri.toPathUri()
-            val workspace = SamtWorkspace.createFromDirectory(folder)
+            val workspace = SamtFolder.createFromDirectory(folder)
             workspaces[folder] = workspace
             workspace.buildSemanticModel()
             client.publishWorkspaceDiagnostics(workspace)
@@ -122,13 +122,13 @@ class SamtWorkspaceService(private val workspaces: MutableMap<URI, SamtWorkspace
         this.client = client
     }
 
-    private fun updateWorkspaces(block: suspend SequenceScope<SamtWorkspace>.() -> Unit): Unit =
+    private fun updateWorkspaces(block: suspend SequenceScope<SamtFolder>.() -> Unit): Unit =
         sequence(block).toSet().forEach {
             it.buildSemanticModel()
             client.publishWorkspaceDiagnostics(it)
         }
 
-    private fun removeFile(workspace: SamtWorkspace, file: URI) {
+    private fun removeFile(workspace: SamtFolder, file: URI) {
         workspace.remove(file)
         client.publishDiagnostics(PublishDiagnosticsParams(file.toString(), emptyList()))
     }

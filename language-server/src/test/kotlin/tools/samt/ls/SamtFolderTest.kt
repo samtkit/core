@@ -5,7 +5,7 @@ import tools.samt.common.SourceFile
 import java.net.URI
 import kotlin.test.*
 
-class SamtWorkspaceTest {
+class SamtFolderTest {
     @Test
     fun `getByFile returns correct workspace`() {
         val workspaces = createWorkspaces()
@@ -23,7 +23,7 @@ class SamtWorkspaceTest {
 
     @Test
     fun `file can be retrieved with URI after set`() {
-        val workspace = SamtWorkspace(DiagnosticController("file:///tmp/test".toPathUri()))
+        val workspace = SamtFolder(DiagnosticController("file:///tmp/test".toPathUri()))
         val uri = "file:///tmp/test/model.samt".toPathUri()
         val fileInfo = parseFile(SourceFile(uri, "package foo.bar"))
         workspace.set(fileInfo)
@@ -34,7 +34,7 @@ class SamtWorkspaceTest {
 
     @Test
     fun `file cannot be retrieved after removal`() {
-        val workspace = SamtWorkspace(DiagnosticController("file:///tmp/test".toPathUri()))
+        val workspace = SamtFolder(DiagnosticController("file:///tmp/test".toPathUri()))
         val uri = "file:///tmp/test/model.samt".toPathUri()
         val fileInfo = parseFile(SourceFile(uri, "package foo.bar"))
         workspace.set(fileInfo)
@@ -46,7 +46,7 @@ class SamtWorkspaceTest {
 
     @Test
     fun `getFilesIn returns files in directory`() {
-        val workspace = SamtWorkspace(DiagnosticController("file:///tmp/test".toPathUri()))
+        val workspace = SamtFolder(DiagnosticController("file:///tmp/test".toPathUri()))
         val file1 = "file:///tmp/test/dir/foo.samt".toPathUri()
         val file2 = "file:///tmp/test/dir/bar.samt".toPathUri()
         val file3 = "file:///tmp/test/baz.samt".toPathUri()
@@ -61,7 +61,7 @@ class SamtWorkspaceTest {
 
     @Test
     fun `getMessages includes parser and semantic messages`() {
-        val workspace = SamtWorkspace(DiagnosticController("file:///tmp/test".toPathUri()))
+        val workspace = SamtFolder(DiagnosticController("file:///tmp/test".toPathUri()))
         val uri1 = "file:///tmp/test/record.samt".toPathUri()
         val uri2 = "file:///tmp/test/service.samt".toPathUri()
         val fileInfo1 = parseFile(SourceFile(uri1, "package foo.bar recrd Foo { "))
@@ -73,11 +73,11 @@ class SamtWorkspaceTest {
         assertEquals(2, messages.size)
     }
 
-    private fun createWorkspaces(): Map<URI, SamtWorkspace> {
+    private fun createWorkspaces(): Map<URI, SamtFolder> {
         val dir1 = "file:///foo/bar".toPathUri()
         val dir2 = "file:///foo/baz".toPathUri()
-        val workspace1 = SamtWorkspace(DiagnosticController(dir1))
-        val workspace2 = SamtWorkspace(DiagnosticController(dir2))
+        val workspace1 = SamtFolder(DiagnosticController(dir1))
+        val workspace2 = SamtFolder(DiagnosticController(dir2))
         return mapOf(
             dir1 to workspace1,
             dir2 to workspace2,

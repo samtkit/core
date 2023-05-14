@@ -12,7 +12,7 @@ import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.toPath
 
-class SamtWorkspace (private val parserController: DiagnosticController) : Iterable<FileInfo> {
+class SamtFolder (private val parserController: DiagnosticController) : Iterable<FileInfo> {
     private val files = mutableMapOf<URI, FileInfo>()
     var samtPackage: Package? = null
         private set
@@ -55,9 +55,9 @@ class SamtWorkspace (private val parserController: DiagnosticController) : Itera
     }
 
     companion object {
-        fun createFromDirectory(folder: URI): SamtWorkspace {
+        fun createFromDirectory(folder: URI): SamtFolder {
             val controller = DiagnosticController(folder)
-            val workspace = SamtWorkspace(controller)
+            val workspace = SamtFolder(controller)
             val sourceFiles = collectSamtFiles(folder).readSamtSource(controller)
             sourceFiles.forEach {
                 workspace.set(parseFile(it))
@@ -67,7 +67,7 @@ class SamtWorkspace (private val parserController: DiagnosticController) : Itera
     }
 }
 
-fun LanguageClient.publishWorkspaceDiagnostics(workspace: SamtWorkspace) {
+fun LanguageClient.publishWorkspaceDiagnostics(workspace: SamtFolder) {
     workspace.getAllMessages().forEach { (path, messages) ->
         publishDiagnostics(
             PublishDiagnosticsParams(
@@ -78,6 +78,6 @@ fun LanguageClient.publishWorkspaceDiagnostics(workspace: SamtWorkspace) {
     }
 }
 
-fun Map<*, SamtWorkspace>.getByFile(filePath: Path): SamtWorkspace? =
+fun Map<*, SamtFolder>.getByFile(filePath: Path): SamtFolder? =
     values.firstOrNull {  filePath.startsWith(it.workingDirectory.toPath()) }
-fun Map<*, SamtWorkspace>.getByFile(fileUri: URI): SamtWorkspace? = getByFile(fileUri.toPath())
+fun Map<*, SamtFolder>.getByFile(fileUri: URI): SamtFolder? = getByFile(fileUri.toPath())

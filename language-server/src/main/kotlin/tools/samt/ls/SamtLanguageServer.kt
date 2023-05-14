@@ -13,7 +13,7 @@ import kotlin.system.exitProcess
 class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     private lateinit var client: LanguageClient
     private val logger = Logger.getLogger("SamtLanguageServer")
-    private val workspaces = mutableMapOf<URI, SamtWorkspace>()
+    private val workspaces = mutableMapOf<URI, SamtFolder>()
     private val textDocumentService = SamtTextDocumentService(workspaces)
     private val workspaceService = SamtWorkspaceService(workspaces)
 
@@ -93,7 +93,7 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
         for (folder in folders) {
             // if the folder is contained within another folder ignore it
             if (folders.any { folder != it && folder.path.startsWith(it.path) }) continue
-            workspaces[folder] = SamtWorkspace.createFromDirectory(folder)
+            workspaces[folder] = SamtFolder.createFromDirectory(folder)
         }
     }
 

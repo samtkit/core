@@ -1,5 +1,8 @@
 package tools.samt.codegen
 
+import tools.samt.common.DiagnosticController
+import tools.samt.parser.ObjectNode
+
 interface GeneratorParams {
     val packages: List<SamtPackage>
 
@@ -24,14 +27,21 @@ interface Generator {
     fun generate(generatorParams: GeneratorParams): List<CodegenFile>
 }
 
+interface TransportConfigurationParserParams {
+    val configObjectNode: ObjectNode
+
+    fun reportError(message: String)
+    fun reportWarning(message: String)
+    fun reportInfo(message: String)
+}
+
 interface TransportConfigurationParser {
     val transportName: String
     fun default(): TransportConfiguration
-    fun parse(configuration: Map<String, Any>): TransportConfiguration
+    fun parse(params: TransportConfigurationParserParams): TransportConfiguration?
 }
 
 interface TransportConfiguration
-
 
 interface Type
 

@@ -16,7 +16,6 @@ data class CodegenFile(val filepath: String, val source: String)
  * - Configurable
  * */
 object Codegen {
-
     private val generators: List<Generator> = listOf(
         KotlinTypesGenerator(),
         KotlinKtorGenerator(),

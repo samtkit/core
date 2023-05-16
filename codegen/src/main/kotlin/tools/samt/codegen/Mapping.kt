@@ -3,7 +3,9 @@ package tools.samt.codegen
 import tools.samt.common.DiagnosticController
 
 class PublicApiMapper(
-    private val transportParsers: List<TransportConfigurationParser>,
+    private val transportParsers: List<TransportConfigurationParser> = listOf(
+        HttpTransportConfigurationParser(),
+    ),
     private val controller: DiagnosticController,
 ) {
     fun toPublicApi(samtPackage: tools.samt.semantic.Package) = object : SamtPackage {
@@ -77,16 +79,21 @@ class PublicApiMapper(
         when (transportConfigurationParser.size) {
             0 -> controller.reportGlobalError("No transport configuration parser found for transport '$name'")
             1 -> {
-                return if (transportConfigNode != null) {
-                    // TODO transform transportConfigNode to a Map<String, Any>
-                    transportConfigurationParser.single().parse(emptyMap())
+                if (transportConfigNode != null) {
+                    val config = HttpTransportConfigurationParser.Params(transportConfigNode, controller)
+                    val transportConfig = transportConfigurationParser.single().parse(config)
+                    if (transportConfig != null) {
+                        return transportConfig
+                    } else {
+                        controller.reportGlobalError("Failed to parse transport configuration for transport '$name'")
+                    }
                 } else {
-                    transportConfigurationParser.single().default()
+                    return transportConfigurationParser.single().default()
                 }
             }
-
             else -> controller.reportGlobalError("Multiple transport configuration parsers found for transport '$name'")
         }
+
         return object : TransportConfiguration {}
     }
 

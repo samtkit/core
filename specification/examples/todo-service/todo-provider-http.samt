@@ -4,27 +4,27 @@ provide TodoEndpointHTTP {
     implements TodoManager
     implements TodoListManager
 
-    transport HTTP {
-        serialization: "JSON",
+    transport http {
+        serialization: "json",
         operations: {
             TodoManager: {
-                 createTodo: "POST /todo",
-                 searchTodo: "GET /todo?title={title}",
+                 createTodo: "POST /todo {cookie:session}",
+                 searchTodo: "GET /todo {query:title}",
                  getTodo: "GET /todo/{id}",
                  getTodos: "GET /todo",
                  updateTodo: "PUT /todo/{id}",
                  deleteTodo: "DELETE /todo/{id}",
-                 markAsCompleted: "PUT /todo/{id}/completed"
+                 markAsCompleted: "PUT /todo/{id} {query:completed}"
             },
             TodoListManager: {
                createTodoList: "POST /todo-list",
-               searchTodoList: "GET /todo-list?title={title}",
+               searchTodoList: "GET /todo-list {query:title}",
                getTodoList: "GET /todo-list/{id}",
                getTodoLists: "GET /todo-list",
                updateTodoList: "PUT /todo-list/{id}",
                deleteTodoList: "DELETE /todo-list/{id}",
-               addTodoToList: "PUT /todo-list/{id}/todo/{todoId}",
-               removeTodoFromList: "DELETE /todo-list/{id}/todo/{todoId}"
+               addTodoToList: "PUT /todo-list/{listId}/todo/{todoId}",
+               removeTodoFromList: "DELETE /todo-list/{listId}/todo/{todoId}"
             }
         },
         faults: {

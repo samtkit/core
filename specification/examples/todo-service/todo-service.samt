@@ -19,7 +19,7 @@ record TodoList {
 
 @Description("A service for managing todo items")
 service TodoManager {
-    createTodo(title: String, description: String): TodoItem
+    createTodo(title: String, description: String, session: String): TodoItem
     searchTodo(title: String): TodoItem?
     getTodo(id: UUID): TodoItem raises NotFoundFault
     getTodos(): List<TodoItem>

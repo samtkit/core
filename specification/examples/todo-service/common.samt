@@ -2,5 +2,10 @@ package tools.samt.examples.common
 
 typealias UUID = String ( pattern("[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}") )
 
+/*
 record NotFoundFault extends Fault
 record MissingPermissionsFault extends Fault
+*/
+
+record NotFoundFault
+record MissingPermissionsFault

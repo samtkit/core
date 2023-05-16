@@ -1,7 +1,9 @@
 package tools.samt.codegen
 
+
 class KotlinKtorGenerator : Generator {
     override val identifier: String = "kotlin-ktor"
+
     override fun generate(generatorParams: GeneratorParams): List<CodegenFile> {
         generatorParams.packages.forEach {
             generatePackage(it)
@@ -63,16 +65,17 @@ class KotlinKtorGenerator : Generator {
     }
 
     private fun StringBuilder.appendProviderOperations(info: ProviderInfo, transportConfiguration: HttpTransportConfiguration) {
+        val service = info.service
         info.implements.operations.forEach { operation ->
             when (operation) {
                 is RequestResponseOperation -> {
-                    appendLine("    ${getKtorRoute(operation, transportConfiguration)} {")
+                    appendLine("    ${getKtorRoute(service, operation, transportConfiguration)} {")
 
                     appendParsingPreamble()
 
                     operation.parameters.forEach { parameter ->
                         // TODO complexer data types than string
-                        appendParameterParsing(parameter, transportConfiguration)
+                        appendParameterParsing(service, operation, parameter, transportConfiguration)
                     }
                     appendLine()
 
@@ -89,11 +92,11 @@ class KotlinKtorGenerator : Generator {
                 is OnewayOperation -> {
                     // TODO Config: HTTP method?
                     // TODO Config: URL?
-                    appendLine("    ${getKtorRoute(operation, transportConfiguration)} {")
+                    appendLine("    ${getKtorRoute(service, operation, transportConfiguration)} {")
                     appendParsingPreamble()
 
                     operation.parameters.forEach { parameter ->
-                        appendParameterParsing(parameter, transportConfiguration)
+                        appendParameterParsing(service, operation, parameter, transportConfiguration)
                     }
 
                     appendLine("        launch {")
@@ -113,15 +116,15 @@ class KotlinKtorGenerator : Generator {
         appendLine()
     }
 
-    private fun getKtorRoute(operation: ServiceOperation, transportConfiguration: HttpTransportConfiguration): String {
-        val method = when (transportConfiguration.getMethod(operation)) {
+    private fun getKtorRoute(service: ServiceType, operation: ServiceOperation, transportConfiguration: HttpTransportConfiguration): String {
+        val method = when (transportConfiguration.getMethod(service.name, operation.name)) {
             HttpTransportConfiguration.HttpMethod.Get -> "get"
             HttpTransportConfiguration.HttpMethod.Post -> "post"
             HttpTransportConfiguration.HttpMethod.Put -> "put"
             HttpTransportConfiguration.HttpMethod.Delete -> "delete"
             HttpTransportConfiguration.HttpMethod.Patch -> "patch"
         }
-        val path = transportConfiguration.getPath(operation)
+        val path = transportConfiguration.getPath(service.name, operation.name)
         return "${method}(\"${path}\")"
     }
 
@@ -129,18 +132,18 @@ class KotlinKtorGenerator : Generator {
         return "${info.serviceArgumentName}.${operation.name}(${operation.parameters.joinToString { it.name }})"
     }
 
-    private fun StringBuilder.appendParameterParsing(parameter: ServiceOperationParameter, transportConfiguration: HttpTransportConfiguration) {
-        appendParameterDeserialization(parameter, transportConfiguration)
+    private fun StringBuilder.appendParameterParsing(service: ServiceType, operation: ServiceOperation, parameter: ServiceOperationParameter, transportConfiguration: HttpTransportConfiguration) {
+        appendParameterDeserialization(service, operation, parameter, transportConfiguration)
         appendParameterConstraints(parameter)
         appendLine()
     }
 
-    private fun StringBuilder.appendParameterDeserialization(parameter: ServiceOperationParameter, transportConfiguration: HttpTransportConfiguration) {
+    private fun StringBuilder.appendParameterDeserialization(service: ServiceType, operation: ServiceOperation, parameter: ServiceOperationParameter, transportConfiguration: HttpTransportConfiguration) {
         // TODO Config: From Body / from Query / from Path etc.
         // TODO error and null handling
         // TODO complexer data types than string
 
-        when(transportConfiguration.getTransportMode(parameter)) {
+        when(transportConfiguration.getTransportMode(service.name, operation.name, parameter.name)) {
             HttpTransportConfiguration.TransportMode.Body -> {
                 if (parameter.type.isOptional) {
                     appendLine("        val ${parameter.name} = body.jsonObject[\"${parameter.name}\"]?.jsonPrimitive?.contentOrNull")
@@ -150,14 +153,32 @@ class KotlinKtorGenerator : Generator {
             }
             HttpTransportConfiguration.TransportMode.Query -> {
                 if (parameter.type.isOptional) {
-                    appendLine("        val ${parameter.name} = queryParameters[\"${parameter.name}\"]")
+                    appendLine("        val ${parameter.name} = call.request.queryParameters[\"${parameter.name}\"]")
                 } else {
-                    appendLine("        val ${parameter.name} = queryParameters.getValue(\"${parameter.name}\")")
+                    appendLine("        val ${parameter.name} = call.request.queryParameters.getValue(\"${parameter.name}\")")
                 }
             }
-            HttpTransportConfiguration.TransportMode.Path -> TODO()
-            HttpTransportConfiguration.TransportMode.Header -> TODO()
-            HttpTransportConfiguration.TransportMode.Cookie -> TODO()
+            HttpTransportConfiguration.TransportMode.Path -> {
+                if (parameter.type.isOptional) {
+                    appendLine("        val ${parameter.name} = call.parameters[\"${parameter.name}\"]")
+                } else {
+                    appendLine("        val ${parameter.name} = call.parameters.getValue(\"${parameter.name}\")")
+                }
+            }
+            HttpTransportConfiguration.TransportMode.Header -> {
+                if (parameter.type.isOptional) {
+                    appendLine("        val ${parameter.name} = call.request.headers.get(\"${parameter.name}\")")
+                } else {
+                    appendLine("        val ${parameter.name} = call.request.headers.get(\"${parameter.name}\")!!")
+                }
+            }
+            HttpTransportConfiguration.TransportMode.Cookie -> {
+                if (parameter.type.isOptional) {
+                    appendLine("        val ${parameter.name} = call.request.cookies.get(\"${parameter.name}\")")
+                } else {
+                    appendLine("        val ${parameter.name} = call.request.cookies.get(\"${parameter.name}\")!!")
+                }
+            }
         }
     }
 

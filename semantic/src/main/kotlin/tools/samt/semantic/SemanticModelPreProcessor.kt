@@ -107,12 +107,14 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                                 }
 
                                 is RequestResponseOperationNode -> {
+/*
                                     if (operation.isAsync) {
                                         controller.getOrCreateContext(operation.location.source).error {
                                             message("Async operations are not yet supported")
                                             highlight("unsupported async operation", operation.location)
                                         }
                                     }
+*/
                                     ServiceType.RequestResponseOperation(
                                         name = operation.name.name,
                                         parameters = parameters,
@@ -136,8 +138,9 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                                 implements
                             )
                         }
+
                         val transport = ProviderType.Transport(
-                            name = statement.transport.protocolName.name,
+                            name = statement.transport.protocolName.name.lowercase(),
                             configuration = statement.transport.configuration
                         )
                         parentPackage += ProviderType(implements, transport, statement, parentPackage)

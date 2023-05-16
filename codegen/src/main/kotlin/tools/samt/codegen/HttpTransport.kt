@@ -10,13 +10,11 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
     override val transportName: String
         get() = "http"
 
-    override fun default(): TransportConfiguration {
-        require(false) { "Not implemented: Default Configuration" }
-        return HttpTransportConfiguration(
-            serializationMode = HttpTransportConfiguration.SerializationMode.Json,
-            services = emptyList(),
-        )
-    }
+    override fun default(): TransportConfiguration = HttpTransportConfiguration(
+        serializationMode = HttpTransportConfiguration.SerializationMode.Json,
+        services = emptyList(),
+        exceptionMap = emptyMap(),
+    )
 
     class Params(
         override val configObjectNode: ObjectNode,
@@ -181,11 +179,27 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
             }
         }
 
-        // TODO: implement faults parsing
+        val exceptions = buildMap {
+            if (fields.containsKey("faults")) {
+                if (fields["faults"] is ObjectNode) {
+                    val faultMapping = parseObjectNode(fields["faults"] as ObjectNode)
+                    for ((faultName, statusCode) in faultMapping) {
+
+                        if (statusCode !is IntegerNode) {
+                            params.reportError("Expected integer value for '$faultName' fault status code")
+                            continue
+                        }
+
+                        set(faultName, (statusCode as IntegerNode).value)
+                    }
+                }
+            }
+        }
 
         return HttpTransportConfiguration(
             serializationMode = serializationMode,
             services = services,
+            exceptionMap = exceptions,
         )
     }
 
@@ -202,6 +216,7 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
 class HttpTransportConfiguration(
     val serializationMode: SerializationMode,
     val services: List<ServiceConfiguration>,
+    val exceptionMap: Map<String, Long>,
 ) : TransportConfiguration {
     class ServiceConfiguration(
         val name: String,

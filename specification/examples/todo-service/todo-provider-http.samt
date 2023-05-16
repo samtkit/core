@@ -28,14 +28,8 @@ provide TodoEndpointHTTP {
             }
         },
         faults: {
-            NotFoundFault: {
-                code: 404,
-                message: "Todo not found"
-            },
-            MissingPermissionsFault: {
-                code: 403,
-                message: "Missing permissions"
-            }
+            NotFoundFault: 404,
+            MissingPermissionsFault: 403
         }
     }
 }

@@ -57,6 +57,7 @@ class KotlinKtorGenerator : Generator {
         val serviceArguments = implementedServices.joinToString { info ->
             "${info.serviceArgumentName}: ${info.reference.qualifiedName}"
         }
+        appendLine("// ${transportConfiguration.exceptionMap}")
         appendLine("fun Routing.route${provider.name}($serviceArguments) {")
         implementedServices.forEach { info ->
             appendProviderOperations(info, transportConfiguration)

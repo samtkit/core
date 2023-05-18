@@ -79,7 +79,7 @@ class SemanticModelTest {
                 }
 
                 enum E { }
-                alias E : Int
+                typealias E = Int
             """.trimIndent()
             parseAndCheck(
                 source to listOf(
@@ -508,7 +508,7 @@ class SemanticModelTest {
             val source = """
                 package color
 
-                alias UShort: Int (0..256)
+                typealias UShort = Int (0..256)
 
                 record Color {
                     r: UShort
@@ -526,18 +526,18 @@ class SemanticModelTest {
             val source = """
                 package color
 
-                alias A : Int
-                alias B : A // Int
-                alias C : B // Int
-                alias D : F // Cycle!
-                alias E : D // Cycle!
-                alias F : E // Cycle!
+                typealias A = Int
+                typealias B = A // Int
+                typealias C = B // Int
+                typealias D = F // Cycle!
+                typealias E = D // Cycle!
+                typealias F = E // Cycle!
             """.trimIndent()
             parseAndCheck(
                 source to listOf(
-                    "Error: Could not resolve alias 'D', are there circular references?",
-                    "Error: Could not resolve alias 'E', are there circular references?",
-                    "Error: Could not resolve alias 'F', are there circular references?",
+                    "Error: Could not resolve type alias 'D', are there circular references?",
+                    "Error: Could not resolve type alias 'E', are there circular references?",
+                    "Error: Could not resolve type alias 'F', are there circular references?",
                 )
             )
         }

@@ -6,13 +6,13 @@ import package
 
 import foo
 
-alias Test : Int(0..1000000000000000000000000)
+typealias Test = Int(0..1000000000000000000000000)
 
-alias ^foobar : String
+typealias ^foobar = String
 
-alias ^ : String
+typealias ^ = String
 
-alias test : String(pattern("\n\x"))
+typealias test = String(pattern("\n\x"))
 
 package debug
 
@@ -31,4 +31,4 @@ enum Foo {
     Baz
 }
 
-alias foo = String
+typealias foo : String

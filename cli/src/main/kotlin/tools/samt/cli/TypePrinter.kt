@@ -14,7 +14,7 @@ internal object TypePrinter {
             appendLine(" ${bold("record")} ${yellow(record.name)}")
         }
         for (alias in samtPackage.aliases) {
-            appendLine(" ${bold("alias")} ${yellow(alias.name)} = ${gray(alias.fullyResolvedType?.humanReadableName ?: "Unknown")}")
+            appendLine(" ${bold("typealias")} ${yellow(alias.name)} = ${gray(alias.fullyResolvedType?.humanReadableName ?: "Unknown")}")
         }
         for (service in samtPackage.services) {
             appendLine(" ${bold("service")} ${yellow(service.name)}")

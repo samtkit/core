@@ -296,7 +296,7 @@ SAMT!""", stream.next()
             record
             enum
             service
-            alias
+            typealias
             package
             import
             provide
@@ -334,7 +334,7 @@ SAMT!""", stream.next()
         assertIs<RecordToken>(stream.next())
         assertIs<EnumToken>(stream.next())
         assertIs<ServiceToken>(stream.next())
-        assertIs<AliasToken>(stream.next())
+        assertIs<TypealiasToken>(stream.next())
         assertIs<PackageToken>(stream.next())
         assertIs<ImportToken>(stream.next())
         assertIs<ProvideToken>(stream.next())

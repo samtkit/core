@@ -221,9 +221,9 @@ class ParserTest {
             val source = """
                 package aliases
 
-                typealias A: String? ( foo(1..2.3..3) )
-                typealias B: List<A?>?
-                typealias C: Map<String, Integer> ( uniqueKeys((false)) )
+                typealias A = String? ( foo(1..2.3..3) )
+                typealias B = List<A?>?
+                typealias C = Map<String, Integer> ( uniqueKeys((false)) )
             """
             val fileTree = parse(source)
             assertPackage("aliases", fileTree.packageDeclaration)
@@ -266,8 +266,8 @@ class ParserTest {
             val source = """
                 package aliases
 
-                typealias A: String?
-                typealias B: List<A?>?
+                typealias A = String?
+                typealias B = List<A?>?
             """
             val fileTree = parse(source)
             assertPackage("aliases", fileTree.packageDeclaration)
@@ -293,7 +293,7 @@ class ParserTest {
             val source = """
                 package illegalAliases
 
-                typealias A: List<>
+                typealias A = List<>
             """
             val (fileTree, diagnostics) = parseWithRecoverableError(source)
             assertEquals(
@@ -466,7 +466,7 @@ class ParserTest {
             val source = """
                 package a
 
-                typealias A: List<B
+                typealias A = List<B
             """
             val exception = parseWithFatalError(source)
             assertEquals("Expected '>' but reached end of file", exception.message)
@@ -477,7 +477,7 @@ class ParserTest {
             val source = """
                 package a
 
-                typealias A: List<B}
+                typealias A = List<B}
             """
             val exception = parseWithFatalError(source)
             assertEquals("Unexpected token '}', expected '>'", exception.message)
@@ -491,7 +491,7 @@ class ParserTest {
                 typealias A 42.0
             """
             val exception = parseWithFatalError(source)
-            assertEquals("Unexpected token '42.0', expected ':'", exception.message)
+            assertEquals("Unexpected token '42.0', expected '='", exception.message)
         }
 
         @Test
@@ -693,7 +693,7 @@ class ParserTest {
 
                 @Password
                 @Encrypted
-                typealias Password: String
+                typealias Password = String
                 
                 @Foo
                 @Bar

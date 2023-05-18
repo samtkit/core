@@ -26,7 +26,7 @@ class ASTPrinterTest {
 
             enum E { A, B, C }
 
-            typealias B : E
+            typealias B = E
 
             @Description("This is a service")
             service MyService {

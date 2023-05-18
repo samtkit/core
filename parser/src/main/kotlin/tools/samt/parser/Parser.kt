@@ -216,7 +216,7 @@ class Parser private constructor(
         val start = currentStart
         expect<TypealiasToken>()
         val name = parseIdentifier()
-        expect<ColonToken>()
+        expect<EqualsToken>()
         val type = parseExpression()
         return TypeAliasNode(locationFromStart(start), name, type, annotations)
     }

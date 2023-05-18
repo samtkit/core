@@ -26,7 +26,7 @@ class ASTPrinterTest {
 
             enum E { A, B, C }
 
-            alias B : E
+            typealias B : E
 
             @Description("This is a service")
             service MyService {
@@ -92,9 +92,9 @@ class ASTPrinterTest {
             │ ├─IdentifierNode B <11:13>
             │ └─IdentifierNode C <11:16>
             ├─TypeAliasNode <13:1>
-            │ ├─IdentifierNode B <13:7>
-            │ └─BundleIdentifierNode E <13:11>
-            │   └─IdentifierNode E <13:11>
+            │ ├─IdentifierNode B <13:11>
+            │ └─BundleIdentifierNode E <13:15>
+            │   └─IdentifierNode E <13:15>
             ├─ServiceDeclarationNode <16:1>
             │ ├─IdentifierNode MyService <16:9>
             │ ├─RequestResponseOperationNode <17:3>

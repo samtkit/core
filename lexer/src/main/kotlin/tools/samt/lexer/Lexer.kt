@@ -412,7 +412,7 @@ class Lexer private constructor(
             "record" to { RecordToken(it) },
             "enum" to { EnumToken(it) },
             "service" to { ServiceToken(it) },
-            "alias" to { AliasToken(it) },
+            "typealias" to { TypealiasToken(it) },
             "package" to { PackageToken(it) },
             "import" to { ImportToken(it) },
             "provide" to { ProvideToken(it) },

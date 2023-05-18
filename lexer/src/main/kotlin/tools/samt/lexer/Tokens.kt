@@ -22,7 +22,7 @@ sealed interface StaticToken: Token
 data class RecordToken(override val location: Location): StaticToken
 data class EnumToken(override val location: Location): StaticToken
 data class ServiceToken(override val location: Location): StaticToken
-data class AliasToken(override val location: Location): StaticToken
+data class TypealiasToken(override val location: Location): StaticToken
 data class PackageToken(override val location: Location): StaticToken
 data class ImportToken(override val location: Location): StaticToken
 data class ProvideToken(override val location: Location): StaticToken
@@ -79,7 +79,7 @@ fun getHumanReadableTokenName(key: KClass<out Token>): String = when (key) {
     // StaticToken
     EnumToken::class -> "enum"
     ServiceToken::class -> "service"
-    AliasToken::class -> "alias"
+    TypealiasToken::class -> "typealias"
     PackageToken::class -> "package"
     ImportToken::class -> "import"
     ProvideToken::class -> "provide"

@@ -78,7 +78,7 @@ class Parser private constructor(
             when (current) {
                 is RecordToken -> parseRecordDeclaration(annotations)
                 is EnumToken -> parseEnumDeclaration(annotations)
-                is AliasToken -> parseTypeAlias(annotations)
+                is TypealiasToken -> parseTypeAlias(annotations)
                 is ServiceToken -> parseServiceDeclaration(annotations)
 
                 else -> {
@@ -100,7 +100,7 @@ class Parser private constructor(
         is PackageToken -> parsePackageDeclaration()
         is RecordToken -> parseRecordDeclaration()
         is EnumToken -> parseEnumDeclaration()
-        is AliasToken -> parseTypeAlias()
+        is TypealiasToken -> parseTypeAlias()
         is ServiceToken -> parseServiceDeclaration()
         is ProvideToken -> parseProviderDeclaration()
         is ConsumeToken -> parseConsumerDeclaration()
@@ -214,7 +214,7 @@ class Parser private constructor(
 
     private fun parseTypeAlias(annotations: List<AnnotationNode> = emptyList()): TypeAliasNode {
         val start = currentStart
-        expect<AliasToken>()
+        expect<TypealiasToken>()
         val name = parseIdentifier()
         expect<ColonToken>()
         val type = parseExpression()

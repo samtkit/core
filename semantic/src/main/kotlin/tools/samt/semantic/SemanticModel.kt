@@ -51,8 +51,8 @@ class SemanticModelBuilder private constructor(
 
         for (unresolvableAlias in workingSet) {
             controller.getOrCreateContext(unresolvableAlias.declaration.location.source).error {
-                message("Could not resolve alias '${unresolvableAlias.name}', are there circular references?")
-                highlight("unresolved alias", unresolvableAlias.declaration.name.location)
+                message("Could not resolve type alias '${unresolvableAlias.name}', are there circular references?")
+                highlight("unresolved type alias", unresolvableAlias.declaration.name.location)
             }
         }
     }
@@ -108,22 +108,22 @@ class SemanticModelBuilder private constructor(
             }
             is ServiceType -> {
                 controller.getOrCreateContext(typeReference.typeNode.location.source).error {
-                    message("Alias cannot reference service")
-                    highlight("alias", typeReference.typeNode.location)
+                    message("Type alias cannot reference service")
+                    highlight("type alias", typeReference.typeNode.location)
                 }
                 typeReference
             }
             is ProviderType -> {
                 controller.getOrCreateContext(typeReference.typeNode.location.source).error {
-                    message("Alias cannot reference provider")
-                    highlight("alias", typeReference.typeNode.location)
+                    message("Type alias cannot reference provider")
+                    highlight("type alias", typeReference.typeNode.location)
                 }
                 typeReference
             }
             is PackageType -> {
                 controller.getOrCreateContext(typeReference.typeNode.location.source).error {
-                    message("Alias cannot reference package")
-                    highlight("alias", typeReference.typeNode.location)
+                    message("Type alias cannot reference package")
+                    highlight("type alias", typeReference.typeNode.location)
                 }
                 typeReference
             }

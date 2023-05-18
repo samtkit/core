@@ -535,9 +535,9 @@ class SemanticModelTest {
             """.trimIndent()
             parseAndCheck(
                 source to listOf(
-                    "Error: Could not resolve alias 'D', are there circular references?",
-                    "Error: Could not resolve alias 'E', are there circular references?",
-                    "Error: Could not resolve alias 'F', are there circular references?",
+                    "Error: Could not resolve type alias 'D', are there circular references?",
+                    "Error: Could not resolve type alias 'E', are there circular references?",
+                    "Error: Could not resolve type alias 'F', are there circular references?",
                 )
             )
         }

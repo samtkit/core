@@ -29,7 +29,7 @@ RecordField = { Annotation }, Identifier, ":", Expression;
 
 EnumDeclaration = { Annotation }, "enum", Identifier, "{", [IdentifierList], "}";
 
-TypeAliasDeclaration = { Annotation }, "alias", Identifier, ":", Expression;
+TypeAliasDeclaration = { Annotation }, "typealias", Identifier, "=", Expression;
 
 ServiceDeclaration = { Annotation }, "service", Identifier, "{", { OperationDeclaration | OnewayOperationDeclaration }, "}";
 

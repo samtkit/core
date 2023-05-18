@@ -18,7 +18,7 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
 
     class Params(
         override val configObjectNode: ObjectNode,
-        private val controller: DiagnosticController
+        val controller: DiagnosticController
     ) : TransportConfigurationParserParams {
 
         override fun reportError(message: String) {
@@ -46,13 +46,19 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
                     "json" -> HttpTransportConfiguration.SerializationMode.Json
                     else -> {
                         // unknown serialization mode
-                        params.reportError("Unknown serialization mode '${serializationConfig.value}', defaulting to 'json'")
+                        serializationConfig.reportError(params.controller) {
+                            message("Unknown serialization mode '${serializationConfig.value}', defaulting to 'json'")
+                            highlight(serializationConfig.location, "unknown serialization mode")
+                        }
                         HttpTransportConfiguration.SerializationMode.Json
                     }
                 }
             } else {
                 // invalid serialization mode type, expected string
-                params.reportError("Invalid value for 'serialization', defaulting to 'json'")
+                serializationConfig.reportError(params.controller) {
+                    message("Expcted serialization config option to be a string, defaulting to 'json'")
+                    highlight(serializationConfig.location, "")
+                }
                 HttpTransportConfiguration.SerializationMode.Json
             }
         } else {
@@ -61,19 +67,24 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
 
         val services = buildList {
             if (!fields.containsKey("operations")) {
-                params.reportError("Missing 'operations' field")
                 return@buildList
             }
 
             if (fields["operations"] !is ObjectNode) {
-                params.reportError("Invalid value for 'operations', expected object")
+                fields["operations"]!!.reportError(params.controller) {
+                    message("Invalid value for 'operations', expected object")
+                    highlight(fields["operations"]!!.location)
+                }
                 return@buildList
             }
 
             val operationsConfig = parseObjectNode(fields["operations"] as ObjectNode)
             for ((serviceName, operationsField) in operationsConfig) {
                 if (operationsField !is ObjectNode) {
-                    params.reportError("Invalid value for '$serviceName', expected object")
+                    operationsField.reportError(params.controller) {
+                        message("Invalid value for '$serviceName', expected object")
+                        highlight(operationsField.location)
+                    }
                     continue
                 }
 
@@ -82,13 +93,19 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
                 val operations = buildList {
                     for ((operationName, operationConfig) in operationsConfig) {
                         if (operationConfig !is StringNode) {
-                            params.reportError("Invalid value for operation config for '$operationName', expected string")
+                            operationConfig.reportError(params.controller) {
+                                message("Invalid value for operation config for '$operationName', expected string")
+                                highlight(operationConfig.location)
+                            }
                             continue
                         }
 
                         val words = operationConfig.value.split(" ")
                         if (words.size < 2) {
-                            params.reportError("Invalid operation config for '$operationName', expected '<method> <path> <parameters>'")
+                            operationConfig.reportError(params.controller) {
+                                message("Invalid operation config for '$operationName', expected '<method> <path> <parameters>'")
+                                highlight(operationConfig.location)
+                            }
                             continue
                         }
 
@@ -99,7 +116,10 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
                             "DELETE" -> HttpTransportConfiguration.HttpMethod.Delete
                             "PATCH" -> HttpTransportConfiguration.HttpMethod.Patch
                             else -> {
-                                params.reportError("Invalid http method '$methodName'")
+                                operationConfig.reportError(params.controller) {
+                                    message("Invalid http method '$methodName'")
+                                    highlight(operationConfig.location)
+                                }
                                 continue
                             }
                         }
@@ -115,7 +135,10 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
                                     val pathParameterName = component.substring(1, component.length - 1)
 
                                     if (pathParameterName.isEmpty()) {
-                                        params.reportError("Expected parameter name between curly braces in '$path'")
+                                        operationConfig.reportError(params.controller) {
+                                            message("Expected parameter name between curly braces in '$path'")
+                                            highlight(operationConfig.location)
+                                        }
                                         continue
                                     }
 
@@ -131,13 +154,19 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
                                 if (component.startsWith("{") && component.endsWith("}")) {
                                     val parameterConfig = component.substring(1, component.length - 1)
                                     if (parameterConfig.isEmpty()) {
-                                        params.reportError("Expected parameter name between curly braces in '$path'")
+                                        operationConfig.reportError(params.controller) {
+                                            message("Expected parameter name between curly braces in '$path'")
+                                            highlight(operationConfig.location)
+                                        }
                                         continue
                                     }
 
                                     val parts = parameterConfig.split(":")
                                     if (parts.size != 2) {
-                                        params.reportError("Expected parameter in format '{type:name}', got '$component'")
+                                        operationConfig.reportError(params.controller) {
+                                            message("Expected parameter in format '{type:name}', got '$component'")
+                                            highlight(operationConfig.location)
+                                        }
                                         continue
                                     }
 
@@ -148,7 +177,10 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
                                         "body" -> HttpTransportConfiguration.TransportMode.Body
                                         "cookie" -> HttpTransportConfiguration.TransportMode.Cookie
                                         else -> {
-                                            params.reportError("Invalid transport mode '$type'")
+                                            operationConfig.reportError(params.controller) {
+                                                message("Invalid transport mode '$type'")
+                                                highlight(operationConfig.location)
+                                            }
                                             continue
                                         }
                                     }
@@ -158,7 +190,10 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
                                         transportMode = transportMode,
                                     ))
                                 } else {
-                                    params.reportError("Expected parameter in format '{type:name}', got '$component'")
+                                    operationConfig.reportError(params.controller) {
+                                        message("Expected parameter in format '{type:name}', got '$component'")
+                                        highlight(operationConfig.location)
+                                    }
                                 }
                             }
                         }
@@ -186,7 +221,10 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
                     for ((faultName, statusCode) in faultMapping) {
 
                         if (statusCode !is IntegerNode) {
-                            params.reportError("Expected integer value for '$faultName' fault status code")
+                            statusCode.reportError(params.controller) {
+                                message("Expected integer value for '$faultName' fault status code")
+                                highlight(statusCode.location)
+                            }
                             continue
                         }
 

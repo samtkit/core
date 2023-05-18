@@ -1,6 +1,5 @@
 package tools.samt.codegen
 
-import tools.samt.common.DiagnosticController
 import tools.samt.parser.ObjectNode
 
 interface GeneratorParams {

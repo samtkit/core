@@ -1,10 +1,25 @@
 package tools.samt.parser
 
-import tools.samt.common.Location
-import tools.samt.common.SourceFile
+import tools.samt.common.*
 
 sealed interface Node {
     val location: Location
+}
+
+inline fun Node.report(controller: DiagnosticController, severity: DiagnosticSeverity, block: DiagnosticMessageBuilder.() -> Unit) {
+    controller.getOrCreateContext(location.source).report(severity, block)
+}
+
+inline fun Node.reportError(controller: DiagnosticController, block: DiagnosticMessageBuilder.() -> Unit) {
+    report(controller, DiagnosticSeverity.Error, block)
+}
+
+inline fun Node.reportWarning(controller: DiagnosticController, block: DiagnosticMessageBuilder.() -> Unit) {
+    report(controller, DiagnosticSeverity.Warning, block)
+}
+
+inline fun Node.reportInfo(controller: DiagnosticController, block: DiagnosticMessageBuilder.() -> Unit) {
+    report(controller, DiagnosticSeverity.Info, block)
 }
 
 sealed interface AnnotatedNode : Node {

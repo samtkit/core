@@ -8,6 +8,7 @@ import tools.samt.common.DiagnosticController
 import tools.samt.common.collectSamtFiles
 import tools.samt.common.readSamtSource
 import java.net.URI
+import kotlin.io.path.extension
 import kotlin.io.path.isDirectory
 import kotlin.io.path.toPath
 
@@ -20,20 +21,19 @@ class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceServ
 
     override fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams) {
         for (change in params.changes) {
-            val path = change.uri.toPathUri()
-            if (path.toPath().isDirectory()) {
+            val uri = change.uri.toPathUri()
+            val path = uri.toPath()
+            if (path.isDirectory()) {
                 when (change.type) {
-                    FileChangeType.Created -> parseFilesInDirectory(path).forEach(workspace::setFile)
+                    FileChangeType.Created -> parseFilesInDirectory(uri).forEach(workspace::setFile)
                     FileChangeType.Changed -> error("Directory changes should not be watched")
-                    FileChangeType.Deleted -> {
-                        workspace.removeDirectory(path)
-                    }
+                    FileChangeType.Deleted -> workspace.removeDirectory(uri)
                     null -> error("Unexpected null value for change.type")
                 }
-            } else if (change.uri.endsWith(".samt")) {
+            } else if (path.extension == "samt") {
                 when (change.type) {
-                    FileChangeType.Created, FileChangeType.Changed -> workspace.setFile(readAndParseFile(path))
-                    FileChangeType.Deleted -> workspace.removeFile(path)
+                    FileChangeType.Created, FileChangeType.Changed -> workspace.setFile(readAndParseFile(uri))
+                    FileChangeType.Deleted -> workspace.removeFile(uri)
                     null -> error("Unexpected null value for change.type")
                 }
             }
@@ -51,15 +51,16 @@ class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceServ
 
     override fun didRenameFiles(params: RenameFilesParams)  {
         for (file in params.files) {
-            val oldPath = file.oldUri.toPathUri()
-            val newPath = file.newUri.toPathUri()
-            if (newPath.toPath().isDirectory()) {
-                workspace.removeDirectory(oldPath)
-                parseFilesInDirectory(newPath).forEach(workspace::setFile)
+            val oldUri = file.oldUri.toPathUri()
+            val newUri = file.newUri.toPathUri()
+            val newPath = newUri.toPath()
+            if (newPath.isDirectory()) {
+                workspace.removeDirectory(oldUri)
+                parseFilesInDirectory(newUri).forEach(workspace::setFile)
             } else {
-                workspace.removeFile(oldPath)
-                if (file.newUri.endsWith(".samt")) {
-                    workspace.setFile(readAndParseFile(newPath))
+                workspace.removeFile(oldUri)
+                if (newPath.extension == "samt") {
+                    workspace.setFile(readAndParseFile(newUri))
                 }
             }
         }
@@ -82,7 +83,7 @@ class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceServ
         val event = params.event
         for (added in event.added) {
             val path = added.uri.toPathUri()
-            val folder = SamtFolder.createFromDirectory(path)
+            val folder = SamtFolder.fromDirectory(path)
             workspace.addFolder(folder)
             folder.buildSemanticModel()
         }

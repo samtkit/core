@@ -8,7 +8,7 @@ import tools.samt.semantic.Package
 import tools.samt.semantic.SemanticModelBuilder
 import java.net.URI
 
-class SamtFolder (val path: URI) : Iterable<FileInfo> {
+class SamtFolder(val path: URI) : Iterable<FileInfo> {
     private val files = mutableMapOf<URI, FileInfo>()
     var globalPackage: Package? = null
         private set
@@ -48,7 +48,7 @@ class SamtFolder (val path: URI) : Iterable<FileInfo> {
     }
 
     companion object {
-        fun createFromDirectory(path: URI): SamtFolder {
+        fun fromDirectory(path: URI): SamtFolder {
             val controller = DiagnosticController(path)
             val workspace = SamtFolder(path)
             val sourceFiles = collectSamtFiles(path).readSamtSource(controller)

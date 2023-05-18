@@ -90,7 +90,7 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     private fun buildSamtModel(params: InitializeParams) {
         val folders = params.workspaceFolders?.map { it.uri.toPathUri() }.orEmpty()
         for (folder in folders) {
-            workspace.addFolder(SamtFolder.createFromDirectory(folder))
+            workspace.addFolder(SamtFolder.fromDirectory(folder))
         }
     }
 

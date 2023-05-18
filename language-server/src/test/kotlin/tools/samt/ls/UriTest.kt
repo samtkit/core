@@ -2,6 +2,7 @@ package tools.samt.ls
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class UriTest {
@@ -17,7 +18,7 @@ class UriTest {
 
     @Test
     fun `startsWith returns false if URI is just a prefix`() {
-        assertTrue(!"file:///c:/testtest".toPathUri().startsWith("file:///c:/test".toPathUri()))
+        assertFalse("file:///c:/testtest".toPathUri().startsWith("file:///c:/test".toPathUri()))
     }
 
     @Test

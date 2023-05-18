@@ -120,7 +120,7 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
 
             val tokens: List<Token> = fileInfo.tokens
             val fileNode: FileNode = fileInfo.fileNode ?: return@supplyAsync SemanticTokens(emptyList())
-            val globalPackage: Package = workspace.getFolderSnapshot(path)?.globalPackage ?: return@supplyAsync SemanticTokens(emptyList())
+            val globalPackage: Package = workspace.getRootPackage(path) ?: return@supplyAsync SemanticTokens(emptyList())
             val samtPackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
 
             val semanticTokens = SamtSemanticTokens.analyze(fileNode, samtPackage)

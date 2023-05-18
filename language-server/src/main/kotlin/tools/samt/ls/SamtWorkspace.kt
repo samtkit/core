@@ -59,9 +59,7 @@ class SamtWorkspace {
     fun getRootPackage(path: URI): Package? = getFolder(path)?.globalPackage
 
     fun getPendingMessages(): Map<URI, List<DiagnosticMessage>> = changedFolders.flatMap { folder ->
-        folder.getAllMessages().map { (path, messages) ->
-            path to messages
-        }
+        folder.getAllMessages().toList()
     }.toMap() + removedFiles.associateWith { emptyList() }
 
     fun buildSemanticModel() {

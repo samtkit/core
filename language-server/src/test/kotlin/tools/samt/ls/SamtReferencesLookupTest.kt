@@ -14,8 +14,16 @@ class SamtReferencesLookupTest {
     fun `correctly find references in complex model`() {
         val serviceSource = """
             package test
+            
+            enum Friendliness {
+                FRIENDLY,
+                NEUTRAL,
+                HOSTILE
+            }
 
-            record Person { }
+            record Person {
+                friendliness: Friendliness
+            }
 
             service PersonService {
                 getNeighbors(person: Person): Map<String, Person?>? (*..100)
@@ -48,16 +56,22 @@ class SamtReferencesLookupTest {
         val (samtPackage, referencesLookup) = parse(serviceSource, providerSource, consumerOneSource, consumerTwoSource)
 
         val testPackage = samtPackage.subPackages.single { it.name == "test" }
+        val friendliness = testPackage.enums.single { it.name == "Friendliness" }
         val person = testPackage.records.single { it.name == "Person" }
         val personService = testPackage.services.single { it.name == "PersonService" }
         val personEndpoint = testPackage.providers.single { it.name == "PersonEndpoint" }
         val getNeighbors = personService.operations.single { it.name == "getNeighbors" }
 
+        val friendlinessReferences = referencesLookup[friendliness]
+        assertNotNull(friendlinessReferences)
+        assertEquals(1, friendlinessReferences.size, "Following list had unexpected amount of entries: $friendlinessReferences")
+        assertContains(friendlinessReferences, TestLocation("9:18" to "9:30").getLocation(serviceSource))
+
         val personReferences = referencesLookup[person]
         assertNotNull(personReferences)
         assertEquals(2, personReferences.size, "Following list had unexpected amount of entries: $personReferences")
-        assertContains(personReferences, TestLocation("5:25" to "5:31").getLocation(serviceSource))
-        assertContains(personReferences, TestLocation("5:46" to "5:52").getLocation(serviceSource))
+        assertContains(personReferences, TestLocation("13:25" to "13:31").getLocation(serviceSource))
+        assertContains(personReferences, TestLocation("13:46" to "13:52").getLocation(serviceSource))
 
         val personServiceReferences = referencesLookup[personService]
         assertNotNull(personServiceReferences)

@@ -50,6 +50,11 @@ class SamtDeclarationLookup private constructor() : SamtSemanticLookup<Location,
         this[aliasType.declaration.name.location] = aliasType
     }
 
+    override fun markEnumDeclaration(enumType: EnumType) {
+        super.markEnumDeclaration(enumType)
+        this[enumType.declaration.name.location] = enumType
+    }
+
     companion object {
         fun analyze(fileNode: FileNode, samtPackage: Package) =
             SamtDeclarationLookup().also { it.analyze(fileNode, samtPackage) }

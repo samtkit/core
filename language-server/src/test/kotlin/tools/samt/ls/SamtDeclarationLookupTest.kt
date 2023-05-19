@@ -16,10 +16,17 @@ class SamtDeclarationLookupTest {
     fun `correctly find definition in complex model`() {
         val serviceSource = """
             package test
+            
+            enum Friendliness {
+                FRIENDLY,
+                NEUTRAL,
+                HOSTILE
+            }
 
             record Person {
                 name: List<String? (size(1..100))>
                 age: Int
+                friendliness: Friendliness
             }
 
             service PersonService {
@@ -52,8 +59,9 @@ class SamtDeclarationLookupTest {
         """.trimIndent()
         parseAndCheck(
             serviceSource to listOf(
-                ExpectedDefinition("8:31" to "8:37") { it is RecordDeclarationNode && it.name.name == "Person" },
-                ExpectedDefinition("8:52" to "8:58") { it is RecordDeclarationNode && it.name.name == "Person" },
+                ExpectedDefinition("11:18" to "11:30") { it is EnumDeclarationNode && it.name.name == "Friendliness" },
+                ExpectedDefinition("15:31" to "15:37") { it is RecordDeclarationNode && it.name.name == "Person" },
+                ExpectedDefinition("15:52" to "15:58") { it is RecordDeclarationNode && it.name.name == "Person" },
             ),
             providerSource to listOf(
                 ExpectedDefinition("3:15" to "3:28") { it is ServiceDeclarationNode && it.name.name == "PersonService" },
@@ -76,6 +84,12 @@ class SamtDeclarationLookupTest {
     fun `finds definition for name of the user defined types themselves`() {
         val serviceSource = """
             package test
+            
+            enum Friendliness {
+                FRIENDLY,
+                NEUTRAL,
+                HOSTILE
+            }
 
             record Person {
                 name: List<String? (size(1..100))>
@@ -97,9 +111,10 @@ class SamtDeclarationLookupTest {
         """.trimIndent()
         parseAndCheck(
             serviceSource to listOf(
-                ExpectedDefinition("2:7" to "2:13") { it is RecordDeclarationNode && it.name.name == "Person" },
-                ExpectedDefinition("7:8" to "7:21") { it is ServiceDeclarationNode && it.name.name == "PersonService" },
-                ExpectedDefinition("8:4" to "8:7") { it is OperationNode && it.name.name == "foo" },
+                ExpectedDefinition("2:5" to "2:17") { it is EnumDeclarationNode && it.name.name == "Friendliness" },
+                ExpectedDefinition("8:7" to "8:13") { it is RecordDeclarationNode && it.name.name == "Person" },
+                ExpectedDefinition("13:8" to "13:21") { it is ServiceDeclarationNode && it.name.name == "PersonService" },
+                ExpectedDefinition("14:4" to "14:7") { it is OperationNode && it.name.name == "foo" },
             ),
             providerSource to listOf(
                 ExpectedDefinition("2:8" to "2:22") { it is ProviderDeclarationNode && it.name.name == "PersonEndpoint" },

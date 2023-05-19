@@ -18,7 +18,7 @@ dependencyResolutionManagement {
         val kotlinxSerialization = "1.5.1"
         val kamlVersion = "0.53.0"
         val kover = "0.7.0"
-        val lsp4j = "0.20.1"
+        val lsp4j = "0.21.0"
 
         create("libs") {
             version("kotlin", kotlin)

@@ -2,7 +2,10 @@ package tools.samt.semantic
 
 import tools.samt.common.DiagnosticController
 import tools.samt.common.SourceFile
-import tools.samt.parser.*
+import tools.samt.parser.FileNode
+import tools.samt.parser.NamedDeclarationNode
+import tools.samt.parser.TypeImportNode
+import tools.samt.parser.WildcardImportNode
 
 /**
  * Goals of the semantic model:
@@ -87,7 +90,11 @@ class SemanticModelBuilder private constructor(
             is LiteralType,
             is EnumType,
             is RecordType,
-            UnknownType -> typeReference
+            is ServiceType,
+            is ProviderType,
+            UnknownType,
+            -> typeReference
+
             is AliasType -> type.fullyResolvedType?.let { merge(typeReference, it) }
             is ListType -> {
                 val elementType = getFullyResolvedType(type.elementType)
@@ -106,24 +113,10 @@ class SemanticModelBuilder private constructor(
                     null
                 }
             }
-            is ServiceType -> {
-                controller.getOrCreateContext(typeReference.typeNode.location.source).error {
-                    message("Type alias cannot reference service")
-                    highlight("type alias", typeReference.typeNode.location)
-                }
-                typeReference
-            }
-            is ProviderType -> {
-                controller.getOrCreateContext(typeReference.typeNode.location.source).error {
-                    message("Type alias cannot reference provider")
-                    highlight("type alias", typeReference.typeNode.location)
-                }
-                typeReference
-            }
             is PackageType -> {
                 controller.getOrCreateContext(typeReference.typeNode.location.source).error {
                     message("Type alias cannot reference package")
-                    highlight("type alias", typeReference.typeNode.location)
+                    highlight("illegal package", typeReference.typeNode.location)
                 }
                 typeReference
             }

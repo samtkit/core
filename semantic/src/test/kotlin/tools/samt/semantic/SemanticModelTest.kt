@@ -522,6 +522,94 @@ class SemanticModelTest {
         }
 
         @Test
+        fun `can use service alias`() {
+            val source = """
+                package color
+
+                typealias Foo = MyService
+
+                service MyService {
+                    foo(): String
+                }
+
+                provide MyEndpoint {
+                    implements Foo { foo }
+                    
+                    transport HTTP
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to emptyList()
+            )
+        }
+
+        @Test
+        fun `cannot use service alias in type model`() {
+            val source = """
+                package color
+
+                typealias Foo = MyService
+
+                service MyService {
+                    foo(): Foo
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf("Error: Type alias refers to 'MyService', which cannot be used in this context")
+            )
+        }
+
+        @Test
+        fun `cannot use package in alias`() {
+            val source = """
+                package color
+
+                typealias myColor = color
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf("Error: Type alias cannot reference package")
+            )
+        }
+
+        @Test
+        fun `duplicate optional markers within alias definitions are reported`() {
+            val source = """
+                package people
+
+                typealias OptionalName = String? ("a-z")
+                typealias OptionalDeepName = OptionalName
+                typealias OptionalDeeperName = OptionalDeepName?
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf(
+                    "Warning: Type is already optional, ignoring '?'",
+                )
+            )
+        }
+
+        @Test
+        fun `duplicate optional markers when referencing alias types are reported`() {
+            val source = """
+                package people
+
+                typealias OptionalName = String? ("a-z")
+                typealias OptionalDeepName = OptionalName
+
+                record Human {
+                    firstName: OptionalName
+                    lastName: OptionalName?
+                    middleName: OptionalDeepName?
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf(
+                    "Warning: Type alias refers to type which is already optional, ignoring '?'",
+                    "Warning: Type alias refers to type which is already optional, ignoring '?'",
+                )
+            )
+        }
+
+        @Test
         fun `cannot use type aliases with cyclic references`() {
             val source = """
                 package color

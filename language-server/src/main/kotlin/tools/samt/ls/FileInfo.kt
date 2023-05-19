@@ -19,6 +19,7 @@ class FileInfo(
 )
 
 val FileInfo.path get() = sourceFile.path
+val FileInfo.content get() = sourceFile.content
 
 fun parseFile(sourceFile: SourceFile): FileInfo {
     val diagnosticContext = DiagnosticContext(sourceFile)

@@ -34,6 +34,8 @@ class SamtWorkspace {
     fun getFile(path: URI): FileInfo? = getFolder(path)?.get(path)
 
     fun setFile(file: FileInfo) {
+        val currentFile = getFile(file.path)
+        if (file.content == currentFile?.content) return
         val folder = getFolder(file.path) ?: return
         folder.set(file)
         changedFolders.add(folder)

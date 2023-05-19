@@ -143,4 +143,16 @@ class SamtWorkspaceTest {
         val rootPackage = workspace.getRootPackage(file1.path)
         assertNotNull(rootPackage)
     }
+
+    @Test
+    fun `if file has not changed pending messages don't change`() {
+        val workspace = SamtWorkspace()
+        workspace.addFolder(SamtFolder("file:///tmp/test".toPathUri()))
+        val sourceFile = SourceFile("file:///tmp/test/foo.samt".toPathUri(), "package foo.bar record Foo {")
+        workspace.setFile(parseFile(sourceFile))
+        assertEquals(1, workspace.getPendingMessages().size)
+        workspace.clearChanges()
+        workspace.setFile(parseFile(sourceFile))
+        assertEquals(emptyMap(), workspace.getPendingMessages())
+    }
 }

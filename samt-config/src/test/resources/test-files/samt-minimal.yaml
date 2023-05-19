@@ -1,0 +1,4 @@
+generators:
+  - name: samt-kotlin-ktor
+    options:
+      addPrefixToKotlinPackage: com.company.samt.generated

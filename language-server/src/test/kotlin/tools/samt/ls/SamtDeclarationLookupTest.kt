@@ -76,6 +76,12 @@ class SamtDeclarationLookupTest {
     fun `finds definition for name of the user defined types themselves`() {
         val serviceSource = """
             package test
+            
+            enum Friendliness {
+                FRIENDLY,
+                NEUTRAL,
+                HOSTILE
+            }
 
             record Person {
                 name: List<String? (size(1..100))>
@@ -97,9 +103,10 @@ class SamtDeclarationLookupTest {
         """.trimIndent()
         parseAndCheck(
             serviceSource to listOf(
-                ExpectedDefinition("2:7" to "2:13") { it is RecordDeclarationNode && it.name.name == "Person" },
-                ExpectedDefinition("7:8" to "7:21") { it is ServiceDeclarationNode && it.name.name == "PersonService" },
-                ExpectedDefinition("8:4" to "8:7") { it is OperationNode && it.name.name == "foo" },
+                ExpectedDefinition("2:5" to "2:17") { it is EnumDeclarationNode && it.name.name == "Friendliness" },
+                ExpectedDefinition("8:7" to "8:13") { it is RecordDeclarationNode && it.name.name == "Person" },
+                ExpectedDefinition("13:8" to "13:21") { it is ServiceDeclarationNode && it.name.name == "PersonService" },
+                ExpectedDefinition("14:4" to "14:7") { it is OperationNode && it.name.name == "foo" },
             ),
             providerSource to listOf(
                 ExpectedDefinition("2:8" to "2:22") { it is ProviderDeclarationNode && it.name.name == "PersonEndpoint" },

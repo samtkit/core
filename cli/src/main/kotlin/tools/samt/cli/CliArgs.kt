@@ -10,8 +10,8 @@ class CliArgs {
 
 @Parameters(commandDescription = "Compile SAMT files")
 class CompileCommand {
-    @Parameter(description = "Files to compile, defaults to all .samt files in the current directory")
-    var files: List<String> = mutableListOf()
+    @Parameter(description = "SAMT project to compile, defaults to the 'samt.yaml' file in the current directory")
+    var file: String = "./samt.yaml"
 }
 
 @Parameters(commandDescription = "Dump SAMT files in various formats for debugging purposes")
@@ -25,8 +25,8 @@ class DumpCommand {
     @Parameter(names = ["--types"], description = "Dump a visual representation of the resolved types")
     var dumpTypes: Boolean = false
 
-    @Parameter(description = "Files to dump, defaults to all .samt files in the current directory")
-    var files: List<String> = mutableListOf()
+    @Parameter(description = "SAMT project to dump, defaults to the 'samt.yaml' file in the current directory")
+    var file: String = "./samt.yaml"
 }
 
 @Parameters(commandDescription = "Initialize or update the SAMT wrapper")

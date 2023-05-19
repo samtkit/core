@@ -3,6 +3,7 @@ package tools.samt.config
 import com.charleskorn.kaml.*
 import kotlinx.serialization.SerializationException
 import java.nio.file.Path
+import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import tools.samt.common.DiagnosticSeverity as CommonDiagnosticSeverity
@@ -37,12 +38,14 @@ object SamtConfigurationParser {
             SamtConfiguration()
         }
 
+        val projectDirectory = path.parent
+
         return CommonSamtConfiguration(
-            source = parsedConfiguration.source,
+            source = projectDirectory.resolve(parsedConfiguration.source).normalize(),
             plugins = parsedConfiguration.plugins.map { plugin ->
                 when (plugin) {
                     is SamtLocalPluginConfiguration -> CommonLocalPluginConfiguration(
-                        path = plugin.path
+                        path = projectDirectory.resolve(plugin.path).normalize()
                     )
 
                     is SamtMavenPluginConfiguration -> CommonMavenPluginConfiguration(
@@ -63,7 +66,7 @@ object SamtConfigurationParser {
             generators = parsedConfiguration.generators.map { generator ->
                 CommonGeneratorConfiguration(
                     name = generator.name,
-                    output = generator.output,
+                    output = projectDirectory.resolve(generator.output).normalize(),
                     options = generator.options
                 )
             }

@@ -1,7 +1,9 @@
 package tools.samt.common
 
+import java.nio.file.Path
+
 data class SamtConfiguration(
-    val source: String,
+    val source: Path,
     val plugins: List<SamtPluginConfiguration>,
     val generators: List<SamtGeneratorConfiguration>,
 )
@@ -9,7 +11,7 @@ data class SamtConfiguration(
 sealed interface SamtPluginConfiguration
 
 data class SamtLocalPluginConfiguration(
-    val path: String,
+    val path: Path,
 ) : SamtPluginConfiguration
 
 data class SamtMavenPluginConfiguration(
@@ -21,6 +23,6 @@ data class SamtMavenPluginConfiguration(
 
 data class SamtGeneratorConfiguration(
     val name: String,
-    val output: String,
+    val output: Path,
     val options: Map<String, String>,
 )

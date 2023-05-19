@@ -1,0 +1,5 @@
+source: ./todo-service
+
+generators:
+  - name: kotlin-ktor
+    output: ./out

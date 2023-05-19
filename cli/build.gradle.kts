@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":lexer"))
     implementation(project(":parser"))
     implementation(project(":semantic"))
+    implementation(project(":samt-config"))
     implementation(project(":codegen"))
 }
 

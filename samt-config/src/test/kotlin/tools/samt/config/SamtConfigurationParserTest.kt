@@ -29,10 +29,10 @@ class SamtConfigurationParserTest {
 
         assertEquals(
             tools.samt.common.SamtConfiguration(
-                source = "./some/other/src",
+                source = testDirectory.resolve("some/other/src"),
                 plugins = listOf(
                     tools.samt.common.SamtLocalPluginConfiguration(
-                        path = "./path/to/plugin.jar"
+                        path = testDirectory.resolve("path/to/plugin.jar")
                     ),
                     tools.samt.common.SamtMavenPluginConfiguration(
                         groupId = "com.example",
@@ -50,7 +50,7 @@ class SamtConfigurationParserTest {
                 generators = listOf(
                     tools.samt.common.SamtGeneratorConfiguration(
                         name = "samt-kotlin-ktor",
-                        output = "./some/other/out",
+                        output = testDirectory.resolve("some/other/out"),
                         options = mapOf(
                             "removePrefixFromSamtPackage" to "tools.samt",
                             "addPrefixToKotlinPackage" to "tools.samt.example.generated",
@@ -67,12 +67,12 @@ class SamtConfigurationParserTest {
 
         assertEquals(
             tools.samt.common.SamtConfiguration(
-                source = "./src",
+                source = testDirectory.resolve("src"),
                 plugins = emptyList(),
                 generators = listOf(
                     tools.samt.common.SamtGeneratorConfiguration(
                         name = "samt-kotlin-ktor",
-                        output = "./out",
+                        output = testDirectory.resolve("out"),
                         options = mapOf(
                             "addPrefixToKotlinPackage" to "com.company.samt.generated",
                         )

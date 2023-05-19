@@ -19,4 +19,7 @@ class CliArgs {
 
     @Parameter(names = ["--stdio"])
     var isStdio: Boolean = false
+
+    @Parameter(names = ["--trace"])
+    var isTracing: Boolean = false
 }

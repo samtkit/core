@@ -31,11 +31,19 @@ class ASTPrinterTest {
             @Description("This is a service")
             service MyService {
               testmethod(foo: A): B
+              oneway testmethod2(foo: A)
             }
 
             provide MyEndpoint {
               implements MyService
-              transport HTTP
+              transport HTTP {
+                operations: {
+                    MyService: {
+                        testmethod: "POST /testmethod",
+                        testmethod2: "POST /testmethod2"
+                    }
+                }
+              }
             }
 
             consume MyEndpoint {
@@ -105,22 +113,41 @@ class ASTPrinterTest {
             │ │ │   └─IdentifierNode A <17:19>
             │ │ └─BundleIdentifierNode B <17:23>
             │ │   └─IdentifierNode B <17:23>
+            │ ├─OnewayOperationNode <18:3>
+            │ │ ├─IdentifierNode testmethod2 <18:10>
+            │ │ └─OperationParameterNode <18:22>
+            │ │   ├─IdentifierNode foo <18:22>
+            │ │   └─BundleIdentifierNode A <18:27>
+            │ │     └─IdentifierNode A <18:27>
             │ └─AnnotationNode <15:1>
             │   ├─IdentifierNode Description <15:2>
             │   └─StringNode "This is a service" <15:14>
-            ├─ProviderDeclarationNode <20:1>
-            │ ├─IdentifierNode MyEndpoint <20:9>
-            │ ├─ProviderImplementsNode <21:3>
-            │ │ └─BundleIdentifierNode MyService <21:14>
-            │ │   └─IdentifierNode MyService <21:14>
-            │ └─ProviderTransportNode <22:3>
-            │   └─IdentifierNode HTTP <22:13>
-            └─ConsumerDeclarationNode <25:1>
-              ├─BundleIdentifierNode MyEndpoint <25:9>
-              │ └─IdentifierNode MyEndpoint <25:9>
-              └─ConsumerUsesNode <26:3>
-                └─BundleIdentifierNode MyService <26:8>
-                  └─IdentifierNode MyService <26:8>
+            ├─ProviderDeclarationNode <21:1>
+            │ ├─IdentifierNode MyEndpoint <21:9>
+            │ ├─ProviderImplementsNode <22:3>
+            │ │ └─BundleIdentifierNode MyService <22:14>
+            │ │   └─IdentifierNode MyService <22:14>
+            │ └─ProviderTransportNode <23:3>
+            │   ├─IdentifierNode HTTP <23:13>
+            │   └─ObjectNode <23:18>
+            │     └─ObjectFieldNode <24:5>
+            │       ├─IdentifierNode operations <24:5>
+            │       └─ObjectNode <24:17>
+            │         └─ObjectFieldNode <25:9>
+            │           ├─IdentifierNode MyService <25:9>
+            │           └─ObjectNode <25:20>
+            │             ├─ObjectFieldNode <26:13>
+            │             │ ├─IdentifierNode testmethod <26:13>
+            │             │ └─StringNode "POST /testmethod" <26:25>
+            │             └─ObjectFieldNode <27:13>
+            │               ├─IdentifierNode testmethod2 <27:13>
+            │               └─StringNode "POST /testmethod2" <27:26>
+            └─ConsumerDeclarationNode <33:1>
+              ├─BundleIdentifierNode MyEndpoint <33:9>
+              │ └─IdentifierNode MyEndpoint <33:9>
+              └─ConsumerUsesNode <34:3>
+                └─BundleIdentifierNode MyService <34:8>
+                  └─IdentifierNode MyService <34:8>
         """.trimIndent().trim(), dumpWithoutColorCodes.trimIndent().trim())
     }
 

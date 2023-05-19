@@ -1,6 +1,5 @@
 package tools.samt.codegen
 
-
 class KotlinKtorGenerator : Generator {
     override val identifier: String = "kotlin-ktor"
 
@@ -15,6 +14,11 @@ class KotlinKtorGenerator : Generator {
 
     private fun generatePackage(pack: SamtPackage) {
         if (pack.hasProviderTypes()) {
+
+            // generate general ktor files
+            generateKtorServer(pack)
+
+            // generate ktor providers
             pack.providers.forEach { provider ->
                 val transportConfiguration = provider.transport
                 if (transportConfiguration !is HttpTransportConfiguration) {
@@ -33,7 +37,46 @@ class KotlinKtorGenerator : Generator {
                 val file = CodegenFile(filePath, packageSource)
                 emittedFiles.add(file)
             }
+
+            // generate ktor consumers
         }
+    }
+
+    private fun generateKtorServer(pack: SamtPackage) {
+        val packageSource = buildString {
+            appendLine("package ${pack.qualifiedName}")
+            appendLine()
+
+            appendLine("import io.ktor.http.*")
+            appendLine("import io.ktor.serialization.kotlinx.json.*")
+            appendLine("import io.ktor.server.plugins.contentnegotiation.*")
+            appendLine("import io.ktor.server.response.*")
+            appendLine("import io.ktor.server.application.*")
+            appendLine("import io.ktor.server.request.*")
+            appendLine("import io.ktor.server.routing.*")
+            appendLine("import kotlinx.serialization.json.*")
+            appendLine()
+
+            appendLine("fun Application.configureSerialization() {")
+            appendLine("    install(ContentNegotiation) {")
+            appendLine("        json()")
+            appendLine("    }")
+            appendLine("    routing {")
+
+            for (provider in pack.providers) {
+                append("        route${provider.name}(")
+                append("/* ")
+                append(provider.implements.joinToString(" */, /* ") { it.service.qualifiedName })
+                appendLine("*/)")
+            }
+
+            appendLine("    }")
+            appendLine("}")
+        }
+
+        val filePath = pack.qualifiedName.replace('.', '/') + "Server.kt"
+        val file = CodegenFile(filePath, packageSource)
+        emittedFiles.add(file)
     }
 
     data class ProviderInfo(val implements: ProviderImplements) {

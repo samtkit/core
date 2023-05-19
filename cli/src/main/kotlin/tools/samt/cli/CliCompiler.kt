@@ -51,6 +51,14 @@ internal fun compile(command: CompileCommand, controller: DiagnosticController) 
 
     // Code Generators will be called here
     val files = Codegen.generate(model, controller)
+
+    // if the semantic model failed to build, exit
+    if (controller.hasErrors()) {
+        return
+    }
+
+    // emit files for debug purposes
+    // TODO: emit into an "out" folder and build package folder structure
     for (file in files) {
         println("${yellow(file.filepath)}:\n${file.source}\n")
     }

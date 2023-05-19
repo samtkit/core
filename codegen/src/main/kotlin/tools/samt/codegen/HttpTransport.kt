@@ -34,7 +34,7 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
         }
     }
 
-    override fun parse(params: TransportConfigurationParserParams): HttpTransportConfiguration? {
+    override fun parse(params: TransportConfigurationParserParams): HttpTransportConfiguration {
         require(params is Params) { "Invalid params type" }
 
         val fields = parseObjectNode(params.configObjectNode)
@@ -56,7 +56,7 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
             } else {
                 // invalid serialization mode type, expected string
                 serializationConfig.reportError(params.controller) {
-                    message("Expcted serialization config option to be a string, defaulting to 'json'")
+                    message("Expected serialization config option to be a string, defaulting to 'json'")
                     highlight(serializationConfig.location, "")
                 }
                 HttpTransportConfiguration.SerializationMode.Json

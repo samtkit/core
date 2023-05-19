@@ -77,7 +77,7 @@ class PublicApiMapper(
         val transportConfigNode = configuration
         val transportConfigurationParser = transportParsers.filter { it.transportName == name }
         when (transportConfigurationParser.size) {
-            0 -> controller.reportGlobalError("No transport configuration parser found for transport '$name'")
+            0 -> controller.reportGlobalWarning("No transport configuration parser found for transport '$name'")
             1 -> {
                 if (transportConfigNode != null) {
                     val config = HttpTransportConfigurationParser.Params(transportConfigNode, controller)

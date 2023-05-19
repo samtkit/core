@@ -13,7 +13,7 @@ import kotlin.test.assertFalse
 
 class TypePrinterTest {
     @Test
-    fun `correctly formats an AST dump`() {
+    fun `correctly formats a type dump`() {
         val stuffPackage = parse("""
             package test.stuff
 
@@ -33,6 +33,8 @@ class TypePrinterTest {
               implements MyService
               transport HTTP
             }
+            
+            typealias F = E
         """.trimIndent())
         val consumerPackage = parse("""
             package test.other.company
@@ -57,6 +59,7 @@ class TypePrinterTest {
               ├─stuff
               │  enum E
               │  record A
+              │  typealias F = E
               │  service MyService
               │  provider MyEndpoint
               └─other

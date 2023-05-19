@@ -3,11 +3,8 @@ package tools.samt.ls
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.services.*
-import tools.samt.common.DiagnosticController
-import tools.samt.common.collectSamtFiles
-import tools.samt.common.readSamtSource
 import java.io.Closeable
-import java.net.URI
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 import kotlin.system.exitProcess
@@ -15,8 +12,9 @@ import kotlin.system.exitProcess
 class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     private lateinit var client: LanguageClient
     private val logger = Logger.getLogger("SamtLanguageServer")
-    private val workspaces = mutableMapOf<URI, SamtWorkspace>()
-    private val textDocumentService = SamtTextDocumentService(workspaces)
+    private val workspace = SamtWorkspace()
+    private val textDocumentService = SamtTextDocumentService(workspace)
+    private val workspaceService = SamtWorkspaceService(workspace)
 
     override fun initialize(params: InitializeParams): CompletableFuture<InitializeResult> =
         CompletableFuture.supplyAsync {
@@ -28,6 +26,35 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
                     range = Either.forLeft(false)
                     full = Either.forLeft(true)
                 }
+                workspace = WorkspaceServerCapabilities().apply {
+                    workspaceFolders = WorkspaceFoldersOptions().apply {
+                        supported = true
+                        changeNotifications = Either.forRight(true)
+                    }
+                    fileOperations = FileOperationsServerCapabilities().apply {
+                        val samtFilter = FileOperationFilter().apply {
+                            pattern = FileOperationPattern().apply {
+                                glob = "**/*.samt"
+                                matches = FileOperationPatternKind.File
+                            }
+                        }
+                        val folderFilter = FileOperationFilter().apply {
+                            pattern = FileOperationPattern().apply {
+                                glob = "**"
+                                matches = FileOperationPatternKind.Folder
+                            }
+                        }
+                        didCreate = FileOperationOptions().apply {
+                            filters = listOf(samtFilter)
+                        }
+                        FileOperationOptions().apply {
+                            filters = listOf(samtFilter, folderFilter)
+                        }.let {
+                            didRename = it
+                            didDelete = it
+                        }
+                    }
+                }
                 definitionProvider = Either.forLeft(true)
                 referencesProvider = Either.forLeft(true)
             }
@@ -35,7 +62,8 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
         }
 
     override fun initialized(params: InitializedParams) {
-        pushDiagnostics()
+        registerFileWatchCapability()
+        client.updateWorkspace(workspace)
     }
 
     override fun shutdown(): CompletableFuture<Any> = CompletableFuture.completedFuture(null)
@@ -46,11 +74,12 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
 
     override fun getTextDocumentService(): TextDocumentService = textDocumentService
 
-    override fun getWorkspaceService(): WorkspaceService? = null
+    override fun getWorkspaceService(): WorkspaceService = workspaceService
 
     override fun connect(client: LanguageClient) {
         this.client = client
         textDocumentService.connect(client)
+        workspaceService.connect(client)
         logger.info("Connected to client")
     }
 
@@ -59,31 +88,26 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     }
 
     private fun buildSamtModel(params: InitializeParams) {
-        val folders = params.workspaceFolders.map { it.uri.toPathUri() }
+        val folders = params.workspaceFolders?.map { it.uri.toPathUri() }.orEmpty()
         for (folder in folders) {
-            // if the folder is contained within another folder ignore it
-            if (folders.any { folder != it && folder.path.startsWith(it.path) }) continue
-            workspaces[folder] = buildWorkspace(folder)
+            workspace.addFolder(SamtFolder.fromDirectory(folder))
         }
     }
 
-    private fun buildWorkspace(workspacePath: URI): SamtWorkspace {
-        val diagnosticController = DiagnosticController(workspacePath)
-        val sourceFiles = collectSamtFiles(workspacePath).readSamtSource(diagnosticController)
-        val workspace = SamtWorkspace(diagnosticController)
-        sourceFiles.asSequence().map(::parseFile).forEach(workspace::add)
-        workspace.buildSemanticModel()
-        return workspace
-    }
-
-    private fun pushDiagnostics() {
-        workspaces.values.flatMap { workspace ->
-            workspace.getAllMessages().map { (path, messages) ->
-                PublishDiagnosticsParams(
-                    path.toString(),
-                    messages.map { it.toDiagnostic() }
+    private fun registerFileWatchCapability() {
+        val capability = "workspace/didChangeWatchedFiles"
+        client.registerCapability(RegistrationParams(listOf(
+            Registration(UUID.randomUUID().toString(), capability, DidChangeWatchedFilesRegistrationOptions().apply {
+                watchers = listOf(
+                    FileSystemWatcher().apply {
+                        globPattern = Either.forLeft("**/*.samt")
+                    },
+                    FileSystemWatcher().apply {
+                        globPattern = Either.forLeft("**/")
+                        kind = WatchKind.Create or WatchKind.Delete
+                    },
                 )
-            }
-        }.forEach(client::publishDiagnostics)
+            })
+        )))
     }
 }

@@ -3,7 +3,6 @@ package tools.samt.cli
 import com.github.ajalt.mordant.terminal.Terminal
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import tools.samt.common.DiagnosticController
 import java.io.File

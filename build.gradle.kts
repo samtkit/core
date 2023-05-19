@@ -13,6 +13,7 @@ dependencies {
     kover(project(":semantic"))
     kover(project(":cli"))
     kover(project(":language-server"))
+    kover(project(":samt-config"))
 }
 
 koverReport {

@@ -5,7 +5,8 @@ include(
     ":lexer",
     ":parser",
     ":semantic",
-    ":language-server"
+    ":language-server",
+    ":samt-config",
 )
 
 dependencyResolutionManagement {
@@ -15,6 +16,7 @@ dependencyResolutionManagement {
         val jCommander = "1.82"
         val mordant = "2.0.0-beta13"
         val kotlinxSerialization = "1.5.0"
+        val kamlVersion = "0.53.0"
         val kover = "0.7.0"
         val lsp4j = "0.20.1"
 
@@ -23,6 +25,7 @@ dependencyResolutionManagement {
             library("jCommander", "com.beust", "jcommander").version(jCommander)
             library("mordant", "com.github.ajalt.mordant", "mordant").version(mordant)
             library("kotlinx.serialization-json", "org.jetbrains.kotlinx", "kotlinx-serialization-json").version(kotlinxSerialization)
+            library("kotlinx.serialization-yaml", "com.charleskorn.kaml", "kaml").version(kamlVersion)
             library("lsp4j", "org.eclipse.lsp4j", "org.eclipse.lsp4j").version(lsp4j)
 
             plugin("shadow", "com.github.johnrengelman.shadow").version(shadow)

@@ -54,7 +54,7 @@ class MappingTest {
                 Position(1, 3)
         ), diagnostic.range)
         assertEquals(listOf(DiagnosticRelatedInformation(
-                Location("file:///tmp/test.samt", Range(
+                Location("file:///tmp/test.samt".toPathUri().toString(), Range(
                         Position(0, 2),
                         Position(1, 3)
                 )),

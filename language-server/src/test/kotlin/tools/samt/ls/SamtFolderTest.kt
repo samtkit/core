@@ -47,7 +47,7 @@ class SamtFolderTest {
         val workspace = SamtFolder("file:///tmp/test".toPathUri())
         val uri1 = "file:///tmp/test/record.samt".toPathUri()
         val uri2 = "file:///tmp/test/service.samt".toPathUri()
-        val fileInfo1 = parseFile(SourceFile(uri1, "package foo.bar recrd Foo { "))
+        val fileInfo1 = parseFile(SourceFile(uri1, "package foo.bar record Foo { "))
         val fileInfo2 = parseFile(SourceFile(uri2, "package foo.bar service FooService { getService(): Foo }"))
         workspace.set(fileInfo1)
         workspace.set(fileInfo2)

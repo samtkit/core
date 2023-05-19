@@ -10,9 +10,11 @@ import java.net.Socket
 
 private fun startServer(inStream: InputStream, outStream: OutputStream, trace: PrintWriter? = null) {
     SamtLanguageServer().use { server ->
-        val launcher = LSPLauncher.createServerLauncher(server, inStream, outStream, false, trace)
+        val launcher = LSPLauncher.createServerLauncher(server, inStream, outStream, true, trace)
         val client = launcher.remoteProxy
-        redirectLogs(client)
+        if (outStream == System.out) {
+            redirectLogs(client)
+        }
         server.connect(client)
         launcher.startListening().get()
     }
@@ -33,7 +35,11 @@ fun main(args: Array<String>) {
     cliArgs.clientPort?.also { port ->
         Socket(cliArgs.clientHost, port).use {
             println("Connecting to client at ${it.remoteSocketAddress}")
-            startServer(it.inputStream, it.outputStream, PrintWriter(System.out))
+            startServer(
+                    it.inputStream,
+                    it.outputStream,
+                    if (cliArgs.isTracing) PrintWriter(System.out) else null
+            )
         }
         return
     }

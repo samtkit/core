@@ -1101,6 +1101,74 @@ class SemanticModelTest {
                 source to List(7) { "Error: Unknown annotation @Deprescription" }
             )
         }
+
+        @Test
+        fun `duplicate annotations are an error`() {
+            val deprecated = """
+                package annotations
+                
+                @Deprecated
+                @Deprecated
+                enum UserType {
+                    ADMIN, USER
+                }
+                
+                @Deprecated
+                @Deprecated
+                typealias Id = Long(1..*)
+                
+                @Deprecated
+                @Deprecated
+                record User {
+                    @Deprecated
+                    @Deprecated
+                    id: Id
+                }
+                
+                @Deprecated
+                @Deprecated
+                service UserService {
+                    @Deprecated
+                    @Deprecated
+                    get(@Deprecated @Deprecated id: Id): User
+                }
+            """.trimIndent()
+            parseAndCheck(
+                deprecated to List(7) { "Error: Duplicate @Deprecated annotation" }
+            )
+            val description = """
+                package annotations
+                
+                @Description("test")
+                @Description("test")
+                enum UserType {
+                    ADMIN, USER
+                }
+                
+                @Description("test")
+                @Description("test")
+                typealias Id = Long(1..*)
+                
+                @Description("test")
+                @Description("test")
+                record User {
+                    @Description("test")
+                    @Description("test")
+                    id: Id
+                }
+                
+                @Description("test")
+                @Description("test")
+                service UserService {
+                    @Description("test")
+                    @Description("test")
+                    get(@Description("test") @Description("test") id: Id): User
+                }
+            """
+            parseAndCheck(
+                description to List(7) { "Error: Duplicate @Description annotation" }
+            )
+        }
     }
 
     private fun parseAndCheck(

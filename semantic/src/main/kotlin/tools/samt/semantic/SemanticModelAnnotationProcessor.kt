@@ -14,8 +14,26 @@ internal class SemanticModelAnnotationProcessor(
             for (annotation in element.declaration.annotations) {
                 val context = controller.getOrCreateContext(annotation.location.source)
                 when (val name = annotation.name.name) {
-                    "Description" -> descriptions[element] = getDescription(annotation)
-                    "Deprecated" -> deprecations[element] = getDeprecation(annotation)
+                    "Description" -> {
+                        if (element in descriptions) {
+                            context.error {
+                                message("Duplicate @Description annotation")
+                                highlight("duplicate annotation", annotation.location)
+                                highlight("previous annotation", element.declaration.annotations.first { it.name.name == "Description" }.location)
+                            }
+                        }
+                        descriptions[element] = getDescription(annotation)
+                    }
+                    "Deprecated" -> {
+                        if (element in deprecations) {
+                            context.error {
+                                message("Duplicate @Deprecated annotation")
+                                highlight("duplicate annotation", annotation.location)
+                                highlight("previous annotation", element.declaration.annotations.first { it.name.name == "Deprecated" }.location)
+                            }
+                        }
+                        deprecations[element] = getDeprecation(annotation)
+                    }
                     else -> {
                         context.error {
                             message("Unknown annotation @${name}")

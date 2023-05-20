@@ -147,7 +147,7 @@ class RecordType(
     val fields: List<Field>,
     override val declaration: RecordDeclarationNode,
 ) : CompoundType, UserDeclared {
-    data class Field(
+    class Field(
         val name: String,
         var type: TypeReference,
         val declaration: RecordFieldNode,
@@ -173,7 +173,7 @@ class ServiceType(
         val name: String
         val parameters: List<Parameter>
         override val declaration: OperationNode
-        data class Parameter(
+        class Parameter(
             val name: String,
             var type: TypeReference,
             override val declaration: OperationParameterNode,

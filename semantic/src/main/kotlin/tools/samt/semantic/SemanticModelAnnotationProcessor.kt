@@ -18,7 +18,7 @@ internal class SemanticModelAnnotationProcessor(
                     "Deprecated" -> deprecations[element] = getDeprecation(annotation)
                     else -> {
                         context.error {
-                            message("Unknown annotation '${name}'")
+                            message("Unknown annotation @${name}")
                             highlight("invalid annotation", annotation.location)
                         }
                     }
@@ -59,7 +59,7 @@ internal class SemanticModelAnnotationProcessor(
         val context = controller.getOrCreateContext(annotation.location.source)
         if (arguments.isEmpty()) {
             context.error {
-                message("Missing argument for @Description annotation")
+                message("Missing argument for @Description")
                 highlight("invalid annotation", annotation.location)
             }
             return ""
@@ -67,7 +67,7 @@ internal class SemanticModelAnnotationProcessor(
         if (arguments.size > 1) {
             val errorLocation = arguments[1].location.copy(end = arguments.last().location.end)
             context.error {
-                message("Description annotation must have only one argument")
+                message("@Description expects exactly one string argument")
                 highlight("extraneous arguments", errorLocation)
             }
         }
@@ -96,7 +96,7 @@ internal class SemanticModelAnnotationProcessor(
         if (annotation.arguments.size > 1) {
             val errorLocation = annotation.arguments[1].location.copy(end = annotation.arguments.last().location.end)
             context.error {
-                message("Deprecated annotation can have at most one argument")
+                message("@Deprecated expects at most one string argument")
                 highlight("extraneous arguments", errorLocation)
             }
         }

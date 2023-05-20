@@ -210,6 +210,7 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
                 add(HttpTransportConfiguration.ServiceConfiguration(
                     name = serviceName,
                     operations = operations,
+                    path = "" // TODO
                 ))
             }
         }
@@ -258,6 +259,7 @@ class HttpTransportConfiguration(
 ) : TransportConfiguration {
     class ServiceConfiguration(
         val name: String,
+        val path: String,
         val operations: List<OperationConfiguration>
     ) {
         fun getOperation(name: String): OperationConfiguration? {
@@ -315,6 +317,11 @@ class HttpTransportConfiguration(
         val service = getService(serviceName)
         val operation = service?.getOperation(operationName)
         return operation?.path ?: "/$operationName"
+    }
+
+    fun getPath(serviceName: String): String {
+        val service = getService(serviceName)
+        return service?.path ?: ""
     }
 
     fun getTransportMode(serviceName: String, operationName: String, parameterName: String): TransportMode {

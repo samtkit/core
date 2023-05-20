@@ -4,21 +4,25 @@ class KotlinTypesGenerator : Generator {
     override val name: String = "kotlin-types"
     override fun generate(generatorParams: GeneratorParams): List<CodegenFile> {
         generatorParams.packages.forEach {
-            generatePackage(it)
+            generatePackage(it, generatorParams.options)
         }
-        return emittedFiles
+        val result = emittedFiles.toList()
+        emittedFiles.clear()
+        return result
     }
 
     private val emittedFiles = mutableListOf<CodegenFile>()
 
-    private fun generatePackage(pack: SamtPackage) {
+    private fun generatePackage(pack: SamtPackage, options: Map<String, String>) {
         if (pack.hasModelTypes()) {
             val packageSource = buildString {
-                appendLine("package ${pack.qualifiedName}")
+                appendLine(GeneratedFilePreamble)
+                appendLine()
+                appendLine("package ${pack.getQualifiedName(options)}")
                 appendLine()
 
                 pack.records.forEach {
-                    appendRecord(it)
+                    appendRecord(it, options)
                 }
 
                 pack.enums.forEach {
@@ -26,24 +30,24 @@ class KotlinTypesGenerator : Generator {
                 }
 
                 pack.aliases.forEach {
-                    appendAlias(it)
+                    appendAlias(it, options)
                 }
 
                 pack.services.forEach {
-                    appendService(it)
+                    appendService(it, options)
                 }
             }
 
-            val filePath = pack.qualifiedName.replace('.', '/') + ".kt"
+            val filePath = "${pack.getQualifiedName(options).replace('.', '/')}/Types.kt"
             val file = CodegenFile(filePath, packageSource)
             emittedFiles.add(file)
         }
     }
 
-    private fun StringBuilder.appendRecord(record: RecordType) {
+    private fun StringBuilder.appendRecord(record: RecordType, options: Map<String, String>) {
         appendLine("class ${record.name}(")
         record.fields.forEach { field ->
-            val fullyQualifiedName = field.type.qualifiedName
+            val fullyQualifiedName = field.type.getQualifiedName(options)
             val isOptional = field.type.isOptional
 
             if (isOptional) {
@@ -58,25 +62,27 @@ class KotlinTypesGenerator : Generator {
 
     private fun StringBuilder.appendEnum(enum: EnumType) {
         appendLine("enum class ${enum.name} {")
+        appendLine("    /** Default value used when the enum could not be parsed */")
+        appendLine("    UNKNOWN,")
         enum.values.forEach {
             appendLine("    ${it},")
         }
         appendLine("}")
     }
 
-    private fun StringBuilder.appendAlias(alias: AliasType) {
-        appendLine("typealias ${alias.name} = ${alias.aliasedType.qualifiedName}")
+    private fun StringBuilder.appendAlias(alias: AliasType, options: Map<String, String>) {
+        appendLine("typealias ${alias.name} = ${alias.aliasedType.getQualifiedName(options)}")
     }
 
-    private fun StringBuilder.appendService(service: ServiceType) {
+    private fun StringBuilder.appendService(service: ServiceType, options: Map<String, String>) {
         appendLine("interface ${service.name} {")
         service.operations.forEach { operation ->
-            appendServiceOperation(operation)
+            appendServiceOperation(operation, options)
         }
         appendLine("}")
     }
 
-    private fun StringBuilder.appendServiceOperation(operation: ServiceOperation) {
+    private fun StringBuilder.appendServiceOperation(operation: ServiceOperation, options: Map<String, String>) {
         when (operation) {
             is RequestResponseOperation -> {
                 // method head
@@ -87,11 +93,11 @@ class KotlinTypesGenerator : Generator {
                 }
 
                 // parameters
-                appendServiceOperationParameterList(operation.parameters)
+                appendServiceOperationParameterList(operation.parameters, options)
 
                 // return type
                 if (operation.returnType != null) {
-                    appendLine("    ): ${operation.returnType!!.qualifiedName}")
+                    appendLine("    ): ${operation.returnType!!.getQualifiedName(options)}")
                 } else {
                     appendLine("    )")
                 }
@@ -99,15 +105,22 @@ class KotlinTypesGenerator : Generator {
 
             is OnewayOperation -> {
                 appendLine("    fun ${operation.name}(")
-                appendServiceOperationParameterList(operation.parameters)
+                appendServiceOperationParameterList(operation.parameters, options)
                 appendLine("    )")
             }
         }
     }
 
-    private fun StringBuilder.appendServiceOperationParameterList(parameters: List<ServiceOperationParameter>) {
+    private fun StringBuilder.appendServiceOperationParameterList(parameters: List<ServiceOperationParameter>, options: Map<String, String>) {
         parameters.forEach { parameter ->
-            appendLine("        ${parameter.name}: ${parameter.type.qualifiedName},")
+            val fullyQualifiedName = parameter.type.getQualifiedName(options)
+            val isOptional = parameter.type.isOptional
+
+            if (isOptional) {
+                appendLine("        ${parameter.name}: $fullyQualifiedName = null,")
+            } else {
+                appendLine("        ${parameter.name}: $fullyQualifiedName,")
+            }
         }
     }
 

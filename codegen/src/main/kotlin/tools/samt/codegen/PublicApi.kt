@@ -4,6 +4,7 @@ import tools.samt.parser.ObjectNode
 
 interface GeneratorParams {
     val packages: List<SamtPackage>
+    val options: Map<String, String>
 
     fun reportError(message: String)
     fun reportWarning(message: String)

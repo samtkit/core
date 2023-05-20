@@ -26,7 +26,11 @@ object Codegen {
         HttpTransportConfigurationParser(),
     )
 
-    internal class SamtGeneratorParams(rootPackage: Package, private val controller: DiagnosticController) : GeneratorParams {
+    internal class SamtGeneratorParams(
+        rootPackage: Package,
+        private val controller: DiagnosticController,
+        override val options: Map<String, String>,
+    ) : GeneratorParams {
         private val apiMapper = PublicApiMapper(transports, controller)
         override val packages: List<SamtPackage> = rootPackage.allSubPackages.map { apiMapper.toPublicApi(it) }
 
@@ -43,7 +47,11 @@ object Codegen {
         }
     }
 
-    fun generate(rootPackage: Package, configuration: SamtGeneratorConfiguration, controller: DiagnosticController): List<CodegenFile> {
+    fun generate(
+        rootPackage: Package,
+        configuration: SamtGeneratorConfiguration,
+        controller: DiagnosticController,
+    ): List<CodegenFile> {
         check(rootPackage.isRootPackage)
         check(rootPackage.parent == null)
         check(rootPackage.records.isEmpty())
@@ -56,7 +64,7 @@ object Codegen {
         val matchingGenerators = generators.filter { it.name == configuration.name }
         when (matchingGenerators.size) {
             0 -> controller.reportGlobalError("No matching generator found for '${configuration.name}'")
-            1 -> return matchingGenerators.single().generate(SamtGeneratorParams(rootPackage, controller))
+            1 -> return matchingGenerators.single().generate(SamtGeneratorParams(rootPackage, controller, configuration.options))
             else -> controller.reportGlobalError("Multiple matching generators found for '${configuration.name}'")
         }
         return emptyList()

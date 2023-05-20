@@ -5,7 +5,7 @@ import tools.samt.common.SourceFile
 import tools.samt.lexer.Lexer
 import tools.samt.parser.FileNode
 import tools.samt.parser.Parser
-import tools.samt.semantic.SemanticModelBuilder
+import tools.samt.semantic.SemanticModel
 import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -47,7 +47,7 @@ class TypePrinterTest {
         """.trimIndent())
 
         val controller = DiagnosticController(URI("file:///tmp"))
-        val samtPackage = SemanticModelBuilder.build(listOf(stuffPackage, consumerPackage), controller)
+        val samtPackage = SemanticModel.build(listOf(stuffPackage, consumerPackage), controller).global
         assertFalse(controller.hasErrors())
 
         val dump = TypePrinter.dump(samtPackage)

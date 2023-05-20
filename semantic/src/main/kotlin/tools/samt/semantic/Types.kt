@@ -150,8 +150,8 @@ class RecordType(
     class Field(
         val name: String,
         var type: TypeReference,
-        val declaration: RecordFieldNode,
-    )
+        override val declaration: RecordFieldNode,
+    ) : UserDeclared
 
     override val humanReadableName: String = name
 }

@@ -7,6 +7,18 @@ import tools.samt.parser.NamedDeclarationNode
 import tools.samt.parser.TypeImportNode
 import tools.samt.parser.WildcardImportNode
 
+class SemanticModel(
+        val global: Package,
+        val userMetadata: UserMetadata,
+) {
+    companion object {
+        fun build(files: List<FileNode>, controller: DiagnosticController): SemanticModel {
+            // Sort by path to ensure deterministic order
+            return SemanticModelBuilder(files.sortedBy { it.sourceFile.path }, controller).build()
+        }
+    }
+}
+
 /**
  * Goals of the semantic model:
  * - Model the entire package structure of the project
@@ -14,7 +26,7 @@ import tools.samt.parser.WildcardImportNode
  * - Resolve all references to types
  * - Resolve all references to their declarations in the AST
  * */
-class SemanticModelBuilder private constructor(
+internal class SemanticModelBuilder (
     private val files: List<FileNode>,
     private val controller: DiagnosticController,
 ) {
@@ -22,8 +34,9 @@ class SemanticModelBuilder private constructor(
     private val preProcessor = SemanticModelPreProcessor(controller)
     private val postProcessor = SemanticModelPostProcessor(controller)
     private val referenceResolver = SemanticModelReferenceResolver(controller, global)
+    private val annotationProcessor = SemanticModelAnnotationProcessor(controller)
 
-    private fun build(): Package {
+    fun build(): SemanticModel {
         preProcessor.fillPackage(global, files)
 
         val fileScopeBySource = files.associate { it.sourceFile to createFileScope(it) }
@@ -33,7 +46,7 @@ class SemanticModelBuilder private constructor(
 
         postProcessor.process(global)
 
-        return global
+        return SemanticModel(global, annotationProcessor.process(global))
     }
 
     private fun resolveAliases() {
@@ -266,12 +279,5 @@ class SemanticModelBuilder private constructor(
         }
 
         return FileScope(filePackage, typeLookup)
-    }
-
-    companion object {
-        fun build(files: List<FileNode>, controller: DiagnosticController): Package {
-            // Sort by path to ensure deterministic order
-            return SemanticModelBuilder(files.sortedBy { it.sourceFile.path }, controller).build()
-        }
     }
 }

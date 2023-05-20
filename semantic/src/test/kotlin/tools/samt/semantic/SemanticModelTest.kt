@@ -848,7 +848,7 @@ class SemanticModelTest {
 
         val parseMessageCount = diagnosticController.contexts.associate { it.source.content to it.messages.size }
 
-        SemanticModelBuilder.build(fileTree, diagnosticController)
+        SemanticModel.build(fileTree, diagnosticController)
 
         for ((source, expectedMessages) in sourceAndExpectedMessages) {
             val messages = diagnosticController.contexts

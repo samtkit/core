@@ -5,7 +5,7 @@ import tools.samt.common.DiagnosticMessage
 import tools.samt.common.collectSamtFiles
 import tools.samt.common.readSamtSource
 import tools.samt.semantic.Package
-import tools.samt.semantic.SemanticModelBuilder
+import tools.samt.semantic.SemanticModel
 import java.net.URI
 
 class SamtFolder(val path: URI) : Iterable<FileInfo> {
@@ -34,7 +34,7 @@ class SamtFolder(val path: URI) : Iterable<FileInfo> {
 
     fun buildSemanticModel() {
         semanticController = DiagnosticController(path)
-        globalPackage = SemanticModelBuilder.build(mapNotNull { it.fileNode }, semanticController)
+        globalPackage = SemanticModel.build(mapNotNull { it.fileNode }, semanticController).global
     }
 
     private fun getMessages(path: URI): List<DiagnosticMessage> {

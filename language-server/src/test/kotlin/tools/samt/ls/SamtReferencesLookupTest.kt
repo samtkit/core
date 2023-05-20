@@ -5,7 +5,7 @@ import tools.samt.common.SourceFile
 import tools.samt.lexer.Lexer
 import tools.samt.parser.Parser
 import tools.samt.semantic.Package
-import tools.samt.semantic.SemanticModelBuilder
+import tools.samt.semantic.SemanticModel
 import java.net.URI
 import kotlin.test.*
 
@@ -104,7 +104,7 @@ class SamtReferencesLookupTest {
             fileTree
         }
 
-        val samtPackage = SemanticModelBuilder.build(fileTree, diagnosticController)
+        val samtPackage = SemanticModel.build(fileTree, diagnosticController).global
 
         val filesAndPackages = fileTree.map { it to samtPackage.resolveSubPackage(it.packageDeclaration.name) }
         return Pair(samtPackage, SamtReferencesLookup.analyze(filesAndPackages))

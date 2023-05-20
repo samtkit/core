@@ -4,7 +4,7 @@ import tools.samt.common.DiagnosticController
 import tools.samt.common.SourceFile
 import tools.samt.lexer.Lexer
 import tools.samt.parser.*
-import tools.samt.semantic.SemanticModelBuilder
+import tools.samt.semantic.SemanticModel
 import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -140,7 +140,7 @@ class SamtDeclarationLookupTest {
             fileTree
         }
 
-        val samtPackage = SemanticModelBuilder.build(fileTree, diagnosticController)
+        val samtPackage = SemanticModel.build(fileTree, diagnosticController).global
 
         for ((fileNode, expectedMetadata) in fileTree.zip(sourceAndExpectedMessages.map { it.second })) {
             val filePackage = samtPackage.resolveSubPackage(fileNode.packageDeclaration.name)

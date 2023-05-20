@@ -8,10 +8,10 @@ internal class SemanticModelAnnotationProcessor(
         private val controller: DiagnosticController
 ) {
     fun process(global: Package): UserMetadata {
-        val descriptions = mutableMapOf<UserDeclared, String>()
-        val deprecations = mutableMapOf<UserDeclared, UserMetadata.Deprecation>()
+        val descriptions = mutableMapOf<Annotated, String>()
+        val deprecations = mutableMapOf<Annotated, UserMetadata.Deprecation>()
         for (element in global.getAnnotatedElements()) {
-            for (annotation in element.annotations) {
+            for (annotation in element.declaration.annotations) {
                 val context = controller.getOrCreateContext(annotation.location.source)
                 when (val name = annotation.name.name) {
                     "Description" -> descriptions[element] = getDescription(annotation)
@@ -28,7 +28,7 @@ internal class SemanticModelAnnotationProcessor(
         return UserMetadata(descriptions, deprecations)
     }
 
-    private fun Package.getAnnotatedElements(): List<UserDeclared> = buildList {
+    private fun Package.getAnnotatedElements(): List<Annotated> = buildList {
         this@getAnnotatedElements.allSubPackages.forEach {
             addAll(it.records)
             it.records.flatMapTo(this, RecordType::fields)
@@ -40,18 +40,6 @@ internal class SemanticModelAnnotationProcessor(
             operations.flatMapTo(this, ServiceType.Operation::parameters)
         }
     }
-
-    private val UserDeclared.annotations
-        get() = when (this) {
-            is RecordType -> declaration.annotations
-            is RecordType.Field -> declaration.annotations
-            is EnumType -> declaration.annotations
-            is ServiceType -> declaration.annotations
-            is ServiceType.Operation -> declaration.annotations
-            is ServiceType.Operation.Parameter -> declaration.annotations
-            is AliasType -> declaration.annotations
-            is ConsumerType, is ProviderType -> emptyList()
-        }
 
     private fun getDescription(annotation: AnnotationNode): String {
         check(annotation.name.name == "Description")

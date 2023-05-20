@@ -116,6 +116,10 @@ sealed interface UserDeclared {
     val declaration: Node
 }
 
+sealed interface Annotated {
+    val declaration: AnnotatedNode
+}
+
 data class ListType(
     val elementType: TypeReference,
     val node: GenericSpecializationNode,
@@ -138,7 +142,7 @@ class AliasType(
     /** The fully resolved type, will not contain any type aliases anymore, just the underlying merged type */
     var fullyResolvedType: ResolvedTypeReference? = null,
     override val declaration: TypeAliasNode,
-) : CompoundType, UserDeclared {
+) : CompoundType, UserDeclared, Annotated {
     override val humanReadableName: String = name
 }
 
@@ -146,12 +150,12 @@ class RecordType(
     val name: String,
     val fields: List<Field>,
     override val declaration: RecordDeclarationNode,
-) : CompoundType, UserDeclared {
+) : CompoundType, UserDeclared, Annotated {
     class Field(
         val name: String,
         var type: TypeReference,
         override val declaration: RecordFieldNode,
-    ) : UserDeclared
+    ) : UserDeclared, Annotated
 
     override val humanReadableName: String = name
 }
@@ -160,7 +164,7 @@ class EnumType(
     val name: String,
     val values: List<String>,
     override val declaration: EnumDeclarationNode,
-) : CompoundType, UserDeclared {
+) : CompoundType, UserDeclared, Annotated {
     override val humanReadableName: String = name
 }
 
@@ -168,8 +172,8 @@ class ServiceType(
     val name: String,
     val operations: List<Operation>,
     override val declaration: ServiceDeclarationNode,
-) : CompoundType, UserDeclared {
-    sealed interface Operation : UserDeclared {
+) : CompoundType, UserDeclared, Annotated {
+    sealed interface Operation : UserDeclared, Annotated {
         val name: String
         val parameters: List<Parameter>
         override val declaration: OperationNode
@@ -177,7 +181,7 @@ class ServiceType(
             val name: String,
             var type: TypeReference,
             override val declaration: OperationParameterNode,
-        ): UserDeclared
+        ): UserDeclared, Annotated
     }
 
     class RequestResponseOperation(

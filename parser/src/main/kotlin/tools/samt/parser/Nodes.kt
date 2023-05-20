@@ -5,6 +5,10 @@ import tools.samt.common.SourceFile
 
 sealed class Node(val location: Location)
 
+sealed interface AnnotatedNode {
+    val annotations: List<AnnotationNode>
+}
+
 class FileNode(
     location: Location,
     val sourceFile: SourceFile,
@@ -48,50 +52,50 @@ class RecordDeclarationNode(
     name: IdentifierNode,
     val extends: List<BundleIdentifierNode> = emptyList(),
     val fields: List<RecordFieldNode>,
-    val annotations: List<AnnotationNode>,
-) : NamedDeclarationNode(name, location)
+    override val annotations: List<AnnotationNode>,
+) : NamedDeclarationNode(name, location), AnnotatedNode
 
 class RecordFieldNode(
     location: Location,
     val name: IdentifierNode,
     val type: ExpressionNode,
-    val annotations: List<AnnotationNode>,
-) : Node(location)
+    override val annotations: List<AnnotationNode>,
+) : Node(location), AnnotatedNode
 
 class EnumDeclarationNode(
     location: Location,
     name: IdentifierNode,
     val values: List<IdentifierNode>,
-    val annotations: List<AnnotationNode>,
-) : NamedDeclarationNode(name, location)
+    override val annotations: List<AnnotationNode>,
+) : NamedDeclarationNode(name, location), AnnotatedNode
 
 class TypeAliasNode(
     location: Location,
     name: IdentifierNode,
     val type: ExpressionNode,
-    val annotations: List<AnnotationNode>,
-) : NamedDeclarationNode(name, location)
+    override val annotations: List<AnnotationNode>,
+) : NamedDeclarationNode(name, location), AnnotatedNode
 
 class ServiceDeclarationNode(
     location: Location,
     name: IdentifierNode,
     val operations: List<OperationNode>,
-    val annotations: List<AnnotationNode>,
-) : NamedDeclarationNode(name, location)
+    override val annotations: List<AnnotationNode>,
+) : NamedDeclarationNode(name, location), AnnotatedNode
 
 sealed class OperationNode(
     location: Location,
     val name: IdentifierNode,
     val parameters: List<OperationParameterNode>,
-    val annotations: List<AnnotationNode>,
-) : Node(location)
+    override val annotations: List<AnnotationNode>,
+) : Node(location), AnnotatedNode
 
 class OperationParameterNode(
     location: Location,
     val name: IdentifierNode,
     val type: ExpressionNode,
-    val annotations: List<AnnotationNode>,
-) : Node(location)
+    override val annotations: List<AnnotationNode>,
+) : Node(location), AnnotatedNode
 
 class RequestResponseOperationNode(
     location: Location,

@@ -22,7 +22,7 @@ interface SamtPackage {
 }
 
 interface Generator {
-    val identifier: String
+    val name: String
     fun generate(generatorParams: GeneratorParams): List<CodegenFile>
 }
 

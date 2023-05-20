@@ -1,6 +1,7 @@
 package tools.samt.codegen
 
 import tools.samt.common.DiagnosticController
+import tools.samt.common.SamtGeneratorConfiguration
 import tools.samt.semantic.*
 
 data class CodegenFile(val filepath: String, val source: String)
@@ -42,7 +43,7 @@ object Codegen {
         }
     }
 
-    fun generate(rootPackage: Package, controller: DiagnosticController): List<CodegenFile> {
+    fun generate(rootPackage: Package, configuration: SamtGeneratorConfiguration, controller: DiagnosticController): List<CodegenFile> {
         check(rootPackage.isRootPackage)
         check(rootPackage.parent == null)
         check(rootPackage.records.isEmpty())
@@ -52,12 +53,11 @@ object Codegen {
         check(rootPackage.providers.isEmpty())
         check(rootPackage.consumers.isEmpty())
 
-        val generatorIdentifier = "kotlin-ktor" // TODO: read from config
-        val matchingGenerators = generators.filter { it.identifier == generatorIdentifier }
+        val matchingGenerators = generators.filter { it.name == configuration.name }
         when (matchingGenerators.size) {
-            0 -> controller.reportGlobalError("No matching generator found for '$generatorIdentifier'")
+            0 -> controller.reportGlobalError("No matching generator found for '${configuration.name}'")
             1 -> return matchingGenerators.single().generate(SamtGeneratorParams(rootPackage, controller))
-            else -> controller.reportGlobalError("Multiple matching generators found for '$generatorIdentifier'")
+            else -> controller.reportGlobalError("Multiple matching generators found for '${configuration.name}'")
         }
         return emptyList()
     }

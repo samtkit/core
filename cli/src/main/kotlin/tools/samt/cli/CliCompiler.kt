@@ -1,6 +1,5 @@
 package tools.samt.cli
 
-import com.github.ajalt.mordant.rendering.TextColors.*
 import tools.samt.codegen.Codegen
 import tools.samt.common.DiagnosticController
 import tools.samt.common.DiagnosticException
@@ -9,6 +8,7 @@ import tools.samt.common.readSamtSource
 import tools.samt.lexer.Lexer
 import tools.samt.parser.Parser
 import tools.samt.semantic.SemanticModel
+import java.io.IOException
 import kotlin.io.path.isDirectory
 import kotlin.io.path.notExists
 
@@ -60,16 +60,17 @@ internal fun compile(command: CompileCommand, controller: DiagnosticController) 
         return
     }
 
-    val files = Codegen.generate(model, controller)
-
-    // if the semantic model failed to build, exit
-    if (controller.hasErrors()) {
+    if (configuration.generators.isEmpty()) {
+        controller.reportGlobalInfo("No generators configured, did you forget to add a 'generators' section to the 'samt.yaml' configuration?")
         return
     }
 
-    // emit files for debug purposes
-    // TODO: emit into an "out" folder and build package folder structure
-    for (file in files) {
-        println("${yellow(file.filepath)}:\n${file.source}\n")
+    for (generator in configuration.generators) {
+        val files = Codegen.generate(model, generator, controller)
+        try {
+            OutputWriter.write(generator.output, files)
+        } catch (e: IOException) {
+            controller.reportGlobalError("Failed to write output for generator '${generator.name}': ${e.message}")
+        }
     }
 }

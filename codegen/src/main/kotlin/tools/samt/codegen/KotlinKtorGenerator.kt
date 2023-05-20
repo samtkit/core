@@ -1,7 +1,7 @@
 package tools.samt.codegen
 
 class KotlinKtorGenerator : Generator {
-    override val identifier: String = "kotlin-ktor"
+    override val name: String = "kotlin-ktor"
 
     override fun generate(generatorParams: GeneratorParams): List<CodegenFile> {
         generatorParams.packages.forEach {

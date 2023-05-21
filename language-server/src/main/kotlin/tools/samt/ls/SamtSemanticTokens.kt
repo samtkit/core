@@ -8,10 +8,14 @@ import tools.samt.semantic.*
 class SamtSemanticTokens private constructor() : SamtSemanticLookup<Location, SamtSemanticTokens.Metadata>() {
     override fun markType(node: ExpressionNode, type: Type) {
         super.markType(node, type)
-        val location = if (node is BundleIdentifierNode) {
-            node.components.last().location
+        val location: Location
+        if (node is BundleIdentifierNode) {
+            location = node.components.last().location
+            node.components.dropLast(1).forEach {
+                this[it.location] = Metadata(TokenType.namespace)
+            }
         } else {
-            node.location
+            location = node.location
         }
         val modifier = (type as? Annotated)?.getDeprecationModifier() ?: TokenModifier.none
         when (type) {

@@ -3,7 +3,7 @@ package tools.samt.ls
 import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.services.LanguageClient
 import tools.samt.common.DiagnosticMessage
-import tools.samt.semantic.Package
+import tools.samt.semantic.SemanticModel
 import java.net.URI
 
 class SamtWorkspace {
@@ -11,7 +11,7 @@ class SamtWorkspace {
     private val changedFolders = mutableSetOf<SamtFolder>()
     private val removedFiles = mutableSetOf<URI>()
 
-    fun getFolderSnapshot(path: URI): FolderSnapshot? = getFolder(path)?.let { FolderSnapshot(it.path, it.toList(), it.globalPackage) }
+    fun getFolderSnapshot(path: URI): FolderSnapshot? = getFolder(path)?.let { FolderSnapshot(it.path, it.toList(), it.semanticModel) }
 
     fun addFolder(folder: SamtFolder) {
         val newPath = folder.path
@@ -58,7 +58,7 @@ class SamtWorkspace {
         }
     }
 
-    fun getRootPackage(path: URI): Package? = getFolder(path)?.globalPackage
+    fun getSemanticModel(path: URI): SemanticModel? = getFolder(path)?.semanticModel
 
     fun getPendingMessages(): Map<URI, List<DiagnosticMessage>> = changedFolders.flatMap { folder ->
         folder.getAllMessages().toList()
@@ -76,7 +76,7 @@ class SamtWorkspace {
     private fun getFolder(path: URI): SamtFolder? = folders[path] ?: folders.values.singleOrNull { path.startsWith(it.path) }
 }
 
-data class FolderSnapshot(val path: URI, val files: List<FileInfo>, val globalPackage: Package?)
+data class FolderSnapshot(val path: URI, val files: List<FileInfo>, val semanticModel: SemanticModel?)
 
 
 fun LanguageClient.updateWorkspace(workspace: SamtWorkspace) {

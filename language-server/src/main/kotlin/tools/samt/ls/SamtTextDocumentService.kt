@@ -58,13 +58,14 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
             val fileInfo = workspace.getFile(path) ?: return@supplyAsync Either.forRight(emptyList())
 
             val fileNode: FileNode = fileInfo.fileNode ?: return@supplyAsync Either.forRight(emptyList())
-            val globalPackage: Package = workspace.getRootPackage(path) ?: return@supplyAsync Either.forRight(emptyList())
+            val semanticModel = workspace.getSemanticModel(path) ?: return@supplyAsync Either.forRight(emptyList())
+            val globalPackage: Package = semanticModel.global
 
             val token = fileInfo.tokens.findAt(params.position) ?: return@supplyAsync Either.forRight(emptyList())
 
             val samtPackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
 
-            val typeLookup = SamtDeclarationLookup.analyze(fileNode, samtPackage)
+            val typeLookup = SamtDeclarationLookup.analyze(fileNode, samtPackage, semanticModel.userMetadata)
             val type = typeLookup[token.location] ?: return@supplyAsync Either.forRight(emptyList())
 
             val definition = type.declaration
@@ -91,10 +92,11 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
             val relevantFileNode = relevantFileInfo.fileNode ?: return@supplyAsync emptyList()
             val token = relevantFileInfo.tokens.findAt(params.position) ?: return@supplyAsync emptyList()
 
-            val (_, files, globalPackage) = workspace.getFolderSnapshot(path) ?: return@supplyAsync emptyList()
-            if (globalPackage == null) return@supplyAsync emptyList()
+            val (_, files, semanticModel) = workspace.getFolderSnapshot(path) ?: return@supplyAsync emptyList()
+            if (semanticModel == null) return@supplyAsync emptyList()
 
-            val typeLookup = SamtDeclarationLookup.analyze(relevantFileNode, globalPackage.resolveSubPackage(relevantFileInfo.fileNode.packageDeclaration.name))
+            val globalPackage = semanticModel.global
+            val typeLookup = SamtDeclarationLookup.analyze(relevantFileNode, globalPackage.resolveSubPackage(relevantFileInfo.fileNode.packageDeclaration.name), userMetadata = semanticModel.userMetadata)
             val type = typeLookup[token.location] ?: return@supplyAsync emptyList()
 
             val filesAndPackages = buildList {
@@ -105,7 +107,7 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
                 }
             }
 
-            val typeReferencesLookup = SamtReferencesLookup.analyze(filesAndPackages)
+            val typeReferencesLookup = SamtReferencesLookup.analyze(filesAndPackages, semanticModel.userMetadata)
 
             val references = typeReferencesLookup[type] ?: emptyList()
 
@@ -120,10 +122,10 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
 
             val tokens: List<Token> = fileInfo.tokens
             val fileNode: FileNode = fileInfo.fileNode ?: return@supplyAsync SemanticTokens(emptyList())
-            val globalPackage: Package = workspace.getRootPackage(path) ?: return@supplyAsync SemanticTokens(emptyList())
-            val samtPackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
+            val semanticModel = workspace.getSemanticModel(path) ?: return@supplyAsync SemanticTokens(emptyList())
+            val samtPackage = semanticModel.global.resolveSubPackage(fileNode.packageDeclaration.name)
 
-            val semanticTokens = SamtSemanticTokens.analyze(fileNode, samtPackage)
+            val semanticTokens = SamtSemanticTokens.analyze(fileNode, samtPackage, semanticModel.userMetadata)
 
             var lastLine = 0
             var lastStartChar = 0

@@ -133,15 +133,15 @@ class SamtWorkspaceTest {
     }
 
     @Test
-    fun `package can be found after buildSemanticModel`() {
+    fun `semanticModel can be found after buildSemanticModel`() {
         val workspace = SamtWorkspace()
         workspace.addFolder(SamtFolder("file:///tmp/test".toPathUri()))
         val file1 = parseFile(SourceFile ("file:///tmp/test/foo.samt".toPathUri(), "package foo.bar record Foo {}"))
         workspace.setFile(file1)
-        assertNull(workspace.getRootPackage(file1.path))
+        assertNull(workspace.getSemanticModel(file1.path))
         workspace.buildSemanticModel()
-        val rootPackage = workspace.getRootPackage(file1.path)
-        assertNotNull(rootPackage)
+        val semanticModel = workspace.getSemanticModel(file1.path)
+        assertNotNull(semanticModel)
     }
 
     @Test

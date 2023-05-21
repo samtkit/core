@@ -140,11 +140,12 @@ class SamtDeclarationLookupTest {
             fileTree
         }
 
-        val samtPackage = SemanticModel.build(fileTree, diagnosticController).global
+        val semanticModel = SemanticModel.build(fileTree, diagnosticController)
+        val samtPackage = semanticModel.global
 
         for ((fileNode, expectedMetadata) in fileTree.zip(sourceAndExpectedMessages.map { it.second })) {
             val filePackage = samtPackage.resolveSubPackage(fileNode.packageDeclaration.name)
-            val definitionLookup = SamtDeclarationLookup.analyze(fileNode, filePackage)
+            val definitionLookup = SamtDeclarationLookup.analyze(fileNode, filePackage, semanticModel.userMetadata)
             for (expected in expectedMetadata) {
                 val actual = definitionLookup[expected.testLocation.getLocation(fileNode.sourceFile)]
                 assertNotNull(actual, "No definition found for ${expected.range}")

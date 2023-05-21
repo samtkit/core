@@ -104,9 +104,10 @@ class SamtReferencesLookupTest {
             fileTree
         }
 
-        val samtPackage = SemanticModel.build(fileTree, diagnosticController).global
+        val semanticModel = SemanticModel.build(fileTree, diagnosticController)
+        val samtPackage = semanticModel.global
 
         val filesAndPackages = fileTree.map { it to samtPackage.resolveSubPackage(it.packageDeclaration.name) }
-        return Pair(samtPackage, SamtReferencesLookup.analyze(filesAndPackages))
+        return Pair(samtPackage, SamtReferencesLookup.analyze(filesAndPackages, semanticModel.userMetadata))
     }
 }

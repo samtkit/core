@@ -56,7 +56,7 @@ class SamtDeclarationLookup private constructor() : SamtSemanticLookup<Location,
     }
 
     companion object {
-        fun analyze(fileNode: FileNode, samtPackage: Package) =
-            SamtDeclarationLookup().also { it.analyze(fileNode, samtPackage) }
+        fun analyze(fileNode: FileNode, samtPackage: Package, userMetadata: UserMetadata) =
+            SamtDeclarationLookup().also { it.analyze(fileNode, samtPackage, userMetadata) }
     }
 }

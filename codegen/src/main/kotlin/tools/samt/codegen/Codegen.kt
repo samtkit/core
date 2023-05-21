@@ -2,7 +2,7 @@ package tools.samt.codegen
 
 import tools.samt.codegen.http.HttpTransportConfigurationParser
 import tools.samt.codegen.kotlin.KotlinTypesGenerator
-import tools.samt.codegen.kotlin.ktor.KotlinKtorGenerator
+import tools.samt.codegen.kotlin.ktor.KotlinKtorProviderGenerator
 import tools.samt.common.DiagnosticController
 import tools.samt.common.SamtGeneratorConfiguration
 import tools.samt.semantic.*
@@ -12,7 +12,7 @@ data class CodegenFile(val filepath: String, val source: String)
 object Codegen {
     private val generators: List<Generator> = listOf(
         KotlinTypesGenerator,
-        KotlinKtorGenerator,
+        KotlinKtorProviderGenerator,
     )
 
     private val transports: List<TransportConfigurationParser> = listOf(

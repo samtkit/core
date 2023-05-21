@@ -65,7 +65,7 @@ object KotlinTypesGenerator : Generator {
     private fun StringBuilder.appendEnum(enum: EnumType) {
         appendLine("enum class ${enum.name} {")
         appendLine("    /** Default value used when the enum could not be parsed */")
-        appendLine("    UNKNOWN,")
+        appendLine("    FAILED_TO_PARSE,")
         enum.values.forEach {
             appendLine("    ${it},")
         }

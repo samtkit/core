@@ -6,8 +6,9 @@ import tools.samt.codegen.kotlin.GeneratedFilePreamble
 import tools.samt.codegen.kotlin.KotlinTypesGenerator
 import tools.samt.codegen.kotlin.getQualifiedName
 
-object KotlinKtorGenerator : Generator {
-    override val name: String = "kotlin-ktor"
+object KotlinKtorProviderGenerator : Generator {
+    override val name: String = "kotlin-ktor-provider"
+    private const val skipKtorServer = "skipKtorServer"
 
     override fun generate(generatorParams: GeneratorParams): List<CodegenFile> {
         generatorParams.packages.forEach {
@@ -22,52 +23,8 @@ object KotlinKtorGenerator : Generator {
     private val emittedFiles = mutableListOf<CodegenFile>()
 
     private fun generateMappings(pack: SamtPackage, options: Map<String, String>) {
-        if (pack.hasDataTypes()) {
-            val packageSource = buildString {
-                appendLine(GeneratedFilePreamble)
-                appendLine()
-                appendLine("package ${pack.getQualifiedName(options)}")
-                appendLine()
-                appendLine("import io.ktor.util.*")
-                appendLine("import kotlinx.serialization.json.*")
-                appendLine()
-
-                pack.records.forEach { record ->
-                    appendLine("/** Parse and validate record ${record.qualifiedName} */")
-                    appendLine("fun `parse ${record.name}`(json: JsonElement): ${record.getQualifiedName(options)} {")
-                    for (field in record.fields) {
-                        appendLine("    // Parse field ${field.name}")
-                        appendLine("    val `field ${field.name}` = run {")
-                        if (field.type.isOptional) {
-                            appendLine("        val jsonElement = json.jsonObject[\"${field.name}\"] ?: return@run null")
-                        } else {
-                            appendLine("        val jsonElement = json.jsonObject[\"${field.name}\"]!!")
-                        }
-                        appendLine("        ${deserializeJsonElement(field.type, options)}")
-                        appendLine("    }")
-                    }
-                    appendLine("    return ${record.getQualifiedName(options)}(")
-                    for (field in record.fields) {
-                        appendLine("        ${field.name} = `field ${field.name}`,")
-                    }
-                    appendLine("    )")
-                    appendLine("}")
-                    appendLine()
-                }
-
-                pack.enums.forEach { enum ->
-                    val enumName = enum.getQualifiedName(options)
-                    appendLine("/** Parse enum ${enum.qualifiedName} */")
-                    appendLine("fun `parse ${enum.name}`(json: JsonElement) = when(json.jsonPrimitive.content) {")
-                    enum.values.forEach { value ->
-                        appendLine("    \"${value}\" -> ${enumName}.${value}")
-                    }
-                    appendLine("    // Value not found in enum ${enum.qualifiedName}, returning UNKNOWN")
-                    appendLine("    else -> ${enumName}.UNKNOWN")
-                    appendLine("}")
-                }
-            }
-
+        val packageSource = mappingFileContent(pack, options)
+        if (packageSource.isNotEmpty()) {
             val filePath = "${pack.getQualifiedName(options).replace('.', '/')}/KtorMappings.kt"
             val file = CodegenFile(filePath, packageSource)
             emittedFiles.add(file)
@@ -75,18 +32,17 @@ object KotlinKtorGenerator : Generator {
     }
 
     private fun generatePackage(pack: SamtPackage, options: Map<String, String>) {
-        if (pack.hasProviderTypes()) {
-
-            // generate general ktor files
-            generateKtorServer(pack, options)
+        val relevantProviders = pack.providers.filter { it.transport is HttpTransportConfiguration }
+        if (relevantProviders.isNotEmpty()) {
+            if (options[skipKtorServer] != "true") {
+                // generate general ktor files
+                generateKtorServer(pack, options)
+            }
 
             // generate ktor providers
-            pack.providers.forEach { provider ->
+            relevantProviders.forEach { provider ->
                 val transportConfiguration = provider.transport
-                if (transportConfiguration !is HttpTransportConfiguration) {
-                    // Skip providers that are not HTTP
-                    return@forEach
-                }
+                check (transportConfiguration is HttpTransportConfiguration)
 
                 val packageSource = buildString {
                     appendLine(GeneratedFilePreamble)
@@ -223,13 +179,13 @@ object KotlinKtorGenerator : Generator {
         options: Map<String, String>,
     ) {
         val service = info.service
+        appendLine("    // Handler for SAMT Service ${info.service.name}")
+        appendLine("    route(\"${transportConfiguration.getPath(service.name)}\") {")
         info.implements.operations.forEach { operation ->
-            appendLine("    // Handler for SAMT Service ${info.service.name}")
-            appendLine("    route(\"${transportConfiguration.getPath(service.name)}\") {")
             appendProviderOperation(operation, info, service, transportConfiguration, options)
-            appendLine("    }")
-            appendLine()
         }
+        appendLine("    }")
+        appendLine()
     }
 
     private fun StringBuilder.appendProviderOperation(
@@ -247,14 +203,26 @@ object KotlinKtorGenerator : Generator {
                 appendParsingPreamble()
 
                 operation.parameters.forEach { parameter ->
-                    appendParameterParsing(service, operation, parameter, transportConfiguration, options)
+                    appendParameterDecoding(service, operation, parameter, transportConfiguration, options)
                 }
 
                 appendLine("            // Call user provided implementation")
-                appendLine("            val response = ${getServiceCall(info, operation)}")
-                appendLine()
+                val returnType = operation.returnType
+                if (returnType != null) {
+                    appendLine("            val value = ${getServiceCall(info, operation)}")
+                    appendLine()
+                    appendLine("            // Encode response")
+                    appendLine("            val response = ${encodeJsonElement(returnType, options)}")
+                    appendLine()
+                    appendLine("            // Return response with 200 OK")
+                    appendLine("            call.respondText(response.toString(), ContentType.Application.Json, HttpStatusCode.OK)")
+                } else {
+                    appendLine("            ${getServiceCall(info, operation)}")
+                    appendLine()
+                    appendLine("            // Return 204 No Content")
+                    appendLine("            call.respond(HttpStatusCode.NoContent)")
+                }
 
-                appendLine("            call.respond(response)")
                 appendLine("        }")
                 appendLine()
             }
@@ -265,7 +233,7 @@ object KotlinKtorGenerator : Generator {
                 appendParsingPreamble()
 
                 operation.parameters.forEach { parameter ->
-                    appendParameterParsing(service, operation, parameter, transportConfiguration, options)
+                    appendParameterDecoding(service, operation, parameter, transportConfiguration, options)
                 }
 
                 appendLine("            // Use launch to handle the request asynchronously, not waiting for the response")
@@ -450,14 +418,14 @@ object KotlinKtorGenerator : Generator {
         return "${info.serviceArgumentName}.${operation.name}(${operation.parameters.joinToString { "`parameter ${it.name}`" }})"
     }
 
-    private fun StringBuilder.appendParameterParsing(
+    private fun StringBuilder.appendParameterDecoding(
         service: ServiceType,
         operation: ServiceOperation,
         parameter: ServiceOperationParameter,
         transportConfiguration: HttpTransportConfiguration,
         options: Map<String, String>,
     ) {
-        appendLine("            // Parse parameter ${parameter.name}")
+        appendLine("            // Decode parameter ${parameter.name}")
         appendLine("            val `parameter ${parameter.name}` = run {")
         val transportMode = transportConfiguration.getTransportMode(service.name, operation.name, parameter.name)
         appendParameterDeserialization(parameter, transportMode, options)
@@ -470,11 +438,11 @@ object KotlinKtorGenerator : Generator {
         transportMode: HttpTransportConfiguration.TransportMode,
         options: Map<String, String>,
     ) {
-        appendReadJsonElement(parameter, transportMode)
-        appendLine("                ${deserializeJsonElement(parameter.type, options)}")
+        appendReadParameterJsonElement(parameter, transportMode)
+        appendLine("                ${decodeJsonElement(parameter.type, options)}")
     }
 
-    private fun StringBuilder.appendReadJsonElement(
+    private fun StringBuilder.appendReadParameterJsonElement(
         parameter: ServiceOperationParameter,
         transportMode: HttpTransportConfiguration.TransportMode,
     ) {
@@ -499,73 +467,5 @@ object KotlinKtorGenerator : Generator {
             }
         }
         appendLine()
-    }
-
-    private fun deserializeJsonElement(typeReference: TypeReference, options: Map<String, String>): String {
-        return when (val type = typeReference.type) {
-            is LiteralType -> when (type) {
-                is StringType -> "jsonElement.jsonPrimitive.content"
-                is BytesType -> "jsonElement.jsonPrimitive.content.decodeBase64Bytes()"
-                is IntType -> "jsonElement.jsonPrimitive.int"
-                is LongType -> "jsonElement.jsonPrimitive.long"
-                is FloatType -> "jsonElement.jsonPrimitive.float"
-                is DoubleType -> "jsonElement.jsonPrimitive.double"
-                is DecimalType -> "jsonElement.jsonPrimitive.content.let { java.math.BigDecimal(it) }"
-                is BooleanType -> "jsonElement.jsonPrimitive.boolean"
-                is DateType -> "jsonElement.jsonPrimitive.content?.let { java.time.LocalDate.parse(it) }"
-                is DateTimeType -> "jsonElement.jsonPrimitive.content?.let { java.time.LocalDateTime.parse(it) }"
-                is DurationType -> "jsonElement.jsonPrimitive.content?.let { java.time.Duration.parse(it) }"
-                else -> error("Unsupported literal type: ${this.javaClass.simpleName}")
-            } + literalConstraintSuffix(typeReference)
-
-            is ListType -> "jsonElement.jsonArray.map { ${deserializeJsonElement(type.elementType, options)} }"
-            is MapType -> "jsonElement.jsonObject.mapValues { ${deserializeJsonElement(type.valueType, options)} }"
-
-            is UserType -> "`parse ${type.name}`(jsonElement)"
-
-            else -> error("Unsupported type: ${javaClass.simpleName}")
-        }
-    }
-
-    private fun literalConstraintSuffix(typeReference: TypeReference): String {
-        val conditions = buildList {
-            typeReference.rangeConstraint?.let { constraint ->
-                constraint.lowerBound?.let {
-                    add("it >= ${constraint.lowerBound}")
-                }
-                constraint.upperBound?.let {
-                    add("it <= ${constraint.upperBound}")
-                }
-            }
-            typeReference.sizeConstraint?.let { constraint ->
-                val property = if (typeReference.type is StringType) "length" else "size"
-                constraint.lowerBound?.let {
-                    add("it.${property} >= ${constraint.lowerBound}")
-                }
-                constraint.upperBound?.let {
-                    add("it.${property} <= ${constraint.upperBound}")
-                }
-            }
-            typeReference.patternConstraint?.let { constraint ->
-                add("it.matches(\"${constraint.pattern}\")")
-            }
-            typeReference.valueConstraint?.let { constraint ->
-                add("it == ${constraint.value})")
-            }
-        }
-
-        if (conditions.isEmpty()) {
-            return ""
-        }
-
-        return ".also { require(${conditions.joinToString(" && ")}) }"
-    }
-
-    private fun SamtPackage.hasDataTypes(): Boolean {
-        return records.isNotEmpty() || enums.isNotEmpty()
-    }
-
-    private fun SamtPackage.hasProviderTypes(): Boolean {
-        return providers.isNotEmpty()
     }
 }

@@ -6,7 +6,7 @@ import tools.samt.codegen.kotlin.GeneratedFilePreamble
 import tools.samt.codegen.kotlin.KotlinTypesGenerator
 import tools.samt.codegen.kotlin.getQualifiedName
 
-class KotlinKtorGenerator : Generator {
+object KotlinKtorGenerator : Generator {
     override val name: String = "kotlin-ktor"
 
     override fun generate(generatorParams: GeneratorParams): List<CodegenFile> {
@@ -14,7 +14,7 @@ class KotlinKtorGenerator : Generator {
             generateMappings(it, generatorParams.options)
             generatePackage(it, generatorParams.options)
         }
-        val result = KotlinTypesGenerator().generate(generatorParams) + emittedFiles
+        val result = KotlinTypesGenerator.generate(generatorParams) + emittedFiles
         emittedFiles.clear()
         return result
     }

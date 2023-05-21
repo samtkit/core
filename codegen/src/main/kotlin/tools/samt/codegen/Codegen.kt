@@ -9,24 +9,14 @@ import tools.samt.semantic.*
 
 data class CodegenFile(val filepath: String, val source: String)
 
-/*
- * Proof of concept codegen for Kotlin code
- *
- * Todos:
- * - Emit providers
- * - Emit consumers
- * - Modular
- * - Extendable
- * - Configurable
- * */
 object Codegen {
     private val generators: List<Generator> = listOf(
-        KotlinTypesGenerator(),
-        KotlinKtorGenerator(),
+        KotlinTypesGenerator,
+        KotlinKtorGenerator,
     )
 
     private val transports: List<TransportConfigurationParser> = listOf(
-        HttpTransportConfigurationParser(),
+        HttpTransportConfigurationParser,
     )
 
     internal class SamtGeneratorParams(

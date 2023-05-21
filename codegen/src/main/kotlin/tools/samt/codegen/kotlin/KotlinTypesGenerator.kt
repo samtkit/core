@@ -2,7 +2,7 @@ package tools.samt.codegen.kotlin
 
 import tools.samt.codegen.*
 
-class KotlinTypesGenerator : Generator {
+object KotlinTypesGenerator : Generator {
     override val name: String = "kotlin-types"
     override fun generate(generatorParams: GeneratorParams): List<CodegenFile> {
         generatorParams.packages.forEach {

@@ -4,9 +4,7 @@ import tools.samt.codegen.http.HttpTransportConfigurationParser
 import tools.samt.common.DiagnosticController
 
 class PublicApiMapper(
-    private val transportParsers: List<TransportConfigurationParser> = listOf(
-        HttpTransportConfigurationParser(),
-    ),
+    private val transportParsers: List<TransportConfigurationParser>,
     private val controller: DiagnosticController,
 ) {
     fun toPublicApi(samtPackage: tools.samt.semantic.Package) = object : SamtPackage {

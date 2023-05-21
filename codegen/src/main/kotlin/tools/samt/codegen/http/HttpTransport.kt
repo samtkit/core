@@ -8,7 +8,7 @@ import tools.samt.parser.*
 
 // TODO: refactor diagnostic controller support
 
-class HttpTransportConfigurationParser: TransportConfigurationParser {
+object HttpTransportConfigurationParser: TransportConfigurationParser {
     override val transportName: String
         get() = "http"
 

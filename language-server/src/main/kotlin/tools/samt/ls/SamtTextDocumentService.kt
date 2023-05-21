@@ -10,6 +10,7 @@ import tools.samt.lexer.Token
 import tools.samt.parser.FileNode
 import tools.samt.parser.NamedDeclarationNode
 import tools.samt.parser.OperationNode
+import tools.samt.semantic.Annotated
 import tools.samt.semantic.Package
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
@@ -151,6 +152,27 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
 
             SemanticTokens(encodedData)
         }
+
+    override fun hover(params: HoverParams): CompletableFuture<Hover> = CompletableFuture.supplyAsync {
+        fun emptyHover() = Hover(Either.forLeft(""))
+
+        val path = params.textDocument.uri.toPathUri()
+
+        val fileInfo = workspace.getFile(path) ?: return@supplyAsync emptyHover()
+
+        val fileNode: FileNode = fileInfo.fileNode ?: return@supplyAsync emptyHover()
+        val semanticModel = workspace.getSemanticModel(path) ?: return@supplyAsync emptyHover()
+        val globalPackage: Package = semanticModel.global
+
+        val token = fileInfo.tokens.findAt(params.position) ?: return@supplyAsync emptyHover()
+        val samtPackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
+
+        val typeLookup = SamtDeclarationLookup.analyze(fileNode, samtPackage, semanticModel.userMetadata)
+        val type = typeLookup[token.location] as? Annotated ?: return@supplyAsync emptyHover()
+
+        val description = semanticModel.userMetadata.getDescription(type) ?: return@supplyAsync emptyHover()
+        Hover(MarkupContent(MarkupKind.MARKDOWN, description))
+    }
 
     override fun connect(client: LanguageClient) {
         this.client = client

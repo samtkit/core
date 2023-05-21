@@ -5,7 +5,7 @@ object KotlinGeneratorConfig {
     const val addPrefixToKotlinPackage = "addPrefixToKotlinPackage"
 }
 
-const val GeneratedFilePreamble = """@file:Suppress("RemoveRedundantQualifierName", "unused", "UnusedImport")"""
+const val GeneratedFilePreamble = """@file:Suppress("RemoveRedundantQualifierName", "unused", "UnusedImport", "LocalVariableName", "FunctionName", "ConvertTwoComparisonsToRangeCheck", "ReplaceSizeCheckWithIsNotEmpty")"""
 
 internal fun String.replacePackage(options: Map<String, String>): String {
     val removePrefix = options[KotlinGeneratorConfig.removePrefixFromSamtPackage]

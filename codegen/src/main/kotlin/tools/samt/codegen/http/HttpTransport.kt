@@ -1,8 +1,10 @@
-package tools.samt.codegen
+package tools.samt.codegen.http
 
+import tools.samt.codegen.TransportConfiguration
+import tools.samt.codegen.TransportConfigurationParser
+import tools.samt.codegen.TransportConfigurationParserParams
 import tools.samt.common.DiagnosticController
 import tools.samt.parser.*
-import tools.samt.semantic.Package
 
 // TODO: refactor diagnostic controller support
 
@@ -142,10 +144,12 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
                                         continue
                                     }
 
-                                    add(HttpTransportConfiguration.ParameterConfiguration(
-                                        name = pathParameterName,
-                                        transportMode = HttpTransportConfiguration.TransportMode.Path,
-                                    ))
+                                    add(
+                                        HttpTransportConfiguration.ParameterConfiguration(
+                                            name = pathParameterName,
+                                            transportMode = HttpTransportConfiguration.TransportMode.Path,
+                                        )
+                                    )
                                 }
                             }
 
@@ -185,10 +189,12 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
                                         }
                                     }
 
-                                    add(HttpTransportConfiguration.ParameterConfiguration(
-                                        name = name,
-                                        transportMode = transportMode,
-                                    ))
+                                    add(
+                                        HttpTransportConfiguration.ParameterConfiguration(
+                                            name = name,
+                                            transportMode = transportMode,
+                                        )
+                                    )
                                 } else {
                                     operationConfig.reportError(params.controller) {
                                         message("Expected parameter in format '{type:name}', got '$component'")
@@ -198,20 +204,24 @@ class HttpTransportConfigurationParser: TransportConfigurationParser {
                             }
                         }
 
-                        add(HttpTransportConfiguration.OperationConfiguration(
-                            name = operationName,
-                            method = methodEnum,
-                            path = path,
-                            parameters = parameters,
-                        ))
+                        add(
+                            HttpTransportConfiguration.OperationConfiguration(
+                                name = operationName,
+                                method = methodEnum,
+                                path = path,
+                                parameters = parameters,
+                            )
+                        )
                     }
                 }
 
-                add(HttpTransportConfiguration.ServiceConfiguration(
-                    name = serviceName,
-                    operations = operations,
-                    path = "" // TODO
-                ))
+                add(
+                    HttpTransportConfiguration.ServiceConfiguration(
+                        name = serviceName,
+                        operations = operations,
+                        path = "" // TODO
+                    )
+                )
             }
         }
 

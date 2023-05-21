@@ -1,5 +1,6 @@
 package tools.samt.codegen
 
+import tools.samt.codegen.http.HttpTransportConfigurationParser
 import tools.samt.common.DiagnosticController
 
 class PublicApiMapper(

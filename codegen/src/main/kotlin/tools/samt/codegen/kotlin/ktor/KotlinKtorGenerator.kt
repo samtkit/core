@@ -1,4 +1,10 @@
-package tools.samt.codegen
+package tools.samt.codegen.kotlin.ktor
+
+import tools.samt.codegen.*
+import tools.samt.codegen.http.HttpTransportConfiguration
+import tools.samt.codegen.kotlin.GeneratedFilePreamble
+import tools.samt.codegen.kotlin.KotlinTypesGenerator
+import tools.samt.codegen.kotlin.getQualifiedName
 
 class KotlinKtorGenerator : Generator {
     override val name: String = "kotlin-ktor"

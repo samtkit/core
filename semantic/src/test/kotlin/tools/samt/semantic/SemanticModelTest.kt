@@ -1098,7 +1098,7 @@ class SemanticModelTest {
                 }
             """.trimIndent()
             parseAndCheck(
-                source to List(7) { "Error: Unknown annotation @Deprescription" }
+                source to List(7) { "Error: Unknown annotation @Deprescription, allowed annotations are @Description and @Deprecated" }
             )
         }
 

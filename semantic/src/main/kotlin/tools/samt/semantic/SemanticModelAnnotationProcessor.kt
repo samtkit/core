@@ -36,7 +36,7 @@ internal class SemanticModelAnnotationProcessor(
                     }
                     else -> {
                         context.error {
-                            message("Unknown annotation @${name}")
+                            message("Unknown annotation @${name}, allowed annotations are @Description and @Deprecated")
                             highlight("invalid annotation", annotation.location)
                         }
                     }

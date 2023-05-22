@@ -7,7 +7,7 @@ import tools.samt.parser.FileNode
 import tools.samt.parser.IdentifierNode
 import tools.samt.semantic.*
 
-class SamtDeclarationLookup private constructor() : SamtSemanticLookup<Location, UserDeclared>() {
+class SamtDeclarationLookup private constructor(userMetadata: UserMetadata) : SamtSemanticLookup<Location, UserDeclared>(userMetadata) {
     override fun markType(node: ExpressionNode, type: Type) {
         super.markType(node, type)
 
@@ -57,6 +57,6 @@ class SamtDeclarationLookup private constructor() : SamtSemanticLookup<Location,
 
     companion object {
         fun analyze(fileNode: FileNode, samtPackage: Package, userMetadata: UserMetadata) =
-            SamtDeclarationLookup().also { it.analyze(fileNode, samtPackage, userMetadata) }
+            SamtDeclarationLookup(userMetadata).also { it.analyze(fileNode, samtPackage) }
     }
 }

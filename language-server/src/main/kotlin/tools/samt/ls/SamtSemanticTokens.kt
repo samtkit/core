@@ -5,7 +5,7 @@ import tools.samt.common.Location
 import tools.samt.parser.*
 import tools.samt.semantic.*
 
-class SamtSemanticTokens private constructor() : SamtSemanticLookup<Location, SamtSemanticTokens.Metadata>() {
+class SamtSemanticTokens private constructor(userMetadata: UserMetadata) : SamtSemanticLookup<Location, SamtSemanticTokens.Metadata>(userMetadata) {
     override fun markType(node: ExpressionNode, type: Type) {
         super.markType(node, type)
         val location: Location
@@ -208,6 +208,6 @@ class SamtSemanticTokens private constructor() : SamtSemanticLookup<Location, Sa
         )
 
         fun analyze(fileNode: FileNode, samtPackage: Package, userMetadata: UserMetadata) =
-            SamtSemanticTokens().also { it.analyze(fileNode, samtPackage, userMetadata) }
+            SamtSemanticTokens(userMetadata).also { it.analyze(fileNode, samtPackage) }
     }
 }

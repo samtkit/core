@@ -3,11 +3,8 @@ package tools.samt.ls
 import tools.samt.parser.*
 import tools.samt.semantic.*
 
-abstract class SamtSemanticLookup<TKey, TValue> protected constructor() {
-    protected lateinit var userMetadata: UserMetadata
-
-    protected fun analyze(fileNode: FileNode, samtPackage: Package, userMetadata: UserMetadata) {
-        this.userMetadata = userMetadata
+abstract class SamtSemanticLookup<TKey, TValue> protected constructor(protected val userMetadata: UserMetadata) {
+    protected fun analyze(fileNode: FileNode, samtPackage: Package) {
         for (import in fileNode.imports) {
             markStatement(samtPackage, import)
         }

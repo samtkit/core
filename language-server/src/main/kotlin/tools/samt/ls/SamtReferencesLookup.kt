@@ -7,7 +7,7 @@ import tools.samt.parser.FileNode
 import tools.samt.parser.IdentifierNode
 import tools.samt.semantic.*
 
-class SamtReferencesLookup private constructor() : SamtSemanticLookup<UserDeclared, List<Location>>() {
+class SamtReferencesLookup private constructor(userMetadata: UserMetadata) : SamtSemanticLookup<UserDeclared, List<Location>>(userMetadata) {
     private fun addUsage(declaration: UserDeclared, usage: Location) {
         if (this[declaration] == null) {
             this[declaration] = mutableListOf()
@@ -34,9 +34,9 @@ class SamtReferencesLookup private constructor() : SamtSemanticLookup<UserDeclar
 
     companion object {
         fun analyze(filesAndPackages: List<Pair<FileNode, Package>>, userMetadata: UserMetadata): SamtReferencesLookup {
-            val lookup = SamtReferencesLookup()
+            val lookup = SamtReferencesLookup(userMetadata)
             for ((fileInfo, samtPackage) in filesAndPackages) {
-                lookup.analyze(fileInfo, samtPackage, userMetadata)
+                lookup.analyze(fileInfo, samtPackage)
             }
             return lookup
         }

@@ -64,9 +64,9 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
 
             val token = fileInfo.tokens.findAt(params.position) ?: return@supplyAsync Either.forRight(emptyList())
 
-            val samtPackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
+            val filePackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
 
-            val typeLookup = SamtDeclarationLookup.analyze(fileNode, samtPackage, semanticModel.userMetadata)
+            val typeLookup = SamtDeclarationLookup.analyze(fileNode, filePackage, semanticModel.userMetadata)
             val type = typeLookup[token.location] ?: return@supplyAsync Either.forRight(emptyList())
 
             val definition = type.declaration
@@ -97,14 +97,18 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
             if (semanticModel == null) return@supplyAsync emptyList()
 
             val globalPackage = semanticModel.global
-            val typeLookup = SamtDeclarationLookup.analyze(relevantFileNode, globalPackage.resolveSubPackage(relevantFileInfo.fileNode.packageDeclaration.name), userMetadata = semanticModel.userMetadata)
+            val typeLookup = SamtDeclarationLookup.analyze(
+                relevantFileNode,
+                globalPackage.resolveSubPackage(relevantFileInfo.fileNode.packageDeclaration.name),
+                semanticModel.userMetadata
+            )
             val type = typeLookup[token.location] ?: return@supplyAsync emptyList()
 
             val filesAndPackages = buildList {
                 for (fileInfo in files) {
                     val fileNode: FileNode = fileInfo.fileNode ?: continue
-                    val samtPackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
-                    add(fileNode to samtPackage)
+                    val filePackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
+                    add(fileNode to filePackage)
                 }
             }
 
@@ -124,9 +128,9 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
             val tokens: List<Token> = fileInfo.tokens
             val fileNode: FileNode = fileInfo.fileNode ?: return@supplyAsync SemanticTokens(emptyList())
             val semanticModel = workspace.getSemanticModel(path) ?: return@supplyAsync SemanticTokens(emptyList())
-            val samtPackage = semanticModel.global.resolveSubPackage(fileNode.packageDeclaration.name)
+            val filePackage = semanticModel.global.resolveSubPackage(fileNode.packageDeclaration.name)
 
-            val semanticTokens = SamtSemanticTokens.analyze(fileNode, samtPackage, semanticModel.userMetadata)
+            val semanticTokens = SamtSemanticTokens.analyze(fileNode, filePackage, semanticModel.userMetadata)
 
             var lastLine = 0
             var lastStartChar = 0
@@ -165,10 +169,10 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
         val globalPackage: Package = semanticModel.global
 
         val token = fileInfo.tokens.findAt(params.position) ?: return@supplyAsync emptyHover()
-        val samtPackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
+        val filePackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
 
-        val typeLookup = SamtDeclarationLookup.analyze(fileNode, samtPackage, semanticModel.userMetadata)
-        val type = typeLookup[token.location] as? Annotated ?: return@supplyAsync emptyHover()
+        val typeLookup = SamtDeclarationLookup.analyze(fileNode, filePackage, semanticModel.userMetadata)
+        val type = typeLookup[token.location] ?: return@supplyAsync emptyHover()
 
         val description = semanticModel.userMetadata.getDescription(type) ?: return@supplyAsync emptyHover()
         Hover(MarkupContent(MarkupKind.MARKDOWN, description))

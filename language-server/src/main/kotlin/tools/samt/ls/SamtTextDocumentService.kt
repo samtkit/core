@@ -10,7 +10,7 @@ import tools.samt.lexer.Token
 import tools.samt.parser.FileNode
 import tools.samt.parser.NamedDeclarationNode
 import tools.samt.parser.OperationNode
-import tools.samt.semantic.Package
+import tools.samt.semantic.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 
@@ -157,7 +157,7 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
         }
 
     override fun hover(params: HoverParams): CompletableFuture<Hover> = CompletableFuture.supplyAsync {
-        fun emptyHover() = Hover(Either.forLeft(""))
+        fun emptyHover() = Hover(MarkupContent(MarkupKind.PLAINTEXT, ""))
 
         val path = params.textDocument.uri.toPathUri()
 
@@ -173,8 +173,35 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
         val typeLookup = SamtDeclarationLookup.analyze(fileNode, filePackage, semanticModel.userMetadata)
         val type = typeLookup[token.location] ?: return@supplyAsync emptyHover()
 
-        val description = semanticModel.userMetadata.getDescription(type) ?: return@supplyAsync emptyHover()
-        Hover(MarkupContent(MarkupKind.MARKDOWN, description))
+        val description = """
+            ```samt
+            ${type.peekDeclaration()}
+            ```
+            ---
+            ${semanticModel.userMetadata.getDescription(type).orEmpty()}
+        """.trimIndent()
+        Hover().apply {
+            contents = Either.forRight(MarkupContent(MarkupKind.MARKDOWN, description))
+            range = token.location.toRange()
+        }
+    }
+
+    private fun UserDeclared.peekDeclaration(): String {
+        fun List<ServiceType.Operation.Parameter>.toParameterList(): String = joinToString(", ") { it.peekDeclaration() }
+        fun List<TypeReference>.toRaisesList(): String = if (isNotEmpty()) "raises " + joinToString(", ") { it.humanReadableName } else ""
+
+        return when (this) {
+            is AliasType -> "typealias $humanReadableName"
+            is EnumType -> "enum $humanReadableName"
+            is RecordType.Field -> "$name: ${type.humanReadableName}"
+            is ServiceType.OnewayOperation -> "oneway $name(${parameters.toParameterList()})"
+            is ServiceType.RequestResponseOperation -> "$name(${parameters.toParameterList()})${returnType?.let { ": ${it.humanReadableName}" }.orEmpty()} ${raisesTypes.toRaisesList()}"
+            is ServiceType.Operation.Parameter -> "$name: ${type.humanReadableName}"
+            is RecordType -> "record $humanReadableName"
+            is ServiceType -> "service $humanReadableName"
+            is ConsumerType -> "consume $humanReadableName"
+            is ProviderType -> "provide $humanReadableName"
+        }
     }
 
     override fun connect(client: LanguageClient) {

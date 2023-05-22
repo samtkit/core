@@ -4,13 +4,13 @@ import tools.samt.parser.*
 import tools.samt.semantic.*
 
 abstract class SamtSemanticLookup<TKey, TValue> protected constructor(protected val userMetadata: UserMetadata) {
-    protected fun analyze(fileNode: FileNode, samtPackage: Package) {
+    protected fun analyze(fileNode: FileNode, filePackage: Package) {
         for (import in fileNode.imports) {
-            markStatement(samtPackage, import)
+            markStatement(filePackage, import)
         }
-        markStatement(samtPackage, fileNode.packageDeclaration)
+        markStatement(filePackage, fileNode.packageDeclaration)
         for (statement in fileNode.statements) {
-            markStatement(samtPackage, statement)
+            markStatement(filePackage, statement)
         }
     }
 

@@ -207,7 +207,7 @@ class SamtSemanticTokens private constructor(userMetadata: UserMetadata) : SamtS
             TokenModifier.values().map { it.name },
         )
 
-        fun analyze(fileNode: FileNode, samtPackage: Package, userMetadata: UserMetadata) =
-            SamtSemanticTokens(userMetadata).also { it.analyze(fileNode, samtPackage) }
+        fun analyze(fileNode: FileNode, filePackage: Package, userMetadata: UserMetadata) =
+            SamtSemanticTokens(userMetadata).also { it.analyze(fileNode, filePackage) }
     }
 }

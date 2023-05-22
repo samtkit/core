@@ -35,8 +35,8 @@ class SamtReferencesLookup private constructor(userMetadata: UserMetadata) : Sam
     companion object {
         fun analyze(filesAndPackages: List<Pair<FileNode, Package>>, userMetadata: UserMetadata): SamtReferencesLookup {
             val lookup = SamtReferencesLookup(userMetadata)
-            for ((fileInfo, samtPackage) in filesAndPackages) {
-                lookup.analyze(fileInfo, samtPackage)
+            for ((fileInfo, filePackage) in filesAndPackages) {
+                lookup.analyze(fileInfo, filePackage)
             }
             return lookup
         }

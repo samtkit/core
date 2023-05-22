@@ -56,7 +56,7 @@ class SamtDeclarationLookup private constructor(userMetadata: UserMetadata) : Sa
     }
 
     companion object {
-        fun analyze(fileNode: FileNode, samtPackage: Package, userMetadata: UserMetadata) =
-            SamtDeclarationLookup(userMetadata).also { it.analyze(fileNode, samtPackage) }
+        fun analyze(fileNode: FileNode, filePackage: Package, userMetadata: UserMetadata) =
+            SamtDeclarationLookup(userMetadata).also { it.analyze(fileNode, filePackage) }
     }
 }

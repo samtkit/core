@@ -157,21 +157,19 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
         }
 
     override fun hover(params: HoverParams): CompletableFuture<Hover> = CompletableFuture.supplyAsync {
-        fun emptyHover() = Hover(MarkupContent(MarkupKind.PLAINTEXT, ""))
-
         val path = params.textDocument.uri.toPathUri()
 
-        val fileInfo = workspace.getFile(path) ?: return@supplyAsync emptyHover()
+        val fileInfo = workspace.getFile(path) ?: return@supplyAsync null
 
-        val fileNode: FileNode = fileInfo.fileNode ?: return@supplyAsync emptyHover()
-        val semanticModel = workspace.getSemanticModel(path) ?: return@supplyAsync emptyHover()
+        val fileNode: FileNode = fileInfo.fileNode ?: return@supplyAsync null
+        val semanticModel = workspace.getSemanticModel(path) ?: return@supplyAsync null
         val globalPackage: Package = semanticModel.global
 
-        val token = fileInfo.tokens.findAt(params.position) ?: return@supplyAsync emptyHover()
+        val token = fileInfo.tokens.findAt(params.position) ?: return@supplyAsync null
         val filePackage = globalPackage.resolveSubPackage(fileNode.packageDeclaration.name)
 
         val typeLookup = SamtDeclarationLookup.analyze(fileNode, filePackage, semanticModel.userMetadata)
-        val type = typeLookup[token.location] ?: return@supplyAsync emptyHover()
+        val type = typeLookup[token.location] ?: return@supplyAsync null
 
         val description = """
             ```samt

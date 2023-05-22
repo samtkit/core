@@ -116,8 +116,8 @@ sealed interface UserDeclared {
     val declaration: Node
 }
 
-sealed interface Annotated {
-    val declaration: AnnotatedNode
+sealed interface Annotated : UserDeclared {
+    override val declaration: AnnotatedNode
 }
 
 data class ListType(
@@ -142,7 +142,7 @@ class AliasType(
     /** The fully resolved type, will not contain any type aliases anymore, just the underlying merged type */
     var fullyResolvedType: ResolvedTypeReference? = null,
     override val declaration: TypeAliasNode,
-) : CompoundType, UserDeclared, Annotated {
+) : CompoundType, Annotated {
     override val humanReadableName: String = name
 }
 
@@ -150,12 +150,12 @@ class RecordType(
     val name: String,
     val fields: List<Field>,
     override val declaration: RecordDeclarationNode,
-) : CompoundType, UserDeclared, Annotated {
+) : CompoundType, Annotated {
     class Field(
         val name: String,
         var type: TypeReference,
         override val declaration: RecordFieldNode,
-    ) : UserDeclared, Annotated
+    ) : Annotated
 
     override val humanReadableName: String = name
 }
@@ -164,7 +164,7 @@ class EnumType(
     val name: String,
     val values: List<String>,
     override val declaration: EnumDeclarationNode,
-) : CompoundType, UserDeclared, Annotated {
+) : CompoundType, Annotated {
     override val humanReadableName: String = name
 }
 
@@ -172,8 +172,8 @@ class ServiceType(
     val name: String,
     val operations: List<Operation>,
     override val declaration: ServiceDeclarationNode,
-) : CompoundType, UserDeclared, Annotated {
-    sealed interface Operation : UserDeclared, Annotated {
+) : CompoundType, Annotated {
+    sealed interface Operation : Annotated {
         val name: String
         val parameters: List<Parameter>
         override val declaration: OperationNode

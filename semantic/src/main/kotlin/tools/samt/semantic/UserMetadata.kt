@@ -1,9 +1,9 @@
 package tools.samt.semantic
 
-class UserMetadata(private val descriptions: Map<Annotated, String>, private val deprecations: Map<Annotated, Deprecation>) {
+class UserMetadata(private val descriptions: Map<UserDeclared, String>, private val deprecations: Map<UserDeclared, Deprecation>) {
     data class Deprecation(val message: String?)
 
-    fun getDescription(element: Annotated): String? = descriptions[element]
+    fun getDescription(element: UserDeclared): String? = descriptions[element]
 
-    fun getDeprecation(element: Annotated): Deprecation? = deprecations[element]
+    fun getDeprecation(element: UserDeclared): Deprecation? = deprecations[element]
 }

@@ -17,7 +17,7 @@ class SamtSemanticTokens private constructor(userMetadata: UserMetadata) : SamtS
         } else {
             location = node.location
         }
-        val modifier = (type as? Annotated)?.getDeprecationModifier() ?: TokenModifier.none
+        val modifier = (type as? UserDeclared)?.getDeprecationModifier() ?: TokenModifier.none
         when (type) {
             is ConsumerType -> this[location] = Metadata(TokenType.type, modifier)
 
@@ -143,7 +143,7 @@ class SamtSemanticTokens private constructor(userMetadata: UserMetadata) : SamtS
         else -> TokenType.type
     }
 
-    private fun Annotated.getDeprecationModifier() =
+    private fun UserDeclared.getDeprecationModifier() =
         if (userMetadata.getDeprecation(this) != null) {
             TokenModifier.deprecated
         } else {

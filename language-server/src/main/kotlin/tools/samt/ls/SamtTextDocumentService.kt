@@ -10,7 +10,6 @@ import tools.samt.lexer.Token
 import tools.samt.parser.FileNode
 import tools.samt.parser.NamedDeclarationNode
 import tools.samt.parser.OperationNode
-import tools.samt.semantic.Annotated
 import tools.samt.semantic.Package
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger

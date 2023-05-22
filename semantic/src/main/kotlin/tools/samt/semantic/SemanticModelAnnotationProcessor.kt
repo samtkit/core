@@ -8,8 +8,8 @@ internal class SemanticModelAnnotationProcessor(
         private val controller: DiagnosticController
 ) {
     fun process(global: Package): UserMetadata {
-        val descriptions = mutableMapOf<Annotated, String>()
-        val deprecations = mutableMapOf<Annotated, UserMetadata.Deprecation>()
+        val descriptions = mutableMapOf<UserDeclared, String>()
+        val deprecations = mutableMapOf<UserDeclared, UserMetadata.Deprecation>()
         for (element in global.getAnnotatedElements()) {
             for (annotation in element.declaration.annotations) {
                 val context = controller.getOrCreateContext(annotation.location.source)

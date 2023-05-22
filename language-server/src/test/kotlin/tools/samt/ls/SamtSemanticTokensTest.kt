@@ -242,6 +242,32 @@ class SamtSemanticTokensTest {
         )
     }
 
+    @Test
+    fun `correctly tokenizes fully qualified names`() {
+        val enumSource = """
+            package test.lib
+                        
+            enum Enum {
+                A, B
+            }
+        """.trimIndent()
+        val recordSource = """
+            package test.impl
+            
+            record Record {
+                e: test.lib.Enum
+            }
+        """.trimIndent()
+        parseAndCheck(
+            enumSource to emptyList(),
+            recordSource to listOf(
+                ExpectedMetadata("3:7" to "3:11", Meta(T.namespace)),
+                ExpectedMetadata("3:12" to "3:15", Meta(T.namespace)),
+                ExpectedMetadata("3:16" to "3:20", Meta(T.enum))
+            ),
+        )
+    }
+
     private data class ExpectedMetadata(val range: Pair<String, String>, val metadata: Meta) {
         val testLocation = TestLocation(range)
     }

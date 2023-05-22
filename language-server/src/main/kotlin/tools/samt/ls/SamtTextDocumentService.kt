@@ -171,13 +171,13 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
         val typeLookup = SamtDeclarationLookup.analyze(fileNode, filePackage, semanticModel.userMetadata)
         val type = typeLookup[token.location] ?: return@supplyAsync null
 
-        val description = """
-            ```samt
-            ${type.peekDeclaration()}
-            ```
-            ---
-            ${semanticModel.userMetadata.getDescription(type).orEmpty()}
-        """.trimIndent()
+        val description = buildString {
+            appendLine("```samt")
+            appendLine(type.peekDeclaration())
+            appendLine("```")
+            appendLine("---")
+            appendLine(semanticModel.userMetadata.getDescription(type).orEmpty())
+        }
         Hover().apply {
             contents = Either.forRight(MarkupContent(MarkupKind.MARKDOWN, description))
             range = token.location.toRange()

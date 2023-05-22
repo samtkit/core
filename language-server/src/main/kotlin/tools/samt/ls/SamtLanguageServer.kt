@@ -59,6 +59,7 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
                 definitionProvider = Either.forLeft(true)
                 referencesProvider = Either.forLeft(true)
                 hoverProvider = Either.forLeft(true)
+                documentSymbolProvider = Either.forLeft(true)
             }
             InitializeResult(capabilities)
         }

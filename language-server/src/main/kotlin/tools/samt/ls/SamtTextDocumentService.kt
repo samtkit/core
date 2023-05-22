@@ -191,6 +191,13 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
         }
     }
 
+    override fun documentSymbol(params: DocumentSymbolParams): CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> = CompletableFuture.supplyAsync {
+        val path = params.textDocument.uri.toPathUri()
+        val fileInfo = workspace.getFile(path) ?: return@supplyAsync emptyList()
+
+        fileInfo.fileNode?.getSymbols()?.map { Either.forRight<SymbolInformation, DocumentSymbol>(it) }.orEmpty()
+    }
+
     private fun UserDeclared.peekDeclaration(): String {
         fun List<ServiceType.Operation.Parameter>.toParameterList(): String =
             joinToString(", ") { it.peekDeclaration() }

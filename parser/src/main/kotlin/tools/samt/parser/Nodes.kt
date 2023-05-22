@@ -3,210 +3,204 @@ package tools.samt.parser
 import tools.samt.common.Location
 import tools.samt.common.SourceFile
 
-sealed class Node(val location: Location)
+sealed interface Node {
+    val location: Location
+}
 
-sealed interface AnnotatedNode {
+sealed interface AnnotatedNode : Node {
     val annotations: List<AnnotationNode>
 }
 
 class FileNode(
-    location: Location,
+    override val location: Location,
     val sourceFile: SourceFile,
     val imports: List<ImportNode>,
     val packageDeclaration: PackageDeclarationNode,
     val statements: List<StatementNode>,
-) : Node(location)
+) : Node
 
-sealed class StatementNode(
-    location: Location,
-) : Node(location)
+sealed interface StatementNode : Node
 
-sealed class NamedDeclarationNode(
-    val name: IdentifierNode,
-    location: Location,
-) : StatementNode(location)
+sealed interface NamedDeclarationNode : StatementNode {
+    val name: IdentifierNode
+}
 
-sealed class ImportNode(
-    location: Location,
-    val name: BundleIdentifierNode,
-) : StatementNode(location)
+sealed interface ImportNode : StatementNode {
+    val name: BundleIdentifierNode
+}
 
 class TypeImportNode(
-    location: Location,
-    name: BundleIdentifierNode,
+    override val location: Location,
+    override val name: BundleIdentifierNode,
     val alias: IdentifierNode?,
-) : ImportNode(location, name)
+) : ImportNode
 
 class WildcardImportNode(
-    location: Location,
-    name: BundleIdentifierNode,
-) : ImportNode(location, name)
+    override val location: Location,
+    override val name: BundleIdentifierNode,
+) : ImportNode
 
 class PackageDeclarationNode(
-    location: Location,
+    override val location: Location,
     val name: BundleIdentifierNode,
-) : StatementNode(location)
+) : StatementNode
 
 class RecordDeclarationNode(
-    location: Location,
-    name: IdentifierNode,
+    override val location: Location,
+    override val name: IdentifierNode,
     val extends: List<BundleIdentifierNode> = emptyList(),
     val fields: List<RecordFieldNode>,
     override val annotations: List<AnnotationNode>,
-) : NamedDeclarationNode(name, location), AnnotatedNode
+) : NamedDeclarationNode, AnnotatedNode
 
 class RecordFieldNode(
-    location: Location,
+    override val location: Location,
     val name: IdentifierNode,
     val type: ExpressionNode,
     override val annotations: List<AnnotationNode>,
-) : Node(location), AnnotatedNode
+) : Node, AnnotatedNode
 
 class EnumDeclarationNode(
-    location: Location,
-    name: IdentifierNode,
+    override val location: Location,
+    override val name: IdentifierNode,
     val values: List<IdentifierNode>,
     override val annotations: List<AnnotationNode>,
-) : NamedDeclarationNode(name, location), AnnotatedNode
+) : NamedDeclarationNode, AnnotatedNode
 
 class TypeAliasNode(
-    location: Location,
-    name: IdentifierNode,
+    override val location: Location,
+    override val name: IdentifierNode,
     val type: ExpressionNode,
     override val annotations: List<AnnotationNode>,
-) : NamedDeclarationNode(name, location), AnnotatedNode
+) : NamedDeclarationNode, AnnotatedNode
 
 class ServiceDeclarationNode(
-    location: Location,
-    name: IdentifierNode,
+    override val location: Location,
+    override val name: IdentifierNode,
     val operations: List<OperationNode>,
     override val annotations: List<AnnotationNode>,
-) : NamedDeclarationNode(name, location), AnnotatedNode
+) : NamedDeclarationNode, AnnotatedNode
 
-sealed class OperationNode(
-    location: Location,
-    val name: IdentifierNode,
-    val parameters: List<OperationParameterNode>,
-    override val annotations: List<AnnotationNode>,
-) : Node(location), AnnotatedNode
+sealed interface OperationNode : Node, AnnotatedNode {
+    val name: IdentifierNode
+    val parameters: List<OperationParameterNode>
+}
 
 class OperationParameterNode(
-    location: Location,
+    override val location: Location,
     val name: IdentifierNode,
     val type: ExpressionNode,
     override val annotations: List<AnnotationNode>,
-) : Node(location), AnnotatedNode
+) : Node, AnnotatedNode
 
 class RequestResponseOperationNode(
-    location: Location,
-    name: IdentifierNode,
-    parameters: List<OperationParameterNode>,
+    override val location: Location,
+    override val name: IdentifierNode,
+    override val parameters: List<OperationParameterNode>,
     val returnType: ExpressionNode?,
     val raises: List<ExpressionNode>,
     val isAsync: Boolean,
-    annotations: List<AnnotationNode>,
-) : OperationNode(location, name, parameters, annotations)
+    override val annotations: List<AnnotationNode>,
+) : OperationNode
 
 class OnewayOperationNode(
-    location: Location,
-    name: IdentifierNode,
-    parameters: List<OperationParameterNode>,
-    annotations: List<AnnotationNode>,
-) : OperationNode(location, name, parameters, annotations)
+    override val location: Location,
+    override val name: IdentifierNode,
+    override val parameters: List<OperationParameterNode>,
+    override val annotations: List<AnnotationNode>,
+) : OperationNode
 
 class ProviderDeclarationNode(
-    location: Location,
-    name: IdentifierNode,
+    override val location: Location,
+    override val name: IdentifierNode,
     val implements: List<ProviderImplementsNode>,
     val transport: ProviderTransportNode,
-) : NamedDeclarationNode(name, location)
+) : NamedDeclarationNode
 
 class ProviderImplementsNode(
-    location: Location,
+    override val location: Location,
     val serviceName: BundleIdentifierNode,
     val serviceOperationNames: List<IdentifierNode>,
-) : Node(location)
+) : Node
 
 class ProviderTransportNode(
-    location: Location,
+    override val location: Location,
     val protocolName: IdentifierNode,
     val configuration: ObjectNode?,
-) : Node(location)
+) : Node
 
 class ConsumerDeclarationNode(
-    location: Location,
+    override val location: Location,
     val providerName: BundleIdentifierNode,
     val usages: List<ConsumerUsesNode>,
-) : StatementNode(location)
+) : StatementNode
 
 class ConsumerUsesNode(
-    location: Location,
+    override val location: Location,
     val serviceName: BundleIdentifierNode,
     val serviceOperationNames: List<IdentifierNode>,
-) : Node(location)
+) : Node
 
 class AnnotationNode(
-    location: Location,
+    override val location: Location,
     val name: IdentifierNode,
     val arguments: List<ExpressionNode>,
-) : Node(location)
+) : Node
 
-sealed class ExpressionNode(
-    location: Location,
-) : Node(location)
+sealed interface ExpressionNode : Node
 
 class CallExpressionNode(
-    location: Location,
+    override val location: Location,
     val base: ExpressionNode,
     val arguments: List<ExpressionNode>,
-) : ExpressionNode(location)
+) : ExpressionNode
 
 class GenericSpecializationNode(
-    location: Location,
+    override val location: Location,
     val base: ExpressionNode,
     val arguments: List<ExpressionNode>,
-) : ExpressionNode(location)
+) : ExpressionNode
 
 class OptionalDeclarationNode(
-    location: Location,
+    override val location: Location,
     val base: ExpressionNode,
-) : ExpressionNode(location)
+) : ExpressionNode
 
 class RangeExpressionNode(
-    location: Location,
+    override val location: Location,
     val left: ExpressionNode,
     val right: ExpressionNode,
-) : ExpressionNode(location)
+) : ExpressionNode
 
 class ObjectNode(
-    location: Location,
+    override val location: Location,
     val fields: List<ObjectFieldNode>,
-) : ExpressionNode(location)
+) : ExpressionNode
 
 class ObjectFieldNode(
-    location: Location,
+    override val location: Location,
     val name: IdentifierNode,
     val value: ExpressionNode,
-) : Node(location)
+) : Node
 
 class ArrayNode(
-    location: Location,
+    override val location: Location,
     val values: List<ExpressionNode>,
-) : ExpressionNode(location)
+) : ExpressionNode
 
 class WildcardNode(
-    location: Location,
-) : ExpressionNode(location)
+    override val location: Location,
+) : ExpressionNode
 
 class IdentifierNode(
-    location: Location,
+    override val location: Location,
     val name: String,
-) : ExpressionNode(location)
+) : ExpressionNode
 
 open class BundleIdentifierNode(
-    location: Location,
+    override val location: Location,
     val components: List<IdentifierNode>,
-) : ExpressionNode(location) {
+) : ExpressionNode {
     val name: String
         get() = components.joinToString(".") { it.name }
 }
@@ -217,28 +211,26 @@ class ImportBundleIdentifierNode(
     val isWildcard: Boolean,
 ) : BundleIdentifierNode(location, components)
 
-sealed class NumberNode(
-    location: Location,
-) : ExpressionNode(location) {
-    abstract val value: Number
+sealed interface NumberNode : ExpressionNode {
+    val value: Number
 }
 
 class IntegerNode(
-    location: Location,
+    override val location: Location,
     override val value: Long,
-) : NumberNode(location)
+) : NumberNode
 
 class FloatNode(
-    location: Location,
+    override val location: Location,
     override val value: Double,
-) : NumberNode(location)
+) : NumberNode
 
 class BooleanNode(
-    location: Location,
+    override val location: Location,
     val value: Boolean,
-) : ExpressionNode(location)
+) : ExpressionNode
 
 class StringNode(
-    location: Location,
+    override val location: Location,
     val value: String,
-) : ExpressionNode(location)
+) : ExpressionNode

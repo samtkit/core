@@ -11,7 +11,7 @@ internal class SemanticModelAnnotationProcessor(
         val descriptions = mutableMapOf<UserDeclared, String>()
         val deprecations = mutableMapOf<UserDeclared, UserMetadata.Deprecation>()
         for (element in global.getAnnotatedElements()) {
-            for (annotation in element.declaration.annotations) {
+            for (annotation in element.annotations) {
                 val context = controller.getOrCreateContext(annotation.location.source)
                 when (val name = annotation.name.name) {
                     "Description" -> {
@@ -19,7 +19,7 @@ internal class SemanticModelAnnotationProcessor(
                             context.error {
                                 message("Duplicate @Description annotation")
                                 highlight("duplicate annotation", annotation.location)
-                                highlight("previous annotation", element.declaration.annotations.first { it.name.name == "Description" }.location)
+                                highlight("previous annotation", element.annotations.first { it.name.name == "Description" }.location)
                             }
                         }
                         descriptions[element] = getDescription(annotation)
@@ -29,7 +29,7 @@ internal class SemanticModelAnnotationProcessor(
                             context.error {
                                 message("Duplicate @Deprecated annotation")
                                 highlight("duplicate annotation", annotation.location)
-                                highlight("previous annotation", element.declaration.annotations.first { it.name.name == "Deprecated" }.location)
+                                highlight("previous annotation", element.annotations.first { it.name.name == "Deprecated" }.location)
                             }
                         }
                         deprecations[element] = getDeprecation(annotation)

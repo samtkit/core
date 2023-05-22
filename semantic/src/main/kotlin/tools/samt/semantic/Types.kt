@@ -118,6 +118,7 @@ sealed interface UserDeclared {
 
 sealed interface Annotated : UserDeclared {
     override val declaration: AnnotatedNode
+    val annotations: List<AnnotationNode> get() = declaration.annotations
 }
 
 data class ListType(

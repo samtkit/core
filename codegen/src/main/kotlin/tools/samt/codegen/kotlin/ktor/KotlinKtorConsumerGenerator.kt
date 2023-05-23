@@ -94,21 +94,35 @@ object KotlinKtorConsumerGenerator : Generator {
 
             when (operation) {
                 is RequestResponseOperation -> {
-                    if (operation.returnType != null) {
-                        appendLine("    override fun ${operation.name}($operationParameters): ${operation.returnType!!.getQualifiedName(options)} {")
+                    if (operation.isAsync) {
+                        if (operation.returnType != null) {
+                            appendLine("    override suspend fun ${operation.name}($operationParameters): ${operation.returnType!!.getQualifiedName(options)} {")
+                        } else {
+                            appendLine("    override suspend fun ${operation.name}($operationParameters): Unit {")
+                        }
                     } else {
-                        appendLine("    override fun ${operation.name}($operationParameters): Unit {")
+                        if (operation.returnType != null) {
+                            appendLine("    override fun ${operation.name}($operationParameters): ${operation.returnType!!.getQualifiedName(options)} {")
+                        } else {
+                            appendLine("    override fun ${operation.name}($operationParameters): Unit {")
+                        }
                     }
 
                     // TODO Config: HTTP status code
-                    // TODO serialize response correctly
+                    // TODO validate call parameters
                     // TODO validate response
-                    appendLine("return runBlocking {")
+                    // TODO serialize response correctly
+                    if (operation.isAsync) {
+                        appendLine("        return runBlocking {")
+                    } else {
+                        appendLine("        return run {")
+                    }
 
                     appendConsumerServiceCall(info, operation, transportConfiguration)
                     appendConsumerResponseParsing(operation, transportConfiguration)
 
-                    appendLine("}")
+                    appendLine("        }")
+                    appendLine("    }")
                 }
 
                 is OnewayOperation -> {
@@ -119,6 +133,33 @@ object KotlinKtorConsumerGenerator : Generator {
     }
 
     private fun StringBuilder.appendConsumerServiceCall(info: ConsumerInfo, operation: ServiceOperation, transport: HttpTransportConfiguration) {
+        // collect parameters for each transport type
+        val headerParameters = mutableMapOf<String, ServiceOperationParameter>()
+        val cookieParameters = mutableMapOf<String, ServiceOperationParameter>()
+        val bodyParameters = mutableMapOf<String, ServiceOperationParameter>()
+        val pathParameters = mutableMapOf<String, ServiceOperationParameter>()
+        val queryParameters = mutableMapOf<String, ServiceOperationParameter>()
+        operation.parameters.forEach {
+            val name = it.name
+            when (transport.getTransportMode(info.service.name, operation.name, name)) {
+                HttpTransportConfiguration.TransportMode.Header -> {
+                    headerParameters[name] = it
+                }
+                HttpTransportConfiguration.TransportMode.Cookie -> {
+                    cookieParameters[name] = it
+                }
+                HttpTransportConfiguration.TransportMode.Body -> {
+                    bodyParameters[name] = it
+                }
+                HttpTransportConfiguration.TransportMode.Path -> {
+                    pathParameters[name] = it
+                }
+                HttpTransportConfiguration.TransportMode.Query -> {
+                    queryParameters[name] = it
+                }
+            }
+        }
+
         /*
             val response = client.request("$baseUrl/todos/$title") {
                 method = HttpMethod.Post
@@ -134,42 +175,56 @@ object KotlinKtorConsumerGenerator : Generator {
             }
         */
 
-        // collect parameters for each transport type
-        val headerParameters = mutableListOf<String>()
-        val cookieParameters = mutableListOf<String>()
-        val bodyParameters = mutableListOf<String>()
-        val pathParameters = mutableListOf<String>()
-        val queryParameters = mutableListOf<String>()
-        operation.parameters.forEach {
-            val name = it.name
-            val transportMode = transport.getTransportMode(info.service.name, operation.name, name)
-            when (transportMode) {
-                HttpTransportConfiguration.TransportMode.Header -> {
-                    headerParameters.add(name)
-                }
-                HttpTransportConfiguration.TransportMode.Cookie -> {
-                    cookieParameters.add(name)
-                }
-                HttpTransportConfiguration.TransportMode.Body -> {
-                    bodyParameters.add(name)
-                }
-                HttpTransportConfiguration.TransportMode.Path -> {
-                    pathParameters.add(name)
-                }
-                HttpTransportConfiguration.TransportMode.Query -> {
-                    queryParameters.add(name)
-                }
-            }
-        }
+        // build request headers and body
+        appendLine("            val `consumer response` = client.request(`consumer baseUrl`) {")
 
         // build request path
         // need to split transport path into path segments and query parameter slots
-        val pathSegments = mutableListOf<String>()
-        val queryParameterSlots = mutableListOf<String>()
+        // remove first empty component (paths start with a / so the first component is always empty)
         val transportPath = transport.getPath(info.service.name, operation.name)
-        val pathParts = transportPath.split("/")
+        val transportPathComponents = transportPath.split("/")
+        appendLine("                url {")
+        transportPathComponents.drop(1).map {
+            if (it.startsWith("{") && it.endsWith("}")) {
+                val parameterName = it.substring(1, it.length - 1)
+                require(pathParameters.contains(parameterName)) { "${operation.name}: path parameter $parameterName is not a known path parameter" }
+                appendLine("                    appendPathSegments($parameterName)")
+            } else {
+                appendLine("                    appendPathSegments(\"$it\")")
+            }
+        }
+        appendLine("                }")
 
-        // build request headers and body
+        // serialization mode
+        when (val serializationMode = transport.serializationMode) {
+            HttpTransportConfiguration.SerializationMode.Json -> appendLine("                contentType(ContentType.Application.Json)")
+            else -> error("unsupported serialization mode: $serializationMode")
+        }
+
+        // transport method
+        val transportMethod = transport.getMethod(info.service.name, operation.name)
+        appendLine("                method = HttpMethod.$transportMethod")
+
+        // header parameters
+        headerParameters.forEach {
+            appendLine("                headers[\"$it\"] = $it")
+        }
+
+        // cookie parameters
+        cookieParameters.forEach {
+            appendLine("                cookie(\"$it\", $it)")
+        }
+
+        // body parameters
+        appendLine("                setBody(")
+        appendLine("                    buildJsonObject {")
+        bodyParameters.forEach { (name, parameter) ->
+            appendLine("                        put(\"$name\", \"placeholder hello world\"")
+        }
+        appendLine("                    }")
+        appendLine("                )")
+
+        appendLine("            }")
 
         // oneway vs request-response
     }
@@ -188,7 +243,5 @@ object KotlinKtorConsumerGenerator : Generator {
                 description = respDescription,
             )
         */
-
-
     }
 }

@@ -73,7 +73,8 @@ class SamtWorkspace {
         removedFiles.clear()
     }
 
-    private fun getFolder(path: URI): SamtFolder? = folders[path] ?: folders.values.singleOrNull { path.startsWith(it.path) }
+    private fun getFolder(path: URI): SamtFolder? =
+        folders[path] ?: folders.values.singleOrNull { path.startsWith(it.path) }
 }
 
 data class FolderSnapshot(val path: URI, val files: List<FileInfo>, val semanticModel: SemanticModel?)
@@ -83,10 +84,10 @@ fun LanguageClient.updateWorkspace(workspace: SamtWorkspace) {
     workspace.buildSemanticModel()
     workspace.getPendingMessages().forEach { (path, messages) ->
         publishDiagnostics(
-                PublishDiagnosticsParams(
-                        path.toString(),
-                        messages.mapNotNull { it.toDiagnostic() }
-                )
+            PublishDiagnosticsParams(
+                path.toString(),
+                messages.mapNotNull { it.toDiagnostic() }
+            )
         )
     }
     workspace.clearChanges()

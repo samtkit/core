@@ -89,10 +89,9 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     }
 
     private fun buildSamtModel(params: InitializeParams) {
-        val folders = params.workspaceFolders?.map { it.uri.toPathUri() }.orEmpty()
-        for (folder in folders) {
-            workspace.addFolder(SamtFolder.fromDirectory(folder))
-        }
+        params.workspaceFolders
+            ?.flatMap { SamtFolder.fromDirectory(it.uri.toPathUri()) }
+            ?.forEach(workspace::addFolder)
     }
 
     private fun registerFileWatchCapability() {

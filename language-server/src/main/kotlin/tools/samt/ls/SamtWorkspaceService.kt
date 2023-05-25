@@ -83,9 +83,7 @@ class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceServ
         val event = params.event
         for (added in event.added) {
             val path = added.uri.toPathUri()
-            val folder = SamtFolder.fromDirectory(path)
-            workspace.addFolder(folder)
-            folder.buildSemanticModel()
+            SamtFolder.fromDirectory(path).forEach(workspace::addFolder)
         }
         for (removed in event.removed) {
             workspace.removeFolder(removed.uri.toPathUri())

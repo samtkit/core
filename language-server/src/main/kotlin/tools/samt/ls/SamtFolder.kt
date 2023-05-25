@@ -6,7 +6,6 @@ import tools.samt.common.collectSamtFiles
 import tools.samt.common.readSamtSource
 import tools.samt.semantic.SemanticModel
 import java.net.URI
-import kotlin.io.path.toPath
 
 class SamtFolder(val path: URI) : Iterable<FileInfo> {
     private val files = mutableMapOf<URI, FileInfo>()
@@ -48,17 +47,14 @@ class SamtFolder(val path: URI) : Iterable<FileInfo> {
     }
 
     companion object {
-        fun fromDirectory(path: URI): List<SamtFolder> = path.toPath().let {
-            it.findSamtRoots().ifEmpty { listOf(it) }.map { root ->
-                val uri = root.toUri()
-                val controller = DiagnosticController(uri)
-                val folder = SamtFolder(uri)
-                val sourceFiles = collectSamtFiles(uri).readSamtSource(controller)
-                for (file in sourceFiles) {
-                    folder.set(parseFile(file))
-                }
-                folder
+        fun fromDirectory(path: URI): SamtFolder {
+            val controller = DiagnosticController(path)
+            val folder = SamtFolder(path)
+            val sourceFiles = collectSamtFiles(path).readSamtSource(controller)
+            for (file in sourceFiles) {
+                folder.set(parseFile(file))
             }
+            return folder
         }
     }
 }

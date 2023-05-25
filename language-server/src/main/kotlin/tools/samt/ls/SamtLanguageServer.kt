@@ -7,6 +7,7 @@ import java.io.Closeable
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
+import kotlin.io.path.toPath
 import kotlin.system.exitProcess
 
 class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
@@ -89,9 +90,12 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
     }
 
     private fun buildSamtModel(params: InitializeParams) {
-        params.workspaceFolders
-            ?.flatMap { SamtFolder.fromDirectory(it.uri.toPathUri()) }
-            ?.forEach(workspace::addFolder)
+        params.workspaceFolders?.forEach { folder ->
+            val path = folder.uri.toPathUri().toPath()
+            path.findSamtRoots()
+                .ifEmpty { listOf(path) }
+                .forEach { workspace.addFolder(SamtFolder.fromDirectory(it.toUri())) }
+        }
     }
 
     private fun registerFileWatchCapability() {

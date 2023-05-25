@@ -82,11 +82,16 @@ class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceServ
     override fun didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
         val event = params.event
         for (added in event.added) {
-            val path = added.uri.toPathUri()
-            SamtFolder.fromDirectory(path).forEach(workspace::addFolder)
+            val path = added.uri.toPathUri().toPath()
+            path.findSamtRoots()
+                .ifEmpty { listOf(path) }
+                .forEach { workspace.addFolder(SamtFolder.fromDirectory(it.toUri())) }
         }
         for (removed in event.removed) {
-            workspace.removeFolder(removed.uri.toPathUri())
+            val path = removed.uri.toPathUri().toPath()
+            path.findSamtRoots()
+                .ifEmpty { listOf(path) }
+                .forEach { workspace.removeFolder(it.toUri()) }
         }
         client.updateWorkspace(workspace)
     }

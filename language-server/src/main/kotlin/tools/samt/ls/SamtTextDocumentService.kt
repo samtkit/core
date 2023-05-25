@@ -13,6 +13,7 @@ import tools.samt.parser.OperationNode
 import tools.samt.semantic.*
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
+import kotlin.io.path.toPath
 
 class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocumentService,
         LanguageClientAware {
@@ -24,6 +25,10 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
         val path = params.textDocument.uri.toPathUri()
         val text = params.textDocument.text
 
+        if (!workspace.containsFile(path)) {
+            val projectRoot = path.toPath().findSamtRoots().singleOrNull()
+            projectRoot?.let { workspace.addFolder(SamtFolder.fromDirectory(it.toUri())) }
+        }
         workspace.setFile(parseFile(SourceFile(path, text)))
         client.updateWorkspace(workspace)
     }

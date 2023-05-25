@@ -48,6 +48,8 @@ class SamtWorkspace {
         removedFiles.add(path)
     }
 
+    fun containsFile(path: URI) = folders.keys.any { path.startsWith(it) }
+
     fun removeDirectory(path: URI) {
         val folder = getFolder(path)
         val files = folder?.getFilesIn(path)?.ifEmpty { null } ?: return

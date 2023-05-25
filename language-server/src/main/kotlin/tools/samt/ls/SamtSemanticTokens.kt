@@ -5,38 +5,43 @@ import tools.samt.common.Location
 import tools.samt.parser.*
 import tools.samt.semantic.*
 
-class SamtSemanticTokens private constructor() : SamtSemanticLookup<Location, SamtSemanticTokens.Metadata>() {
+class SamtSemanticTokens private constructor(userMetadata: UserMetadata) : SamtSemanticLookup<Location, SamtSemanticTokens.Metadata>(userMetadata) {
     override fun markType(node: ExpressionNode, type: Type) {
         super.markType(node, type)
-        val location = if (node is BundleIdentifierNode) {
-            node.components.last().location
+        val location: Location
+        if (node is BundleIdentifierNode) {
+            location = node.components.last().location
+            node.components.dropLast(1).forEach {
+                this[it.location] = Metadata(TokenType.namespace)
+            }
         } else {
-            node.location
+            location = node.location
         }
+        val modifier = (type as? UserDeclared)?.getDeprecationModifier() ?: TokenModifier.none
         when (type) {
-            is ConsumerType -> this[location] = Metadata(TokenType.type)
+            is ConsumerType -> this[location] = Metadata(TokenType.type, modifier)
 
-            is EnumType -> this[location] = Metadata(TokenType.enum)
+            is EnumType -> this[location] = Metadata(TokenType.enum, modifier)
 
             is ListType -> {
                 this[type.node.base.location] =
-                    Metadata(TokenType.type, TokenModifier.defaultLibrary)
+                    Metadata(TokenType.type, modifier and TokenModifier.defaultLibrary)
             }
 
             is MapType -> {
                 this[type.node.base.location] =
-                    Metadata(TokenType.type, TokenModifier.defaultLibrary)
+                    Metadata(TokenType.type, modifier and TokenModifier.defaultLibrary)
             }
 
-            is AliasType -> this[location] = Metadata(TokenType.type)
-            is ProviderType -> this[location] = Metadata(TokenType.type)
-            is RecordType -> this[location] = Metadata(TokenType.`class`)
-            is ServiceType -> this[location] = Metadata(TokenType.`interface`)
+            is AliasType -> this[location] = Metadata(getAliasTokenType(type), modifier)
+            is ProviderType -> this[location] = Metadata(TokenType.type, modifier)
+            is RecordType -> this[location] = Metadata(TokenType.`class`, modifier)
+            is ServiceType -> this[location] = Metadata(TokenType.`interface`, modifier)
             is LiteralType -> this[location] =
-                Metadata(TokenType.type, TokenModifier.defaultLibrary)
+                Metadata(TokenType.type, modifier and TokenModifier.defaultLibrary)
 
-            is PackageType -> this[location] = Metadata(TokenType.namespace)
-            UnknownType -> this[location] = Metadata(TokenType.type)
+            is PackageType -> this[location] = Metadata(TokenType.namespace, modifier)
+            UnknownType -> this[location] = Metadata(TokenType.type, modifier)
         }
     }
 
@@ -56,39 +61,39 @@ class SamtSemanticTokens private constructor() : SamtSemanticLookup<Location, Sa
 
     override fun markServiceDeclaration(serviceType: ServiceType) {
         super.markServiceDeclaration(serviceType)
-        this[serviceType.declaration.name.location] = Metadata(TokenType.`interface`, TokenModifier.declaration)
+        this[serviceType.declaration.name.location] = Metadata(TokenType.`interface`, serviceType.getDeprecationModifier() and TokenModifier.declaration)
     }
 
     override fun markOperationDeclaration(operation: ServiceType.Operation) {
         super.markOperationDeclaration(operation)
+        var modifier = TokenModifier.declaration and operation.getDeprecationModifier()
+        if (operation is ServiceType.RequestResponseOperation && operation.isAsync) {
+            modifier = modifier and TokenModifier.async
+        }
         this[operation.declaration.name.location] = Metadata(
             type = TokenType.method,
-            modifier = if (operation is ServiceType.RequestResponseOperation && operation.isAsync) {
-                TokenModifier.declaration and TokenModifier.async
-            } else {
-                TokenModifier.declaration
-            }
+            modifier = modifier
         )
     }
 
     override fun markOperationParameterDeclaration(parameter: ServiceType.Operation.Parameter) {
         super.markOperationParameterDeclaration(parameter)
-        this[parameter.declaration.name.location] = Metadata(TokenType.parameter, TokenModifier.declaration)
+        this[parameter.declaration.name.location] = Metadata(TokenType.parameter, parameter.getDeprecationModifier() and TokenModifier.declaration)
     }
 
     override fun markRecordDeclaration(recordType: RecordType) {
         super.markRecordDeclaration(recordType)
-        this[recordType.declaration.name.location] = Metadata(TokenType.`class`, TokenModifier.declaration)
+        this[recordType.declaration.name.location] = Metadata(TokenType.`class`, recordType.getDeprecationModifier() and TokenModifier.declaration)
     }
 
     override fun markRecordFieldDeclaration(field: RecordType.Field) {
         super.markRecordFieldDeclaration(field)
-        this[field.declaration.name.location] = Metadata(TokenType.property, TokenModifier.declaration)
+        this[field.declaration.name.location] = Metadata(TokenType.property, field.getDeprecationModifier() and TokenModifier.declaration)
     }
 
     override fun markEnumDeclaration(enumType: EnumType) {
         super.markEnumDeclaration(enumType)
-        this[enumType.declaration.name.location] = Metadata(TokenType.enum, TokenModifier.declaration)
+        this[enumType.declaration.name.location] = Metadata(TokenType.enum, enumType.getDeprecationModifier() and TokenModifier.declaration)
         for (enumMember in enumType.declaration.values) {
             this[enumMember.location] = Metadata(TokenType.enumMember, TokenModifier.declaration)
         }
@@ -101,13 +106,13 @@ class SamtSemanticTokens private constructor() : SamtSemanticLookup<Location, Sa
 
     override fun markOperationReference(operation: ServiceType.Operation, reference: IdentifierNode) {
         super.markOperationReference(operation, reference)
+        var modifier = operation.getDeprecationModifier()
+        if (operation is ServiceType.RequestResponseOperation && operation.isAsync) {
+            modifier = modifier and TokenModifier.async
+        }
         this[reference.location] = Metadata(
             type = TokenType.method,
-            modifier = if (operation is ServiceType.RequestResponseOperation && operation.isAsync) {
-                TokenModifier.async
-            } else {
-                TokenModifier.none
-            }
+            modifier = modifier
         )
     }
 
@@ -125,6 +130,26 @@ class SamtSemanticTokens private constructor() : SamtSemanticLookup<Location, Sa
             this[import.alias!!.location] = this[typeLocation]!!.copy(modifier = TokenModifier.declaration)
         }
     }
+
+    override fun markTypeAliasDeclaration(aliasType: AliasType) {
+        super.markTypeAliasDeclaration(aliasType)
+        this[aliasType.declaration.name.location] = Metadata(getAliasTokenType(aliasType), aliasType.getDeprecationModifier() and TokenModifier.declaration)
+    }
+
+    private fun getAliasTokenType(aliasType: AliasType): TokenType = when (aliasType.fullyResolvedType?.type) {
+        is EnumType -> TokenType.enum
+        is RecordType -> TokenType.`class`
+        is ServiceType -> TokenType.`interface`
+        else -> TokenType.type
+    }
+
+    private fun UserDeclared.getDeprecationModifier() =
+        if (userMetadata.getDeprecation(this) != null) {
+            TokenModifier.deprecated
+        } else {
+            TokenModifier.none
+        }
+
 
     data class Metadata(val type: TokenType, val modifier: TokenModifier = TokenModifier.none)
 
@@ -171,7 +196,8 @@ class SamtSemanticTokens private constructor() : SamtSemanticLookup<Location, Sa
             val declaration = TokenModifier(1 shl 0)
             val async = TokenModifier(1 shl 1)
             val defaultLibrary = TokenModifier(1 shl 2)
-            fun values() = arrayOf(::declaration, ::async, ::defaultLibrary)
+            val deprecated = TokenModifier(1 shl 3)
+            fun values() = arrayOf(::declaration, ::async, ::defaultLibrary, ::deprecated)
         }
     }
 
@@ -181,7 +207,7 @@ class SamtSemanticTokens private constructor() : SamtSemanticLookup<Location, Sa
             TokenModifier.values().map { it.name },
         )
 
-        fun analyze(fileNode: FileNode, samtPackage: Package) =
-            SamtSemanticTokens().also { it.analyze(fileNode, samtPackage) }
+        fun analyze(fileNode: FileNode, filePackage: Package, userMetadata: UserMetadata) =
+            SamtSemanticTokens(userMetadata).also { it.analyze(fileNode, filePackage) }
     }
 }

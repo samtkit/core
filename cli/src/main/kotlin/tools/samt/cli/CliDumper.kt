@@ -5,7 +5,7 @@ import tools.samt.common.DiagnosticController
 import tools.samt.common.DiagnosticException
 import tools.samt.lexer.Lexer
 import tools.samt.parser.Parser
-import tools.samt.semantic.SemanticModelBuilder
+import tools.samt.semantic.SemanticModel
 
 internal fun dump(command: DumpCommand, terminal: Terminal, controller: DiagnosticController) {
     val sourceFiles = command.files.readSamtSourceFiles(controller)
@@ -61,7 +61,7 @@ internal fun dump(command: DumpCommand, terminal: Terminal, controller: Diagnost
     }
 
     // build up the semantic model from the AST
-    val samtPackage = SemanticModelBuilder.build(fileNodes, controller)
+    val samtPackage = SemanticModel.build(fileNodes, controller).global
 
     if (dumpAll || command.dumpTypes) {
         terminal.println(TypePrinter.dump(samtPackage))

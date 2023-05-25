@@ -3,14 +3,14 @@ package tools.samt.ls
 import tools.samt.parser.*
 import tools.samt.semantic.*
 
-abstract class SamtSemanticLookup<TKey, TValue> protected constructor() {
-    protected fun analyze(fileNode: FileNode, samtPackage: Package) {
+abstract class SamtSemanticLookup<TKey, TValue> protected constructor(protected val userMetadata: UserMetadata) {
+    protected fun analyze(fileNode: FileNode, filePackage: Package) {
         for (import in fileNode.imports) {
-            markStatement(samtPackage, import)
+            markStatement(filePackage, import)
         }
-        markStatement(samtPackage, fileNode.packageDeclaration)
+        markStatement(filePackage, fileNode.packageDeclaration)
         for (statement in fileNode.statements) {
-            markStatement(samtPackage, statement)
+            markStatement(filePackage, statement)
         }
     }
 
@@ -69,19 +69,19 @@ abstract class SamtSemanticLookup<TKey, TValue> protected constructor() {
     }
 
     protected open fun markTypeAliasDeclaration(aliasType: AliasType) {
-        markAnnotations(aliasType.declaration.annotations)
+        markAnnotations(aliasType.annotations)
         markTypeReference(aliasType.aliasedType)
     }
 
     protected open fun markServiceDeclaration(serviceType: ServiceType) {
-        markAnnotations(serviceType.declaration.annotations)
+        markAnnotations(serviceType.annotations)
         for (operation in serviceType.operations) {
             markOperationDeclaration(operation)
         }
     }
 
     protected open fun markOperationDeclaration(operation: ServiceType.Operation) {
-        markAnnotations(operation.declaration.annotations)
+        markAnnotations(operation.annotations)
         for (parameter in operation.parameters) {
             markOperationParameterDeclaration(parameter)
         }
@@ -95,24 +95,24 @@ abstract class SamtSemanticLookup<TKey, TValue> protected constructor() {
     }
 
     protected open fun markOperationParameterDeclaration(parameter: ServiceType.Operation.Parameter) {
-        markAnnotations(parameter.declaration.annotations)
+        markAnnotations(parameter.annotations)
         markTypeReference(parameter.type)
     }
 
     protected open fun markRecordDeclaration(recordType: RecordType) {
-        markAnnotations(recordType.declaration.annotations)
+        markAnnotations(recordType.annotations)
         for (field in recordType.fields) {
             markRecordFieldDeclaration(field)
         }
     }
 
     protected open fun markRecordFieldDeclaration(field: RecordType.Field) {
-        markAnnotations(field.declaration.annotations)
+        markAnnotations(field.annotations)
         markTypeReference(field.type)
     }
 
     protected open fun markEnumDeclaration(enumType: EnumType) {
-        markAnnotations(enumType.declaration.annotations)
+        markAnnotations(enumType.annotations)
     }
 
     protected open fun markProviderDeclaration(providerType: ProviderType) {

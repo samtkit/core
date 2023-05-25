@@ -832,9 +832,348 @@ class SemanticModelTest {
         }
     }
 
+    @Nested
+    inner class Annotations {
+        @Test
+        fun `can retrieve descriptions`() {
+            val source = """
+                package annotations
+                
+                @Description("enum description")
+                enum UserType {
+                    ADMIN, USER
+                }
+                
+                @Description("typealias description")
+                typealias Id = Long(1..*)
+                
+                @Description("record description")
+                record User {
+                    @Description("field description")
+                    id: Id
+                }
+                
+                @Description("service description")
+                service UserService {
+                    @Description("operation description")
+                    get(@Description("parameter description") id: Id): User
+                }
+            """.trimIndent()
+            val model = parseAndCheck(
+                source to emptyList()
+            )
+            val samtPackage = model.global.subPackages.single()
+            val metadata = model.userMetadata
+            assertEquals("enum description", metadata.getDescription(samtPackage.enums.single()))
+            assertEquals("typealias description", metadata.getDescription(samtPackage.aliases.single()))
+            val record = samtPackage.records.single()
+            assertEquals("record description", metadata.getDescription(record))
+            assertEquals("field description", metadata.getDescription(record.fields.single()))
+            val service = samtPackage.services.single()
+            assertEquals("service description", metadata.getDescription(service))
+            val operation = service.operations.single()
+            assertEquals("operation description", metadata.getDescription(operation))
+            val parameter = operation.parameters.single()
+            assertEquals("parameter description", metadata.getDescription(parameter))
+        }
+
+        @Test
+        fun `can retrieve deprecations`() {
+            val source = """
+                package annotations
+                
+                @Deprecated("enum deprecation")
+                enum UserType {
+                    ADMIN, USER
+                }
+                
+                @Deprecated("typealias deprecation")
+                typealias Id = Long(1..*)
+                
+                @Deprecated("record deprecation")
+                record User {
+                    @Deprecated("field description")
+                    id: Id
+                    @Deprecated
+                    type: UserType
+                }
+                
+                @Deprecated("service deprecation")
+                service UserService {
+                    @Deprecated("operation deprecation")
+                    get(@Deprecated("parameter deprecation") id: Id): User
+                }
+            """.trimIndent()
+            val model = parseAndCheck(
+                source to emptyList()
+            )
+            val samtPackage = model.global.subPackages.single()
+            val metadata = model.userMetadata
+            assertEquals(UserMetadata.Deprecation("enum deprecation"), metadata.getDeprecation(samtPackage.enums.single()))
+            assertEquals(UserMetadata.Deprecation("typealias deprecation"), metadata.getDeprecation(samtPackage.aliases.single()))
+            val record = samtPackage.records.single()
+            assertEquals(UserMetadata.Deprecation("record deprecation"), metadata.getDeprecation(record))
+            assertEquals(listOf(UserMetadata.Deprecation("field description"), UserMetadata.Deprecation(null)), record.fields.map { metadata.getDeprecation(it) })
+            val service = samtPackage.services.single()
+            assertEquals(UserMetadata.Deprecation("service deprecation"), metadata.getDeprecation(service))
+            val operation = service.operations.single()
+            assertEquals(UserMetadata.Deprecation("operation deprecation"), metadata.getDeprecation(operation))
+            val parameter = operation.parameters.single()
+            assertEquals(UserMetadata.Deprecation("parameter deprecation"), metadata.getDeprecation(parameter))
+        }
+
+        @Test
+        fun `@Description without argument is an error`() {
+            val source = """
+                package annotations
+                
+                @Description
+                enum UserType {
+                    ADMIN, USER
+                }
+                
+                @Description
+                typealias Id = Long(1..*)
+                
+                @Description
+                record User {
+                    @Description
+                    id: Id
+                }
+                
+                @Description
+                service UserService {
+                    @Description
+                    get(@Description id: Id): User
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to List(7) { "Error: Missing argument for @Description" }
+            )
+        }
+
+        @Test
+        fun `wrong argument type for @Description is an error`() {
+            val source = """
+                package annotations
+                
+                @Description(1)
+                enum UserType {
+                    ADMIN, USER
+                }
+                
+                @Description(true)
+                typealias Id = Long(1..*)
+                
+                @Description({})
+                record User {
+                    @Description(1)
+                    id: Id
+                }
+                
+                @Description([])
+                service UserService {
+                    @Description(1.5)
+                    get(@Description(String) id: Id): User
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to List(7) { "Error: Argument for @Description must be a string" }
+            )
+        }
+
+        @Test
+        fun `wrong argument type for @Deprecated is an error`() {
+            val source = """
+                package annotations
+                
+                @Deprecated(1)
+                enum UserType {
+                    ADMIN, USER
+                }
+                
+                @Deprecated(true)
+                typealias Id = Long(1..*)
+                
+                @Deprecated({})
+                record User {
+                    @Deprecated(1)
+                    id: Id
+                }
+                
+                @Deprecated([])
+                service UserService {
+                    @Deprecated(1.5)
+                    get(@Deprecated(String) id: Id): User
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to List(7) { "Error: Argument for @Deprecated must be a string" }
+            )
+        }
+
+        @Test
+        fun `extraneous arguments for @Description are an error`() {
+            val source = """
+                package annotations
+                
+                @Description("enum description", "")
+                enum UserType {
+                    ADMIN, USER
+                }
+                
+                @Description("typealias description", "")
+                typealias Id = Long(1..*)
+                
+                @Description("record description", "")
+                record User {
+                    @Description("field description", "")
+                    id: Id
+                }
+                
+                @Description("service description", "")
+                service UserService {
+                    @Description("operation description", "")
+                    get(@Description("parameter description", "") id: Id): User
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to List(7) { "Error: @Description expects exactly one string argument" }
+            )
+        }
+
+        @Test
+        fun `extraneous arguments for @Deprecated are an error`() {
+            val source = """
+                package annotations
+                
+                @Deprecated("enum deprecation", "")
+                enum UserType {
+                    ADMIN, USER
+                }
+                
+                @Deprecated("typealias deprecation", "")
+                typealias Id = Long(1..*)
+                
+                @Deprecated("record deprecation", "")
+                record User {
+                    @Deprecated("field deprecation", "")
+                    id: Id
+                }
+                
+                @Deprecated("service deprecation", "")
+                service UserService {
+                    @Deprecated("operation deprecation", "")
+                    get(@Deprecated("parameter deprecation", "") id: Id): User
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to List(7) { "Error: @Deprecated expects at most one string argument" }
+            )
+        }
+
+        @Test
+        fun `unknown annotations are an error`() {
+            val source = """
+                package annotations
+                
+                @Deprescription
+                enum UserType {
+                    ADMIN, USER
+                }
+                
+                @Deprescription
+                typealias Id = Long(1..*)
+                
+                @Deprescription
+                record User {
+                    @Deprescription
+                    id: Id
+                }
+                
+                @Deprescription
+                service UserService {
+                    @Deprescription
+                    get(@Deprescription id: Id): User
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to List(7) { "Error: Unknown annotation @Deprescription, allowed annotations are @Description and @Deprecated" }
+            )
+        }
+
+        @Test
+        fun `duplicate annotations are an error`() {
+            val deprecated = """
+                package annotations
+                
+                @Deprecated
+                @Deprecated
+                enum UserType {
+                    ADMIN, USER
+                }
+                
+                @Deprecated
+                @Deprecated
+                typealias Id = Long(1..*)
+                
+                @Deprecated
+                @Deprecated
+                record User {
+                    @Deprecated
+                    @Deprecated
+                    id: Id
+                }
+                
+                @Deprecated
+                @Deprecated
+                service UserService {
+                    @Deprecated
+                    @Deprecated
+                    get(@Deprecated @Deprecated id: Id): User
+                }
+            """.trimIndent()
+            parseAndCheck(
+                deprecated to List(7) { "Error: Duplicate @Deprecated annotation" }
+            )
+            val description = """
+                package annotations
+                
+                @Description("test")
+                @Description("test")
+                enum UserType {
+                    ADMIN, USER
+                }
+                
+                @Description("test")
+                @Description("test")
+                typealias Id = Long(1..*)
+                
+                @Description("test")
+                @Description("test")
+                record User {
+                    @Description("test")
+                    @Description("test")
+                    id: Id
+                }
+                
+                @Description("test")
+                @Description("test")
+                service UserService {
+                    @Description("test")
+                    @Description("test")
+                    get(@Description("test") @Description("test") id: Id): User
+                }
+            """
+            parseAndCheck(
+                description to List(7) { "Error: Duplicate @Description annotation" }
+            )
+        }
+    }
+
     private fun parseAndCheck(
         vararg sourceAndExpectedMessages: Pair<String, List<String>>,
-    ) {
+    ): SemanticModel {
         val diagnosticController = DiagnosticController(URI("file:///tmp"))
         val fileTree = sourceAndExpectedMessages.mapIndexed { index, (source) ->
             val filePath = URI("file:///tmp/SemanticModelTest-${index}.samt")
@@ -848,7 +1187,7 @@ class SemanticModelTest {
 
         val parseMessageCount = diagnosticController.contexts.associate { it.source.content to it.messages.size }
 
-        SemanticModelBuilder.build(fileTree, diagnosticController)
+        val semanticModel = SemanticModel.build(fileTree, diagnosticController)
 
         for ((source, expectedMessages) in sourceAndExpectedMessages) {
             val messages = diagnosticController.contexts
@@ -858,5 +1197,6 @@ class SemanticModelTest {
                 .map { "${it.severity}: ${it.message}" }
             assertEquals(expectedMessages, messages)
         }
+        return semanticModel
     }
 }

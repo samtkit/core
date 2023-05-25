@@ -116,6 +116,11 @@ sealed interface UserDeclared {
     val declaration: Node
 }
 
+sealed interface Annotated : UserDeclared {
+    override val declaration: AnnotatedNode
+    val annotations: List<AnnotationNode> get() = declaration.annotations
+}
+
 data class ListType(
     val elementType: TypeReference,
     val node: GenericSpecializationNode,
@@ -138,7 +143,7 @@ class AliasType(
     /** The fully resolved type, will not contain any type aliases anymore, just the underlying merged type */
     var fullyResolvedType: ResolvedTypeReference? = null,
     override val declaration: TypeAliasNode,
-) : CompoundType, UserDeclared {
+) : CompoundType, Annotated {
     override val humanReadableName: String = name
 }
 
@@ -146,12 +151,12 @@ class RecordType(
     val name: String,
     val fields: List<Field>,
     override val declaration: RecordDeclarationNode,
-) : CompoundType, UserDeclared {
-    data class Field(
+) : CompoundType, Annotated {
+    class Field(
         val name: String,
         var type: TypeReference,
-        val declaration: RecordFieldNode,
-    )
+        override val declaration: RecordFieldNode,
+    ) : Annotated
 
     override val humanReadableName: String = name
 }
@@ -160,7 +165,7 @@ class EnumType(
     val name: String,
     val values: List<String>,
     override val declaration: EnumDeclarationNode,
-) : CompoundType, UserDeclared {
+) : CompoundType, Annotated {
     override val humanReadableName: String = name
 }
 
@@ -168,16 +173,16 @@ class ServiceType(
     val name: String,
     val operations: List<Operation>,
     override val declaration: ServiceDeclarationNode,
-) : CompoundType, UserDeclared {
-    sealed interface Operation : UserDeclared {
+) : CompoundType, Annotated {
+    sealed interface Operation : Annotated {
         val name: String
         val parameters: List<Parameter>
         override val declaration: OperationNode
-        data class Parameter(
+        class Parameter(
             val name: String,
             var type: TypeReference,
             override val declaration: OperationParameterNode,
-        ): UserDeclared
+        ): UserDeclared, Annotated
     }
 
     class RequestResponseOperation(

@@ -4,7 +4,7 @@ import tools.samt.common.DiagnosticController
 import tools.samt.common.DiagnosticException
 import tools.samt.lexer.Lexer
 import tools.samt.parser.Parser
-import tools.samt.semantic.SemanticModelBuilder
+import tools.samt.semantic.SemanticModel
 
 internal fun compile(command: CompileCommand, controller: DiagnosticController) {
     val sourceFiles = command.files.readSamtSourceFiles(controller)
@@ -40,7 +40,7 @@ internal fun compile(command: CompileCommand, controller: DiagnosticController) 
     }
 
     // build up the semantic model from the AST
-    SemanticModelBuilder.build(fileNodes, controller)
+    SemanticModel.build(fileNodes, controller)
 
     // Code Generators will be called here
 }

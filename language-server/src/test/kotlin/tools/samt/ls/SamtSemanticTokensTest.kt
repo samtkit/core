@@ -4,7 +4,7 @@ import tools.samt.common.DiagnosticController
 import tools.samt.common.SourceFile
 import tools.samt.lexer.Lexer
 import tools.samt.parser.Parser
-import tools.samt.semantic.SemanticModelBuilder
+import tools.samt.semantic.SemanticModel
 import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -142,6 +142,132 @@ class SamtSemanticTokensTest {
         )
     }
 
+    @Test
+    fun `typealiases inherit token type`() {
+        val source = """
+            package typealiases
+            
+            typealias Builtin = String
+            typealias Record = R
+            typealias Enum = E
+            typealias Service = S
+            typealias Provider = P
+            
+            record R {
+                b: Builtin
+                e: Enum
+            }
+
+            enum E {}
+            
+            service S {
+                get(): Record
+            }
+
+            provide P {
+                implements Service
+            
+                transport http
+            }
+            
+            consume Provider {
+                uses Service
+            }
+        """.trimIndent()
+        parseAndCheck(
+            source to listOf(
+                ExpectedMetadata("2:10" to "2:17", Meta(T.type, Mod.declaration)),
+                ExpectedMetadata("3:10" to "3:16", Meta(T.`class`, Mod.declaration)),
+                ExpectedMetadata("4:10" to "4:14", Meta(T.enum, Mod.declaration)),
+                ExpectedMetadata("5:10" to "5:17", Meta(T.`interface`, Mod.declaration)),
+                ExpectedMetadata("6:10" to "6:18", Meta(T.type, Mod.declaration)),
+                ExpectedMetadata("9:7" to "9:14", Meta(T.type)),
+                ExpectedMetadata("10:7" to "10:11", Meta(T.enum)),
+                ExpectedMetadata("16:11" to "16:17", Meta(T.`class`)),
+                ExpectedMetadata("20:15" to "20:22", Meta(T.`interface`)),
+                ExpectedMetadata("25:8" to "25:16", Meta(T.type)),
+                ExpectedMetadata("26:9" to "26:16", Meta(T.`interface`)),
+            ),
+        )
+    }
+
+    @Test
+    fun `correctly tokenizes deprecations`() {
+        val source = """
+            package deprecations
+            
+            @Deprecated
+            enum UserType {
+                ADMIN, USER
+            }
+            
+            @Deprecated
+            typealias Id = Long(1..*)
+            
+            @Deprecated
+            record User {
+                id: Id
+                @Deprecated
+                type: UserType
+            }
+            
+            @Deprecated
+            service UserService {
+                @Deprecated
+                get(@Deprecated id: Id): User
+            }
+            
+            provide UserProvider {
+                implements UserService { get } 
+            
+                transport http
+            }
+        """.trimIndent()
+        parseAndCheck(
+            source to listOf(
+                ExpectedMetadata("3:5" to "3:13", Meta(T.enum, Mod.declaration and Mod.deprecated)),
+                ExpectedMetadata("8:10" to "8:12", Meta(T.type, Mod.declaration and Mod.deprecated)),
+                ExpectedMetadata("11:7" to "11:11", Meta(T.`class`, Mod.declaration and Mod.deprecated)),
+                ExpectedMetadata("12:8" to "12:10", Meta(T.type, Mod.deprecated)),
+                ExpectedMetadata("14:4" to "14:8", Meta(T.property, Mod.declaration and Mod.deprecated)),
+                ExpectedMetadata("14:10" to "14:18", Meta(T.enum, Mod.deprecated)),
+                ExpectedMetadata("18:8" to "18:19", Meta(T.`interface`, Mod.declaration and Mod.deprecated)),
+                ExpectedMetadata("20:4" to "20:7", Meta(T.method, Mod.declaration and Mod.deprecated)),
+                ExpectedMetadata("20:20" to "20:22", Meta(T.parameter, Mod.declaration and Mod.deprecated)),
+                ExpectedMetadata("20:24" to "20:26", Meta(T.type, Mod.deprecated)),
+                ExpectedMetadata("20:29" to "20:33", Meta(T.`class`, Mod.deprecated)),
+                ExpectedMetadata("24:15" to "24:26", Meta(T.`interface`, Mod.deprecated)),
+                ExpectedMetadata("24:29" to "24:32", Meta(T.method, Mod.deprecated)),
+            ),
+        )
+    }
+
+    @Test
+    fun `correctly tokenizes fully qualified names`() {
+        val enumSource = """
+            package test.lib
+                        
+            enum Enum {
+                A, B
+            }
+        """.trimIndent()
+        val recordSource = """
+            package test.impl
+            
+            record Record {
+                e: test.lib.Enum
+            }
+        """.trimIndent()
+        parseAndCheck(
+            enumSource to emptyList(),
+            recordSource to listOf(
+                ExpectedMetadata("3:7" to "3:11", Meta(T.namespace)),
+                ExpectedMetadata("3:12" to "3:15", Meta(T.namespace)),
+                ExpectedMetadata("3:16" to "3:20", Meta(T.enum))
+            ),
+        )
+    }
+
     private data class ExpectedMetadata(val range: Pair<String, String>, val metadata: Meta) {
         val testLocation = TestLocation(range)
     }
@@ -160,11 +286,12 @@ class SamtSemanticTokensTest {
             fileTree
         }
 
-        val samtPackage = SemanticModelBuilder.build(fileTree, diagnosticController)
+        val semanticModel = SemanticModel.build(fileTree, diagnosticController)
+        val samtPackage = semanticModel.global
 
         for ((fileNode, expectedMetadata) in fileTree.zip(sourceAndExpectedMessages.map { it.second })) {
             val filePackage = samtPackage.resolveSubPackage(fileNode.packageDeclaration.name)
-            val semanticTokens = SamtSemanticTokens.analyze(fileNode, filePackage)
+            val semanticTokens = SamtSemanticTokens.analyze(fileNode, filePackage, semanticModel.userMetadata)
             for (expected in expectedMetadata) {
                 val actual = semanticTokens[expected.testLocation.getLocation(fileNode.sourceFile)]
                 assertEquals(expected.metadata, actual, "Metadata for ${expected.range} did not match")

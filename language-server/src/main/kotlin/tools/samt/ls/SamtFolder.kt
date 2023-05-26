@@ -54,11 +54,16 @@ class SamtFolder(val configPath: URI, val sourcePath: URI) : Iterable<FileInfo> 
     }
 
     companion object {
-        fun fromConfig(configPath: URI): SamtFolder {
-            val folder = configPath.toPath().let {
-                val config = SamtConfigurationParser.parseConfiguration(it)
-                SamtFolder(configPath.normalize(), it.resolveSibling(config.source).normalize().toUri())
-            }
+        fun fromConfig(configPath: URI): SamtFolder? {
+            val folder =
+                try {
+                    configPath.toPath().let {
+                        val config = SamtConfigurationParser.parseConfiguration(it)
+                        SamtFolder(configPath.normalize(), it.resolveSibling(config.source).normalize().toUri())
+                    }
+                } catch (e: SamtConfigurationParser.ParseException) {
+                    return null
+                }
             val sourceFiles = collectSamtFiles(folder.sourcePath).readSamtSource(DiagnosticController(folder.sourcePath))
             for (file in sourceFiles) {
                 folder.set(parseFile(file))

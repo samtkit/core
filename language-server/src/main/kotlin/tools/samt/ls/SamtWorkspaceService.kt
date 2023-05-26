@@ -33,7 +33,7 @@ class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceServ
                 path.fileName == SAMT_CONFIG_FILE_NAME -> when (changeType) {
                     FileChangeType.Created, FileChangeType.Changed -> {
                         workspace.removeFolder(uri)
-                        workspace.addFolder(SamtFolder.fromConfig(uri))
+                        SamtFolder.fromConfig(uri)?.let { workspace.addFolder(it) }
                     }
                     FileChangeType.Deleted -> workspace.removeFolder(uri)
                 }
@@ -88,7 +88,9 @@ class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceServ
         val event = params.event
         for (added in event.added) {
             val path = added.uri.toPathUri().toPath()
-            findSamtConfigs(path).forEach { workspace.addFolder(SamtFolder.fromConfig(it.toUri())) }
+            findSamtConfigs(path).forEach { configPath ->
+                SamtFolder.fromConfig(configPath.toUri())?.let { workspace.addFolder(it) }
+            }
         }
         for (removed in event.removed) {
             val path = removed.uri.toPathUri().toPath()

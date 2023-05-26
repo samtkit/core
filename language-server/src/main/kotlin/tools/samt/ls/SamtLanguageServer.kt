@@ -93,7 +93,9 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
         params.workspaceFolders
             ?.flatMap { folder ->
                 val path = folder.uri.toPathUri().toPath()
-                findSamtConfigs(path).map { SamtFolder.fromConfig(it.toUri()) }
+                findSamtConfigs(path).mapNotNull {
+                    SamtFolder.fromConfig(it.toUri())
+                }
             }?.forEach(workspace::addFolder)
     }
 

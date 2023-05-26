@@ -72,7 +72,6 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                             )
                         }
                         parentPackage += RecordType(
-                            name = statement.name.name,
                             fields = fields,
                             declaration = statement
                         )
@@ -82,7 +81,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                         reportDuplicateDeclaration(parentPackage, statement)
                         reportDuplicates(statement.values, "Enum value") { it }
                         val values = statement.values.map { it.name }
-                        parentPackage += EnumType(statement.name.name, values, statement)
+                        parentPackage += EnumType(values, statement)
                     }
 
                     is ServiceDeclarationNode -> {
@@ -124,7 +123,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                                 }
                             }
                         }
-                        parentPackage += ServiceType(statement.name.name, operations, statement)
+                        parentPackage += ServiceType(operations, statement)
                     }
 
                     is ProviderDeclarationNode -> {
@@ -140,7 +139,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                             name = statement.transport.protocolName.name,
                             configuration = statement.transport.configuration
                         )
-                        parentPackage += ProviderType(statement.name.name, implements, transport, statement)
+                        parentPackage += ProviderType(implements, transport, statement)
                     }
 
                     is ConsumerDeclarationNode -> {
@@ -160,7 +159,6 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                     is TypeAliasNode -> {
                         reportDuplicateDeclaration(parentPackage, statement)
                         parentPackage += AliasType(
-                            name = statement.name.name,
                             aliasedType = UnresolvedTypeReference(statement.type),
                             declaration = statement
                         )

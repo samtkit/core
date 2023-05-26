@@ -20,12 +20,12 @@ object UnknownType : Type {
 
 sealed interface LiteralType : Type
 
-sealed interface NumberType : Type
+sealed interface LiteralNumberType : LiteralType
 
 /**
  * 32-bit whole number, signed
  */
-object IntType : LiteralType, NumberType {
+object IntType : LiteralNumberType {
     override val humanReadableName: String
         get() = "Int"
 }
@@ -33,7 +33,7 @@ object IntType : LiteralType, NumberType {
 /**
  * 64-bit whole number, signed
  */
-object LongType : LiteralType, NumberType {
+object LongType : LiteralNumberType {
     override val humanReadableName: String
         get() = "Long"
 }
@@ -41,7 +41,7 @@ object LongType : LiteralType, NumberType {
 /**
  * 32-bit floating point number, signed
  */
-object FloatType : LiteralType, NumberType {
+object FloatType : LiteralNumberType {
     override val humanReadableName: String
         get() = "Float"
 }
@@ -49,7 +49,7 @@ object FloatType : LiteralType, NumberType {
 /**
  * 64-bit floating point number, signed
  */
-object DoubleType : LiteralType, NumberType {
+object DoubleType : LiteralNumberType {
     override val humanReadableName: String
         get() = "Double"
 }
@@ -57,7 +57,7 @@ object DoubleType : LiteralType, NumberType {
 /**
  * Arbitrary precision number, fixed amount of digits before and after decimal point
  */
-object DecimalType : LiteralType, NumberType {
+object DecimalType : LiteralNumberType {
     override val humanReadableName: String
         get() = "Decimal"
 }
@@ -110,13 +110,17 @@ object DurationType : LiteralType {
         get() = "Duration"
 }
 
-sealed interface CompoundType : Type
+sealed interface UserDeclaredNamedType : UserDeclared, Type {
+    override val humanReadableName: String get() = name
+    override val declaration: NamedDeclarationNode
+    val name: String get() = declaration.name.name
+}
 
 sealed interface UserDeclared {
     val declaration: Node
 }
 
-sealed interface Annotated : UserDeclared {
+sealed interface UserAnnotated : UserDeclared {
     override val declaration: AnnotatedNode
     val annotations: List<AnnotationNode> get() = declaration.annotations
 }
@@ -124,7 +128,7 @@ sealed interface Annotated : UserDeclared {
 data class ListType(
     val elementType: TypeReference,
     val node: GenericSpecializationNode,
-) : CompoundType {
+) : Type {
     override val humanReadableName: String = "List<${elementType.humanReadableName}>"
 }
 
@@ -132,57 +136,48 @@ data class MapType(
     val keyType: TypeReference,
     val valueType: TypeReference,
     val node: GenericSpecializationNode,
-) : CompoundType {
+) : Type {
     override val humanReadableName: String = "Map<${keyType.humanReadableName}, ${valueType.humanReadableName}>"
 }
 
 class AliasType(
-    val name: String,
     /** The type this alias stands for, could be another alias */
     var aliasedType: TypeReference,
     /** The fully resolved type, will not contain any type aliases anymore, just the underlying merged type */
     var fullyResolvedType: ResolvedTypeReference? = null,
     override val declaration: TypeAliasNode,
-) : CompoundType, Annotated {
-    override val humanReadableName: String = name
-}
+) : UserDeclaredNamedType, UserAnnotated
 
 class RecordType(
-    val name: String,
     val fields: List<Field>,
     override val declaration: RecordDeclarationNode,
-) : CompoundType, Annotated {
+) : UserDeclaredNamedType, UserAnnotated {
     class Field(
         val name: String,
         var type: TypeReference,
         override val declaration: RecordFieldNode,
-    ) : Annotated
-
-    override val humanReadableName: String = name
+    ) : UserAnnotated
 }
 
 class EnumType(
-    val name: String,
     val values: List<String>,
     override val declaration: EnumDeclarationNode,
-) : CompoundType, Annotated {
-    override val humanReadableName: String = name
-}
+) : UserDeclaredNamedType, UserAnnotated
 
 class ServiceType(
-    val name: String,
     val operations: List<Operation>,
     override val declaration: ServiceDeclarationNode,
-) : CompoundType, Annotated {
-    sealed interface Operation : Annotated {
+) : UserDeclaredNamedType, UserAnnotated {
+    sealed interface Operation : UserAnnotated {
         val name: String
         val parameters: List<Parameter>
         override val declaration: OperationNode
+
         class Parameter(
             val name: String,
             var type: TypeReference,
             override val declaration: OperationParameterNode,
-        ): UserDeclared, Annotated
+        ) : UserDeclared, UserAnnotated
     }
 
     class RequestResponseOperation(
@@ -199,16 +194,13 @@ class ServiceType(
         override val parameters: List<Operation.Parameter>,
         override val declaration: OnewayOperationNode,
     ) : Operation
-
-    override val humanReadableName: String = name
 }
 
 class ProviderType(
-    val name: String,
     val implements: List<Implements>,
     @Suppress("unused") val transport: Transport,
     override val declaration: ProviderDeclarationNode,
-) : CompoundType, UserDeclared {
+) : UserDeclaredNamedType {
     class Implements(
         var service: TypeReference,
         var operations: List<ServiceType.Operation>,
@@ -219,15 +211,13 @@ class ProviderType(
         val name: String,
         @Suppress("unused") val configuration: Any?,
     )
-
-    override val humanReadableName: String = name
 }
 
 class ConsumerType(
     var provider: TypeReference,
     var uses: List<Uses>,
     override val declaration: ConsumerDeclarationNode,
-) : CompoundType, UserDeclared {
+) : Type, UserDeclared {
     class Uses(
         var service: TypeReference,
         var operations: List<ServiceType.Operation>,

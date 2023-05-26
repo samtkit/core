@@ -58,7 +58,7 @@ class RecordFieldNode(
     val name: IdentifierNode,
     val type: ExpressionNode,
     override val annotations: List<AnnotationNode>,
-) : Node, AnnotatedNode
+) : AnnotatedNode
 
 class EnumDeclarationNode(
     override val location: Location,
@@ -81,7 +81,7 @@ class ServiceDeclarationNode(
     override val annotations: List<AnnotationNode>,
 ) : NamedDeclarationNode, AnnotatedNode
 
-sealed interface OperationNode : Node, AnnotatedNode {
+sealed interface OperationNode : AnnotatedNode {
     val name: IdentifierNode
     val parameters: List<OperationParameterNode>
 }
@@ -91,7 +91,7 @@ class OperationParameterNode(
     val name: IdentifierNode,
     val type: ExpressionNode,
     override val annotations: List<AnnotationNode>,
-) : Node, AnnotatedNode
+) : AnnotatedNode
 
 class RequestResponseOperationNode(
     override val location: Location,

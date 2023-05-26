@@ -26,8 +26,8 @@ class SamtTextDocumentService(private val workspace: SamtWorkspace) : TextDocume
         val text = params.textDocument.text
 
         if (!workspace.containsFile(path)) {
-            val projectRoot = path.toPath().findSamtRoots().singleOrNull()
-            projectRoot?.let { workspace.addFolder(SamtFolder.fromDirectory(it.toUri())) }
+            val configPath = findSamtConfigs(path.toPath().parent).singleOrNull()
+            configPath?.let { workspace.addFolder(SamtFolder.fromConfig(it.toUri())) }
         }
         workspace.setFile(parseFile(SourceFile(path, text)))
         client.updateWorkspace(workspace)

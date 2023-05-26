@@ -7,26 +7,28 @@ import tools.samt.semantic.SemanticModel
 import java.net.URI
 
 class SamtWorkspace {
-    private val folders = mutableMapOf<URI, SamtFolder>()
+    /**
+     * Maps the path of the config file to the folder
+     */
+    private val foldersByConfigPath = mutableMapOf<URI, SamtFolder>()
     private val changedFolders = mutableSetOf<SamtFolder>()
     private val removedFiles = mutableSetOf<URI>()
 
-    fun getFolderSnapshot(path: URI): FolderSnapshot? = getFolder(path)?.let { FolderSnapshot(it.path, it.toList(), it.semanticModel) }
+    fun getFolderSnapshot(path: URI): FolderSnapshot? = getFolder(path)?.let { FolderSnapshot(it.sourcePath, it.toList(), it.semanticModel) }
 
     fun addFolder(folder: SamtFolder) {
-        val newPath = folder.path
         // folder is contained in other folder, ignore
-        if (folders.keys.any { newPath.startsWith(it) }) {
+        if (foldersByConfigPath.values.any { folder.sourcePath.startsWith(it.sourcePath) }) {
             return
         }
         // remove folders contained in new folder
-        folders.keys.removeIf { it.startsWith(newPath) }
-        folders[folder.path] = folder
+        foldersByConfigPath.values.removeIf { it.sourcePath.startsWith(folder.sourcePath) }
+        foldersByConfigPath[folder.configPath] = folder
         changedFolders.add(folder)
     }
 
-    fun removeFolder(path: URI) {
-        folders.remove(path)?.let { folder ->
+    fun removeFolder(configPath: URI) {
+        foldersByConfigPath.remove(configPath)?.let { folder ->
             removedFiles.addAll(folder.map { it.path })
         }
     }
@@ -48,7 +50,7 @@ class SamtWorkspace {
         removedFiles.add(path)
     }
 
-    fun containsFile(path: URI) = folders.keys.any { path.startsWith(it) }
+    fun containsFile(path: URI) = foldersByConfigPath.keys.any { path.startsWith(it) }
 
     fun removeDirectory(path: URI) {
         val folder = getFolder(path)
@@ -76,10 +78,10 @@ class SamtWorkspace {
     }
 
     private fun getFolder(path: URI): SamtFolder? =
-        folders[path] ?: folders.values.singleOrNull { path.startsWith(it.path) }
+        foldersByConfigPath[path] ?: foldersByConfigPath.values.singleOrNull { path.startsWith(it.sourcePath) }
 }
 
-data class FolderSnapshot(val path: URI, val files: List<FileInfo>, val semanticModel: SemanticModel?)
+data class FolderSnapshot(val sourcePath: URI, val files: List<FileInfo>, val semanticModel: SemanticModel?)
 
 
 fun LanguageClient.updateWorkspace(workspace: SamtWorkspace) {

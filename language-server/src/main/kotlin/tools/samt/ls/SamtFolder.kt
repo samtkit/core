@@ -4,17 +4,23 @@ import tools.samt.common.DiagnosticController
 import tools.samt.common.DiagnosticMessage
 import tools.samt.common.collectSamtFiles
 import tools.samt.common.readSamtSource
+import tools.samt.config.SamtConfigurationParser
 import tools.samt.semantic.SemanticModel
 import java.net.URI
+import kotlin.io.path.toPath
 
-class SamtFolder(val path: URI) : Iterable<FileInfo> {
+class SamtFolder(val configPath: URI, val sourcePath: URI) : Iterable<FileInfo> {
     private val files = mutableMapOf<URI, FileInfo>()
     var semanticModel: SemanticModel? = null
         private set
-    private var semanticController: DiagnosticController = DiagnosticController(path)
+    private var semanticController: DiagnosticController = DiagnosticController(sourcePath)
+
+    init {
+        require(configPath.toPath().fileName.toString() == SAMT_CONFIG_FILE_NAME)
+    }
 
     fun set(fileInfo: FileInfo) {
-        require(fileInfo.sourceFile.path.startsWith(path))
+        require(fileInfo.sourceFile.path.startsWith(sourcePath))
         files[fileInfo.sourceFile.path] = fileInfo
     }
 
@@ -33,7 +39,7 @@ class SamtFolder(val path: URI) : Iterable<FileInfo> {
     }
 
     fun buildSemanticModel() {
-        semanticController = DiagnosticController(path)
+        semanticController = DiagnosticController(sourcePath)
         semanticModel = SemanticModel.build(mapNotNull { it.fileNode }, semanticController)
     }
 
@@ -48,10 +54,12 @@ class SamtFolder(val path: URI) : Iterable<FileInfo> {
     }
 
     companion object {
-        fun fromDirectory(path: URI): SamtFolder {
-            val controller = DiagnosticController(path)
-            val folder = SamtFolder(path)
-            val sourceFiles = collectSamtFiles(path).readSamtSource(controller)
+        fun fromConfig(configPath: URI): SamtFolder {
+            val folder = configPath.toPath().let {
+                val config = SamtConfigurationParser.parseConfiguration(it)
+                SamtFolder(configPath.normalize(), it.resolveSibling(config.source).normalize().toUri())
+            }
+            val sourceFiles = collectSamtFiles(folder.sourcePath).readSamtSource(DiagnosticController(folder.sourcePath))
             for (file in sourceFiles) {
                 folder.set(parseFile(file))
             }

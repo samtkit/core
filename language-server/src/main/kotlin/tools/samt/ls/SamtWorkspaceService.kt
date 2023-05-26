@@ -83,14 +83,11 @@ class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceServ
         val event = params.event
         for (added in event.added) {
             val path = added.uri.toPathUri().toPath()
-            path.findSamtRoots()
-                .ifEmpty { listOf(path) }
-                .forEach { workspace.addFolder(SamtFolder.fromDirectory(it.toUri())) }
+            findSamtConfigs(path).forEach { workspace.addFolder(SamtFolder.fromConfig(it.toUri())) }
         }
         for (removed in event.removed) {
             val path = removed.uri.toPathUri().toPath()
-            path.findSamtRoots()
-                .ifEmpty { listOf(path) }
+            findSamtConfigs(path)
                 .forEach { workspace.removeFolder(it.toUri()) }
         }
         client.updateWorkspace(workspace)
@@ -101,7 +98,7 @@ class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceServ
     }
 
     private fun parseFilesInDirectory(path: URI): List<FileInfo> {
-        val folderPath  = checkNotNull(workspace.getFolderSnapshot(path)).path
+        val folderPath  = checkNotNull(workspace.getFolderSnapshot(path)).sourcePath
         val sourceFiles = collectSamtFiles(path).readSamtSource(DiagnosticController(folderPath))
         return sourceFiles.map(::parseFile)
     }

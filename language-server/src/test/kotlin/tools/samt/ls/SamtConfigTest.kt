@@ -8,7 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class PathTest {
+class SamtConfigTest {
     private val testDirectory = Path("src/test/resources/path-test")
     @BeforeTest
     fun setup() {
@@ -18,28 +18,28 @@ class PathTest {
     @Test
     fun `no samt yaml`() {
         val workDir = testDirectory.resolve("no-yaml")
-        val roots = workDir.findSamtRoots()
-        assertEquals(emptyList(), roots)
+        val configs = findSamtConfigs(workDir)
+        assertEquals(emptyList(), configs)
     }
 
     @Test
     fun `samt yaml in workdir`() {
         val workDir = testDirectory.resolve("yaml-in-workdir")
-        val roots = workDir.findSamtRoots()
-        assertEquals(listOf(workDir.resolve("src")), roots)
+        val configs = findSamtConfigs(workDir)
+        assertEquals(listOf(workDir.resolve("samt.yaml")), configs)
     }
 
     @Test
     fun `samt yaml in subdir`() {
         val workDir = testDirectory.resolve("yaml-in-subdir")
-        val roots = workDir.findSamtRoots()
-        assertEquals(listOf(workDir.resolve("sub/src")), roots)
+        val configs = findSamtConfigs(workDir)
+        assertEquals(listOf(workDir.resolve("sub/samt.yaml")), configs)
     }
 
     @Test
     fun `samt yaml in parent dir`() {
         val workDir = testDirectory.resolve("yaml-in-parentdir/parent/work")
-        val roots = workDir.findSamtRoots()
-        assertEquals(listOf(workDir.resolve("src")), roots)
+        val configs = findSamtConfigs(workDir)
+        assertEquals(listOf(workDir.resolveSibling("samt.yaml")), configs)
     }
 }

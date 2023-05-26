@@ -14,6 +14,7 @@ class SamtFolder(val path: URI) : Iterable<FileInfo> {
     private var semanticController: DiagnosticController = DiagnosticController(path)
 
     fun set(fileInfo: FileInfo) {
+        require(fileInfo.sourceFile.path.startsWith(path))
         files[fileInfo.sourceFile.path] = fileInfo
     }
 

@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class SamtConfiguration(
+internal data class SamtConfiguration(
     val source: String = "./src",
     val repositories: SamtRepositoriesConfiguration = SamtRepositoriesConfiguration(),
     val plugins: List<SamtPluginConfiguration> = emptyList(),
@@ -12,22 +12,22 @@ data class SamtConfiguration(
 )
 
 @Serializable
-data class SamtRepositoriesConfiguration(
+internal data class SamtRepositoriesConfiguration(
     val maven: String = "https://repo.maven.apache.org/maven2"
 )
 
 @Serializable
-sealed interface SamtPluginConfiguration
+internal sealed interface SamtPluginConfiguration
 
 @Serializable
 @SerialName("local")
-data class SamtLocalPluginConfiguration(
+internal data class SamtLocalPluginConfiguration(
     val path: String,
 ) : SamtPluginConfiguration
 
 @Serializable
 @SerialName("maven")
-data class SamtMavenPluginConfiguration(
+internal data class SamtMavenPluginConfiguration(
     val groupId: String,
     val artifactId: String,
     val version: String,
@@ -36,13 +36,13 @@ data class SamtMavenPluginConfiguration(
 
 @Serializable
 @SerialName("gradle")
-data class SamtGradlePluginConfiguration(
+internal data class SamtGradlePluginConfiguration(
     val dependency: String,
     val repository: String? = null,
 ) : SamtPluginConfiguration
 
 @Serializable
-data class SamtGeneratorConfiguration(
+internal data class SamtGeneratorConfiguration(
     val name: String,
     val output: String = "./out",
     val options: Map<String, String> = emptyMap(),

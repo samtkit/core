@@ -7,9 +7,9 @@ import kotlin.test.*
 class SamtWorkspaceTest {
     @Test
     fun `getFile retrieves file`() {
-        val folder = SamtFolder("file:///tmp/test".toPathUri())
+        val folder = SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri())
         val workspace = SamtWorkspace()
-        val uri = "file:///tmp/test/model.samt".toPathUri()
+        val uri = "file:///tmp/test/src/model.samt".toPathUri()
         workspace.addFolder(folder)
         val fileInfo = parseFile(SourceFile (uri, "package foo.bar"))
         folder.set(fileInfo)
@@ -18,43 +18,43 @@ class SamtWorkspaceTest {
 
     @Test
     fun `file is in folder snapshot`() {
-        val folder = SamtFolder("file:///tmp/test".toPathUri())
+        val folder = SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri())
         val workspace = SamtWorkspace()
-        val uri = "file:///tmp/test/model.samt".toPathUri()
+        val uri = "file:///tmp/test/src/model.samt".toPathUri()
         workspace.addFolder(folder)
         val fileInfo = parseFile(SourceFile (uri, "package foo.bar"))
         folder.set(fileInfo)
-        val snapshot = workspace.getFolderSnapshot("file:///tmp/test".toPathUri())
+        val snapshot = workspace.getFolderSnapshot("file:///tmp/test/src".toPathUri())
         assertEquals(listOf(fileInfo), snapshot?.files)
     }
 
     @Test
     fun `folder which is already contained in other folder is ignored`() {
-        val outer = SamtFolder("file:///tmp/test".toPathUri())
-        val inner = SamtFolder("file:///tmp/test/inner".toPathUri())
+        val outer = SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri())
+        val inner = SamtFolder("file:///tmp/test/src/inner/samt.yaml".toPathUri(), "file:///tmp/test/src/inner/src".toPathUri())
         val workspace = SamtWorkspace()
         workspace.addFolder(outer)
         workspace.addFolder(inner)
-        val snapshot = workspace.getFolderSnapshot("file:///tmp/test/inner".toPathUri())
-        assertEquals(outer.path, snapshot?.path)
+        val snapshot = workspace.getFolderSnapshot("file:///tmp/test/src/inner/src".toPathUri())
+        assertEquals(outer.sourcePath, snapshot?.sourcePath)
     }
 
     @Test
     fun `folder which contains other folder overwrites it`() {
-        val inner = SamtFolder("file:///tmp/test/inner".toPathUri())
-        val outer = SamtFolder("file:///tmp/test".toPathUri())
+        val inner = SamtFolder("file:///tmp/test/src/inner/samt.yaml".toPathUri(), "file:///tmp/test/src/inner/src".toPathUri())
+        val outer = SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri())
         val workspace = SamtWorkspace()
         workspace.addFolder(inner)
         workspace.addFolder(outer)
-        val snapshot = workspace.getFolderSnapshot("file:///tmp/test/inner".toPathUri())
-        assertEquals(outer.path, snapshot?.path)
+        val snapshot = workspace.getFolderSnapshot("file:///tmp/test/src/inner/src".toPathUri())
+        assertEquals(outer.sourcePath, snapshot?.sourcePath)
     }
 
     @Test
     fun `getPendingMessages includes messages from new files`() {
         val workspace = SamtWorkspace()
-        workspace.addFolder(SamtFolder("file:///tmp/test".toPathUri()))
-        val uri = "file:///tmp/test/model.samt".toPathUri()
+        workspace.addFolder(SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri()))
+        val uri = "file:///tmp/test/src/model.samt".toPathUri()
         val fileInfo = parseFile(SourceFile (uri, "package foo.bar record Foo {"))
         workspace.setFile(fileInfo)
         val messages = workspace.getPendingMessages()[uri]
@@ -64,8 +64,8 @@ class SamtWorkspaceTest {
     @Test
     fun `getPendingMessages includes emptyList for removed file`() {
         val workspace = SamtWorkspace()
-        workspace.addFolder(SamtFolder("file:///tmp/test".toPathUri()))
-        val uri = "file:///tmp/test/model.samt".toPathUri()
+        workspace.addFolder(SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri()))
+        val uri = "file:///tmp/test/src/model.samt".toPathUri()
         val fileInfo = parseFile(SourceFile (uri, "package foo.bar record Foo {"))
         workspace.setFile(fileInfo)
         workspace.removeFile(uri)
@@ -76,12 +76,12 @@ class SamtWorkspaceTest {
     @Test
     fun `getPendingMessages includes empty list for every file in removed folder`() {
         val workspace = SamtWorkspace()
-        workspace.addFolder(SamtFolder("file:///tmp/test".toPathUri()))
-        val file1 = parseFile(SourceFile ("file:///tmp/test/foo.samt".toPathUri(), "package foo.bar record Foo {"))
-        val file2 = parseFile(SourceFile ("file:///tmp/test/bar.samt".toPathUri(), "package foo.bar record Bar {"))
+        workspace.addFolder(SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri()))
+        val file1 = parseFile(SourceFile ("file:///tmp/test/src/foo.samt".toPathUri(), "package foo.bar record Foo {"))
+        val file2 = parseFile(SourceFile ("file:///tmp/test/src/bar.samt".toPathUri(), "package foo.bar record Bar {"))
         workspace.setFile(file1)
         workspace.setFile(file2)
-        workspace.removeFolder("file:///tmp/test".toPathUri())
+        workspace.removeFolder("file:///tmp/test/samt.yaml".toPathUri())
         val messages = workspace.getPendingMessages()
         assertEquals(mapOf(file1.path to emptyList(), file2.path to emptyList()), messages)
     }
@@ -89,7 +89,7 @@ class SamtWorkspaceTest {
     @Test
     fun `getPendingMessages is empty after clearing changes`() {
         val workspace = SamtWorkspace()
-        workspace.addFolder(SamtFolder("file:///tmp/test".toPathUri()))
+        workspace.addFolder(SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri()))
         val uri = "file:///tmp/test/model.samt".toPathUri()
         val fileInfo = parseFile(SourceFile (uri, "package foo.bar record Foo {"))
         workspace.setFile(fileInfo)
@@ -101,9 +101,9 @@ class SamtWorkspaceTest {
     @Test
     fun `removing file triggers semantic error in dependent file`() {
         val workspace = SamtWorkspace()
-        workspace.addFolder(SamtFolder("file:///tmp/test".toPathUri()))
-        val file1 = parseFile(SourceFile ("file:///tmp/test/foo.samt".toPathUri(), "package foo.bar record Foo {}"))
-        val file2 = parseFile(SourceFile ("file:///tmp/test/bar.samt".toPathUri(), "package foo.bar record Bar { foo: Foo }"))
+        workspace.addFolder(SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri()))
+        val file1 = parseFile(SourceFile ("file:///tmp/test/src/foo.samt".toPathUri(), "package foo.bar record Foo {}"))
+        val file2 = parseFile(SourceFile ("file:///tmp/test/src/bar.samt".toPathUri(), "package foo.bar record Bar { foo: Foo }"))
         workspace.setFile(file1)
         workspace.setFile(file2)
         workspace.buildSemanticModel()
@@ -122,12 +122,12 @@ class SamtWorkspaceTest {
     @Test
     fun `getPendingMessages includes empty list for every file in removed directory`() {
         val workspace = SamtWorkspace()
-        workspace.addFolder(SamtFolder("file:///tmp/test".toPathUri()))
-        val file1 = parseFile(SourceFile ("file:///tmp/test/subfolder/foo.samt".toPathUri(), "package foo.bar record Foo {"))
-        val file2 = parseFile(SourceFile ("file:///tmp/test/subfolder/bar.samt".toPathUri(), "package foo.bar record Bar {"))
+        workspace.addFolder(SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri()))
+        val file1 = parseFile(SourceFile ("file:///tmp/test/src/subfolder/foo.samt".toPathUri(), "package foo.bar record Foo {"))
+        val file2 = parseFile(SourceFile ("file:///tmp/test/src/subfolder/bar.samt".toPathUri(), "package foo.bar record Bar {"))
         workspace.setFile(file1)
         workspace.setFile(file2)
-        workspace.removeDirectory("file:///tmp/test/subfolder".toPathUri())
+        workspace.removeDirectory("file:///tmp/test/src/subfolder".toPathUri())
         val messages = workspace.getPendingMessages()
         assertEquals(mapOf(file1.path to emptyList(), file2.path to emptyList()), messages)
     }
@@ -135,8 +135,8 @@ class SamtWorkspaceTest {
     @Test
     fun `semanticModel can be found after buildSemanticModel`() {
         val workspace = SamtWorkspace()
-        workspace.addFolder(SamtFolder("file:///tmp/test".toPathUri()))
-        val file1 = parseFile(SourceFile ("file:///tmp/test/foo.samt".toPathUri(), "package foo.bar record Foo {}"))
+        workspace.addFolder(SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri()))
+        val file1 = parseFile(SourceFile ("file:///tmp/test/src/foo.samt".toPathUri(), "package foo.bar record Foo {}"))
         workspace.setFile(file1)
         assertNull(workspace.getSemanticModel(file1.path))
         workspace.buildSemanticModel()
@@ -147,12 +147,45 @@ class SamtWorkspaceTest {
     @Test
     fun `if file has not changed pending messages don't change`() {
         val workspace = SamtWorkspace()
-        workspace.addFolder(SamtFolder("file:///tmp/test".toPathUri()))
-        val sourceFile = SourceFile("file:///tmp/test/foo.samt".toPathUri(), "package foo.bar record Foo {")
+        workspace.addFolder(SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri()))
+        val sourceFile = SourceFile("file:///tmp/test/src/foo.samt".toPathUri(), "package foo.bar record Foo {")
         workspace.setFile(parseFile(sourceFile))
         assertEquals(1, workspace.getPendingMessages().size)
         workspace.clearChanges()
         workspace.setFile(parseFile(sourceFile))
         assertEquals(emptyMap(), workspace.getPendingMessages())
+    }
+
+    @Test
+    fun `if file is removed and re-added pending messages are not empty`() {
+        val workspace = SamtWorkspace()
+        val sourceFile = SourceFile("file:///tmp/test/src/foo.samt".toPathUri(), "package foo.bar record Foo {")
+        workspace.addFolder(SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri()))
+
+        workspace.setFile(parseFile(sourceFile))
+        assertEquals(DiagnosticSeverity.Error, workspace.getPendingMessages()[sourceFile.path]?.single()?.severity)
+
+        workspace.removeFile(sourceFile.path)
+        assertEquals(mapOf(sourceFile.path to emptyList()), workspace.getPendingMessages())
+
+        workspace.setFile(parseFile(sourceFile))
+        assertEquals(DiagnosticSeverity.Error, workspace.getPendingMessages()[sourceFile.path]?.single()?.severity)
+    }
+
+    @Test
+    fun `if folder is removed and re-added pending messages are not empty`() {
+        val workspace = SamtWorkspace()
+        val folder = SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri())
+        val sourceFile = SourceFile("file:///tmp/test/src/foo.samt".toPathUri(), "package foo.bar record Foo {")
+        workspace.addFolder(folder)
+
+        workspace.setFile(parseFile(sourceFile))
+        assertEquals(DiagnosticSeverity.Error, workspace.getPendingMessages()[sourceFile.path]?.single()?.severity)
+
+        workspace.removeFolder(folder.configPath)
+        assertEquals(mapOf(sourceFile.path to emptyList()), workspace.getPendingMessages())
+
+        workspace.addFolder(folder)
+        assertEquals(DiagnosticSeverity.Error, workspace.getPendingMessages()[sourceFile.path]?.single()?.severity)
     }
 }

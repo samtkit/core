@@ -16,12 +16,12 @@ class SamtFolder(val configPath: URI, val sourcePath: URI) : Iterable<FileInfo> 
     private var semanticController: DiagnosticController = DiagnosticController(sourcePath)
 
     init {
-        require(configPath.toPath().fileName.toString() == SAMT_CONFIG_FILE_NAME)
+        require(configPath.toPath().fileName == SAMT_CONFIG_FILE_NAME)
     }
 
     fun set(fileInfo: FileInfo) {
-        require(fileInfo.sourceFile.path.startsWith(sourcePath))
-        files[fileInfo.sourceFile.path] = fileInfo
+        require(fileInfo.path.startsWith(sourcePath))
+        files[fileInfo.path] = fileInfo
     }
 
     fun remove(fileUri: URI) {

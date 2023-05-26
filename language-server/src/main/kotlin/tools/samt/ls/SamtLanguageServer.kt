@@ -109,6 +109,9 @@ class SamtLanguageServer : LanguageServer, LanguageClientAware, Closeable {
                         globPattern = Either.forLeft("**/")
                         kind = WatchKind.Create or WatchKind.Delete
                     },
+                    FileSystemWatcher().apply {
+                        globPattern = Either.forLeft("**/$SAMT_CONFIG_FILE_NAME")
+                    }
                 )
             })
         )))

@@ -25,6 +25,7 @@ class SamtWorkspace {
         foldersByConfigPath.values.removeIf { it.sourcePath.startsWith(folder.sourcePath) }
         foldersByConfigPath[folder.configPath] = folder
         changedFolders.add(folder)
+        removedFiles.removeAll(folder.map { it.path }.toSet())
     }
 
     fun removeFolder(configPath: URI) {
@@ -41,6 +42,7 @@ class SamtWorkspace {
         val folder = getFolder(file.path) ?: return
         folder.set(file)
         changedFolders.add(folder)
+        removedFiles.remove(file.path)
     }
 
     fun removeFile(path: URI) {

@@ -155,4 +155,37 @@ class SamtWorkspaceTest {
         workspace.setFile(parseFile(sourceFile))
         assertEquals(emptyMap(), workspace.getPendingMessages())
     }
+
+    @Test
+    fun `if file is removed and re-added pending messages are not empty`() {
+        val workspace = SamtWorkspace()
+        val sourceFile = SourceFile("file:///tmp/test/src/foo.samt".toPathUri(), "package foo.bar record Foo {")
+        workspace.addFolder(SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri()))
+
+        workspace.setFile(parseFile(sourceFile))
+        assertEquals(DiagnosticSeverity.Error, workspace.getPendingMessages()[sourceFile.path]?.single()?.severity)
+
+        workspace.removeFile(sourceFile.path)
+        assertEquals(mapOf(sourceFile.path to emptyList()), workspace.getPendingMessages())
+
+        workspace.setFile(parseFile(sourceFile))
+        assertEquals(DiagnosticSeverity.Error, workspace.getPendingMessages()[sourceFile.path]?.single()?.severity)
+    }
+
+    @Test
+    fun `if folder is removed and re-added pending messages are not empty`() {
+        val workspace = SamtWorkspace()
+        val folder = SamtFolder("file:///tmp/test/samt.yaml".toPathUri(), "file:///tmp/test/src".toPathUri())
+        val sourceFile = SourceFile("file:///tmp/test/src/foo.samt".toPathUri(), "package foo.bar record Foo {")
+        workspace.addFolder(folder)
+
+        workspace.setFile(parseFile(sourceFile))
+        assertEquals(DiagnosticSeverity.Error, workspace.getPendingMessages()[sourceFile.path]?.single()?.severity)
+
+        workspace.removeFolder(folder.configPath)
+        assertEquals(mapOf(sourceFile.path to emptyList()), workspace.getPendingMessages())
+
+        workspace.addFolder(folder)
+        assertEquals(DiagnosticSeverity.Error, workspace.getPendingMessages()[sourceFile.path]?.single()?.severity)
+    }
 }

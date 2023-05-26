@@ -23,18 +23,23 @@ class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceServ
         for (change in params.changes) {
             val uri = change.uri.toPathUri()
             val path = uri.toPath()
-            if (path.isDirectory()) {
-                when (change.type) {
+            val changeType = checkNotNull(change.type)
+            when {
+                path.isDirectory() -> when (changeType) {
                     FileChangeType.Created -> parseFilesInDirectory(uri).forEach(workspace::setFile)
                     FileChangeType.Changed -> error("Directory changes should not be watched")
                     FileChangeType.Deleted -> workspace.removeDirectory(uri)
-                    null -> error("Unexpected null value for change.type")
                 }
-            } else if (path.extension == "samt") {
-                when (change.type) {
+                path.fileName == SAMT_CONFIG_FILE_NAME -> when (changeType) {
+                    FileChangeType.Created, FileChangeType.Changed -> {
+                        workspace.removeFolder(uri)
+                        workspace.addFolder(SamtFolder.fromConfig(uri))
+                    }
+                    FileChangeType.Deleted -> workspace.removeFolder(uri)
+                }
+                path.extension == "samt" -> when (changeType) {
                     FileChangeType.Created, FileChangeType.Changed -> workspace.setFile(readAndParseFile(uri))
                     FileChangeType.Deleted -> workspace.removeFile(uri)
-                    null -> error("Unexpected null value for change.type")
                 }
             }
         }

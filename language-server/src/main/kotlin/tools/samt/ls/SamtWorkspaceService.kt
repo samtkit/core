@@ -23,18 +23,23 @@ class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceServ
         for (change in params.changes) {
             val uri = change.uri.toPathUri()
             val path = uri.toPath()
-            if (path.isDirectory()) {
-                when (change.type) {
+            val changeType = checkNotNull(change.type)
+            when {
+                path.isDirectory() -> when (changeType) {
                     FileChangeType.Created -> parseFilesInDirectory(uri).forEach(workspace::setFile)
                     FileChangeType.Changed -> error("Directory changes should not be watched")
                     FileChangeType.Deleted -> workspace.removeDirectory(uri)
-                    null -> error("Unexpected null value for change.type")
                 }
-            } else if (path.extension == "samt") {
-                when (change.type) {
+                path.fileName == SAMT_CONFIG_FILE_NAME -> when (changeType) {
+                    FileChangeType.Created, FileChangeType.Changed -> {
+                        workspace.removeFolder(uri)
+                        SamtFolder.fromConfig(uri)?.let { workspace.addFolder(it) }
+                    }
+                    FileChangeType.Deleted -> workspace.removeFolder(uri)
+                }
+                path.extension == "samt" -> when (changeType) {
                     FileChangeType.Created, FileChangeType.Changed -> workspace.setFile(readAndParseFile(uri))
                     FileChangeType.Deleted -> workspace.removeFile(uri)
-                    null -> error("Unexpected null value for change.type")
                 }
             }
         }
@@ -82,13 +87,15 @@ class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceServ
     override fun didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
         val event = params.event
         for (added in event.added) {
-            val path = added.uri.toPathUri()
-            val folder = SamtFolder.fromDirectory(path)
-            workspace.addFolder(folder)
-            folder.buildSemanticModel()
+            val path = added.uri.toPathUri().toPath()
+            findSamtConfigs(path).forEach { configPath ->
+                SamtFolder.fromConfig(configPath.toUri())?.let { workspace.addFolder(it) }
+            }
         }
         for (removed in event.removed) {
-            workspace.removeFolder(removed.uri.toPathUri())
+            val path = removed.uri.toPathUri().toPath()
+            findSamtConfigs(path)
+                .forEach { workspace.removeFolder(it.toUri()) }
         }
         client.updateWorkspace(workspace)
     }
@@ -98,7 +105,7 @@ class SamtWorkspaceService(private val workspace: SamtWorkspace) : WorkspaceServ
     }
 
     private fun parseFilesInDirectory(path: URI): List<FileInfo> {
-        val folderPath  = checkNotNull(workspace.getFolderSnapshot(path)).path
+        val folderPath  = checkNotNull(workspace.getFolderSnapshot(path)).sourcePath
         val sourceFiles = collectSamtFiles(path).readSamtSource(DiagnosticController(folderPath))
         return sourceFiles.map(::parseFile)
     }

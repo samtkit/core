@@ -85,7 +85,7 @@ class SamtConfigurationParserTest {
 
     @Test
     fun `throws for samt-invalid file`() {
-        val exception = assertThrows<YamlException> {
+        val exception = assertThrows<SamtConfigurationParser.ParseException> {
             SamtConfigurationParser.parseConfiguration(testDirectory.resolve("samt-invalid.yaml"))
         }
 

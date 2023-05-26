@@ -1,6 +1,7 @@
 package tools.samt.config
 
 import com.charleskorn.kaml.*
+import kotlinx.serialization.SerializationException
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
@@ -23,9 +24,15 @@ object SamtConfigurationParser {
         )
     )
 
+    class ParseException(exception: Throwable) : RuntimeException(exception.message, exception)
+
     fun parseConfiguration(path: Path): CommonSamtConfiguration {
         val parsedConfiguration: SamtConfiguration = if (path.exists()) {
-            yaml.decodeFromStream(path.inputStream())
+            try {
+                yaml.decodeFromStream(path.inputStream())
+            } catch (exception: SerializationException) {
+                throw ParseException(exception)
+            }
         } else {
             SamtConfiguration()
         }

@@ -497,7 +497,7 @@ class Parser private constructor(
             else -> {
                 diagnostic.fatal {
                     message("Expected an expression")
-                    highlight(locationFromStart(start), highlightBeginningOnly = true)
+                    highlight(current!!.location, highlightBeginningOnly = true)
                 }
             }
         }

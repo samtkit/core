@@ -542,6 +542,17 @@ class ParserTest {
             val exception = parseWithFatalError(source)
             assertEquals("Expected an expression", exception.message)
         }
+
+        @Test
+        fun `unexpected question mark`() {
+            val source = """
+                package a
+                
+                typealias A = ?String
+            """
+            val exception = parseWithFatalError(source)
+            assertEquals("Expected an expression", exception.message)
+        }
     }
 
     @Nested

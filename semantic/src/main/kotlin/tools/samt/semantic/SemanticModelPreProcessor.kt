@@ -107,14 +107,6 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                                 }
 
                                 is RequestResponseOperationNode -> {
-/*
-                                    if (operation.isAsync) {
-                                        controller.getOrCreateContext(operation.location.source).error {
-                                            message("Async operations are not yet supported")
-                                            highlight("unsupported async operation", operation.location)
-                                        }
-                                    }
-*/
                                     ServiceType.RequestResponseOperation(
                                         name = operation.name.name,
                                         parameters = parameters,

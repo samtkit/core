@@ -230,11 +230,11 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
     private fun validateConstraintMatches(constraint: ResolvedTypeReference.Constraint, baseType: Type): Boolean {
         return when (constraint) {
             is ResolvedTypeReference.Constraint.Pattern -> baseType is StringType
-            is ResolvedTypeReference.Constraint.Range -> baseType is NumberType
+            is ResolvedTypeReference.Constraint.Range -> baseType is LiteralNumberType
             is ResolvedTypeReference.Constraint.Size -> baseType is StringType || baseType is ListType || baseType is MapType
             is ResolvedTypeReference.Constraint.Value -> when (constraint.value) {
                 is String -> baseType is StringType
-                is Number -> baseType is NumberType
+                is Number -> baseType is LiteralNumberType
                 is Boolean -> baseType is BooleanType
                 else -> false
             }
@@ -260,7 +260,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
 
                 val applicableConstraints = when (baseType) {
                     is StringType -> "pattern, size or value"
-                    is NumberType -> "range or value"
+                    is LiteralNumberType -> "range or value"
                     is BooleanType -> "value"
                     is ListType -> "size"
                     is MapType -> "size"

@@ -46,7 +46,7 @@ internal class SemanticModelAnnotationProcessor(
         return UserMetadata(descriptions, deprecations)
     }
 
-    private fun Package.getAnnotatedElements(): List<Annotated> = buildList {
+    private fun Package.getAnnotatedElements(): List<UserAnnotated> = buildList {
         this@getAnnotatedElements.allSubPackages.forEach {
             addAll(it.records)
             it.records.flatMapTo(this, RecordType::fields)

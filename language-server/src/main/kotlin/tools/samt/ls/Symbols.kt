@@ -6,7 +6,14 @@ import tools.samt.parser.*
 
 fun FileNode.getSymbols(): List<DocumentSymbol> = buildList {
     add(packageDeclaration.toSymbol())
-    statements.filterIsInstance<NamedDeclarationNode>().mapTo(this) { it.toSymbol() }
+    for (statement in statements) {
+        when (statement) {
+            is NamedDeclarationNode -> add(statement.toSymbol())
+            is ConsumerDeclarationNode -> add(statement.toSymbol())
+            is TypeImportNode, is WildcardImportNode -> {}
+            is PackageDeclarationNode -> error("Unexpected package declaration")
+        }
+    }
 }
 
 private fun NamedDeclarationNode.toSymbol(): DocumentSymbol {
@@ -27,5 +34,7 @@ private fun NamedDeclarationNode.toSymbol(): DocumentSymbol {
         this.children = children
     }
 }
+
+private fun ConsumerDeclarationNode.toSymbol() = DocumentSymbol("Consumer for ${providerName.name}", SymbolKind.Class, location.toRange(), providerName.location.toRange())
 
 private fun PackageDeclarationNode.toSymbol() = DocumentSymbol(name.name, SymbolKind.Package, location.toRange(), name.location.toRange())

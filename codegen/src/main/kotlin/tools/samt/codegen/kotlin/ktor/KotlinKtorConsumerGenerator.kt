@@ -55,6 +55,8 @@ object KotlinKtorConsumerGenerator : Generator {
 
     data class ConsumerInfo(val uses: ConsumerUses) {
         val service = uses.service
+        val implementedOperations = uses.operations
+        val notImplementedOperations = service.operations.filter { serviceOp -> implementedOperations.none { it.name == serviceOp.name } }
     }
 
     private fun StringBuilder.appendConsumer(consumer: ConsumerType, transportConfiguration: HttpTransportConfiguration, options: Map<String, String>) {
@@ -68,6 +70,7 @@ object KotlinKtorConsumerGenerator : Generator {
         appendLine("import io.ktor.util.*")
         appendLine("import kotlinx.coroutines.runBlocking")
         appendLine("import kotlinx.serialization.json.*")
+        appendLine("import kotlinx.coroutines.*")
 
         val implementedServices = consumer.uses.map { ConsumerInfo(it) }
         appendLine("class ${consumer.provider.name}Impl(private val `consumer baseUrl`: String) : ${implementedServices.joinToString { it.service.getQualifiedName(options) }} {")
@@ -84,52 +87,62 @@ object KotlinKtorConsumerGenerator : Generator {
         appendLine("        }")
         appendLine("    }")
         appendLine()
+        appendLine("    /** Used to launch oneway operations asynchronously */")
+        appendLine("    private val onewayScope = CoroutineScope(Dispatchers.IO)")
+        appendLine()
 
-        val service = info.service
-        info.uses.operations.forEach { operation ->
+        info.implementedOperations.forEach { operation ->
             val operationParameters = operation.parameters.joinToString { "${it.name}: ${it.type.getQualifiedName(options)}" }
 
             when (operation) {
                 is RequestResponseOperation -> {
                     if (operation.isAsync) {
-                        if (operation.returnType != null) {
-                            appendLine("    override suspend fun ${operation.name}($operationParameters): ${operation.returnType!!.getQualifiedName(options)} {")
-                        } else {
-                            appendLine("    override suspend fun ${operation.name}($operationParameters): Unit {")
-                        }
+                        appendLine("    override suspend fun ${operation.name}($operationParameters): ${operation.returnType?.getQualifiedName(options) ?: "Unit"} {")
                     } else {
-                        if (operation.returnType != null) {
-                            appendLine("    override fun ${operation.name}($operationParameters): ${operation.returnType!!.getQualifiedName(options)} {")
-                        } else {
-                            appendLine("    override fun ${operation.name}($operationParameters): Unit {")
-                        }
+                        appendLine("    override fun ${operation.name}($operationParameters): ${operation.returnType?.getQualifiedName(options) ?: "Unit"} = runBlocking {")
                     }
 
-                    // TODO Config: HTTP status code
-                    // TODO validate call parameters
-                    // TODO validate response
-                    // TODO serialize response correctly
-                    if (operation.isAsync) {
-                        appendLine("        return runBlocking {")
-                    } else {
-                        appendLine("        return run {")
-                    }
+                    appendConsumerServiceCall(info, operation, transportConfiguration, options)
+                    appendCheckResponseStatus(operation)
+                    appendConsumerResponseParsing(operation, transportConfiguration, options)
 
-                    appendConsumerServiceCall(info, operation, transportConfiguration)
-                    appendConsumerResponseParsing(operation, transportConfiguration)
-
-                    appendLine("        }")
                     appendLine("    }")
                 }
 
                 is OnewayOperation -> {
-                    // TODO
+                    appendLine("    override fun ${operation.name}($operationParameters): Unit {")
+                    appendLine("        onewayScope.launch {")
+
+                    appendConsumerServiceCall(info, operation, transportConfiguration, options)
+                    appendCheckResponseStatus(operation)
+
+                    appendLine("        }")
+                    appendLine("    }")
                 }
             }
         }
+
+        info.notImplementedOperations.forEach { operation ->
+            val operationParameters = operation.parameters.joinToString { "${it.name}: ${it.type.getQualifiedName(options)}" }
+
+            when (operation) {
+                is RequestResponseOperation -> {
+                    if (operation.isAsync) {
+                        appendLine("    override suspend fun ${operation.name}($operationParameters): ${operation.returnType?.getQualifiedName(options) ?: "Unit"} {")
+                    } else {
+                        appendLine("    override fun ${operation.name}($operationParameters): ${operation.returnType?.getQualifiedName(options) ?: "Unit"}")
+                    }
+                }
+
+                is OnewayOperation -> {
+                    appendLine("    override fun ${operation.name}($operationParameters): Unit")
+                }
+            }
+            appendLine("        = error(\"Not used in model and therefore not generated\")")
+        }
     }
 
-    private fun StringBuilder.appendConsumerServiceCall(info: ConsumerInfo, operation: ServiceOperation, transport: HttpTransportConfiguration) {
+    private fun StringBuilder.appendConsumerServiceCall(info: ConsumerInfo, operation: ServiceOperation, transport: HttpTransportConfiguration, options: Map<String, String>) {
         // collect parameters for each transport type
         val headerParameters = mutableMapOf<String, ServiceOperationParameter>()
         val cookieParameters = mutableMapOf<String, ServiceOperationParameter>()
@@ -157,30 +170,15 @@ object KotlinKtorConsumerGenerator : Generator {
             }
         }
 
-        /*
-            val response = client.request("$baseUrl/todos/$title") {
-                method = HttpMethod.Post
-                headers["title"] = title
-                cookie("description", description)
-                setBody(
-                    buildJsonObject {
-                        put("title", title)
-                        put("description", description)
-                    }
-                )
-                contentType(ContentType.Application.Json)
-            }
-        */
-
         // build request headers and body
-        appendLine("            val `consumer response` = client.request(`consumer baseUrl`) {")
+        appendLine("        val response = client.request(`consumer baseUrl`) {")
 
         // build request path
         // need to split transport path into path segments and query parameter slots
         // remove first empty component (paths start with a / so the first component is always empty)
         val transportPath = transport.getPath(info.service.name, operation.name)
         val transportPathComponents = transportPath.split("/")
-        appendLine("                url {")
+        appendLine("                url(`consumer baseUrl`) {")
         transportPathComponents.drop(1).map {
             if (it.startsWith("{") && it.endsWith("}")) {
                 val parameterName = it.substring(1, it.length - 1)
@@ -193,9 +191,8 @@ object KotlinKtorConsumerGenerator : Generator {
         appendLine("                }")
 
         // serialization mode
-        when (val serializationMode = transport.serializationMode) {
+        when (transport.serializationMode) {
             HttpTransportConfiguration.SerializationMode.Json -> appendLine("                contentType(ContentType.Application.Json)")
-            else -> error("unsupported serialization mode: $serializationMode")
         }
 
         // transport method
@@ -204,41 +201,35 @@ object KotlinKtorConsumerGenerator : Generator {
 
         // header parameters
         headerParameters.forEach {
-            appendLine("                headers[\"$it\"] = $it")
+            appendLine("                headers[\"${it.key}\"] = ${encodeJsonElement(it.value.type, options)}")
         }
 
         // cookie parameters
         cookieParameters.forEach {
-            appendLine("                cookie(\"$it\", $it)")
+            appendLine("                cookie(\"${it.key}\", ${encodeJsonElement(it.value.type, options)})")
         }
 
         // body parameters
         appendLine("                setBody(")
         appendLine("                    buildJsonObject {")
         bodyParameters.forEach { (name, parameter) ->
-            appendLine("                        put(\"$name\", \"placeholder hello world\"")
+            appendLine("                        put(\"$name\", ${encodeJsonElement(parameter.type, options)})")
         }
         appendLine("                    }")
         appendLine("                )")
 
         appendLine("            }")
-
-        // oneway vs request-response
     }
 
-    private fun StringBuilder.appendConsumerResponseParsing(operation: ServiceOperation, transport: HttpTransportConfiguration) {
-        /*
-            val bodyAsText = response.bodyAsText()
-            val body = Json.parseToJsonElement(bodyAsText)
+    private fun StringBuilder.appendCheckResponseStatus(operation: ServiceOperation) {
+        appendLine("        check(!response.status.isSuccess()) { \"${operation.name} failed with status \${response.status}\" }")
+    }
 
-            val respTitle = body.jsonObject["title"]!!.jsonPrimitive.content
-            val respDescription = response.headers["description"]!!
-            check(respTitle.length in 1..100)
-
-            Todo(
-                title = respTitle,
-                description = respDescription,
-            )
-        */
+    private fun StringBuilder.appendConsumerResponseParsing(operation: RequestResponseOperation, transport: HttpTransportConfiguration, options: Map<String, String>) {
+        operation.returnType?.let { returnType ->
+            appendLine("        val bodyAsText = response.bodyAsText()")
+            appendLine("        val jsonElement = Json.parseToJsonElement(bodyAsText)")
+            appendLine("        return ${decodeJsonElement(returnType, options)}")
+        }
     }
 }

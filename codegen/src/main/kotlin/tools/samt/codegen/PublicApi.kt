@@ -1,7 +1,5 @@
 package tools.samt.codegen
 
-import tools.samt.parser.ObjectNode
-
 interface GeneratorParams {
     val packages: List<SamtPackage>
     val options: Map<String, String>
@@ -28,17 +26,56 @@ interface Generator {
 }
 
 interface TransportConfigurationParserParams {
-    val configObjectNode: ObjectNode
+    val config: ConfigurationObject
 
-    fun reportError(message: String)
-    fun reportWarning(message: String)
-    fun reportInfo(message: String)
+    fun reportError(message: String, context: ConfigurationElement? = null)
+    fun reportWarning(message: String, context: ConfigurationElement? = null)
+    fun reportInfo(message: String, context: ConfigurationElement? = null)
 }
+
+interface  ConfigurationElement {
+    val asObject: ConfigurationObject
+    val asValue: ConfigurationValue
+    val asList: ConfigurationList
+}
+
+interface ConfigurationObject : ConfigurationElement {
+    val fields: Map<ConfigurationValue, ConfigurationElement>
+    fun getField(name: String): ConfigurationElement
+    fun getFieldOrNull(name: String): ConfigurationElement?
+}
+
+interface ConfigurationList : ConfigurationElement {
+    val entries: List<ConfigurationElement>
+}
+
+interface ConfigurationValue : ConfigurationElement {
+    val asString: String
+    fun <T : Enum<T>> asEnum(enum: Class<T>): T
+    val asLong: Long
+    val asDouble: Double
+    val asBoolean: Boolean
+    val asServiceName: ServiceType
+    fun asOperationName(service: ServiceType): ServiceOperation
+}
+
+inline fun <reified T : Enum<T>> ConfigurationValue.asEnum() = asEnum(T::class.java)
 
 interface TransportConfigurationParser {
     val transportName: String
+
+    /**
+     * Create the default configuration for this transport, used when no configuration body is specified
+     * @return Default configuration
+     */
     fun default(): TransportConfiguration
-    fun parse(params: TransportConfigurationParserParams): TransportConfiguration?
+
+    /**
+     * Parses the configuration body and returns the configuration object
+     * @throws RuntimeException if the configuration is invalid and graceful error handling is not possible
+     * @return Parsed configuration
+     */
+    fun parse(params: TransportConfigurationParserParams): TransportConfiguration
 }
 
 interface TransportConfiguration
@@ -74,10 +111,14 @@ interface UserType : Type {
 }
 
 interface AliasType : UserType {
-    /** The type this alias stands for, could be another alias */
+    /**
+     * The type this alias stands for, could be another alias
+     */
     val aliasedType: TypeReference
 
-    /** The fully resolved type, will not contain any type aliases anymore, just the underlying merged type */
+    /**
+     * The fully resolved type, will not contain any type aliases anymore, just the underlying merged type
+     */
     val fullyResolvedType: TypeReference
 }
 
@@ -121,7 +162,7 @@ interface ProviderType : UserType {
 }
 
 interface ProviderImplements {
-    val service: TypeReference
+    val service: ServiceType
     val operations: List<ServiceOperation>
 }
 
@@ -132,7 +173,7 @@ interface ConsumerType : Type {
 }
 
 interface ConsumerUses {
-    val service: TypeReference
+    val service: ServiceType
     val operations: List<ServiceOperation>
 }
 

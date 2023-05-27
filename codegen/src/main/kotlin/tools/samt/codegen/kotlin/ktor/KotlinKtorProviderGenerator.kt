@@ -109,9 +109,8 @@ object KotlinKtorProviderGenerator : Generator {
     }
 
     data class ProviderInfo(val implements: ProviderImplements) {
-        val reference = implements.service
-        val service = reference.type as ServiceType
-        val serviceArgumentName = service.name.replaceFirstChar { it.lowercase() }
+        val service = implements.service
+        val serviceArgumentName = implements.service.name.replaceFirstChar { it.lowercase() }
     }
 
     private fun StringBuilder.appendProvider(
@@ -131,11 +130,10 @@ object KotlinKtorProviderGenerator : Generator {
         appendLine()
 
         val implementedServices = provider.implements.map { ProviderInfo(it) }
-        appendLine("// ${transportConfiguration.exceptionMap}")
         appendLine("/** Connector for SAMT provider ${provider.name} */")
         appendLine("fun Routing.route${provider.name}(")
         for (info in implementedServices) {
-            appendLine("    ${info.serviceArgumentName}: ${info.reference.getQualifiedName(options)},")
+            appendLine("    ${info.serviceArgumentName}: ${info.service.getQualifiedName(options)},")
         }
         appendLine(") {")
         appendUtilities()

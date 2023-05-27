@@ -54,9 +54,7 @@ object KotlinKtorConsumerGenerator : Generator {
     }
 
     data class ConsumerInfo(val uses: ConsumerUses) {
-        val reference = uses.service
-        val service = reference.type as ServiceType
-        val serviceArgumentName = service.name.replaceFirstChar { it.lowercase() }
+        val service = uses.service
     }
 
     private fun StringBuilder.appendConsumer(consumer: ConsumerType, transportConfiguration: HttpTransportConfiguration, options: Map<String, String>) {
@@ -72,7 +70,6 @@ object KotlinKtorConsumerGenerator : Generator {
         appendLine("import kotlinx.serialization.json.*")
 
         val implementedServices = consumer.uses.map { ConsumerInfo(it) }
-        appendLine("// ${transportConfiguration.exceptionMap}")
         appendLine("class ${consumer.provider.name}Impl(private val `consumer baseUrl`: String) : ${implementedServices.joinToString { it.service.getQualifiedName(options) }} {")
         implementedServices.forEach { info ->
             appendConsumerOperations(info, transportConfiguration, options)

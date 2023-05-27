@@ -493,6 +493,16 @@ class Parser private constructor(
             check<OpenBraceToken>() -> parseObjectNode()
 
             skip<AsteriskToken>() -> WildcardNode(locationFromStart(start))
+            skip<QuestionMarkToken>() -> {
+                val literal = parseLiteral()
+                diagnostic.error {
+                    message("Nullability is indicated after a type")
+                    highlight(locationFromStart(start), highlightBeginningOnly = true)
+                    info("A valid nullable type looks like 'Int?' or 'String(size(1..*))?'")
+                    help("To declare the type nullable move the question mark to the end of the type")
+                }
+                literal
+            }
 
             else -> {
                 diagnostic.fatal {

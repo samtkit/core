@@ -550,8 +550,8 @@ class ParserTest {
                 
                 typealias A = ?String
             """
-            val exception = parseWithFatalError(source)
-            assertEquals("Expected an expression", exception.message)
+            val (_, diagnostics) = parseWithRecoverableError(source)
+            assertEquals("Nullability is indicated after a type", diagnostics.messages.single().message)
         }
     }
 

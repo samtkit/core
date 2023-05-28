@@ -14,7 +14,7 @@ class TransportConfigurationMapper(
     private fun tools.samt.parser.Node.reportAndThrow(message: String): Nothing {
         reportError(controller) {
             message(message)
-            highlight("related configuration", location)
+            highlight("offending configuration", location)
         }
         error(message)
     }
@@ -33,6 +33,7 @@ class TransportConfigurationMapper(
 
     private fun tools.samt.parser.IntegerNode.toConfigurationValue() = object : ConfigurationValue {
         override val asString: String get() = reportAndThrow("Unexpected integer, expected a string")
+        override val asIdentifier: String get() = reportAndThrow("Unexpected integer, expected an identifier")
 
         override fun <T : Enum<T>> asEnum(enum: Class<T>): T =
             reportAndThrow("Unexpected integer, expected an enum (${enum.simpleName})")
@@ -51,8 +52,9 @@ class TransportConfigurationMapper(
 
     private fun tools.samt.parser.FloatNode.toConfigurationValue() = object : ConfigurationValue {
         override val asString: String get() = reportAndThrow("Unexpected float, expected a string")
+        override val asIdentifier: String get() = reportAndThrow("Unexpected float, expected an identifier")
 
-        override fun <T : Enum<T>> asEnum(enum: Class<T>): T =
+            override fun <T : Enum<T>> asEnum(enum: Class<T>): T =
             reportAndThrow("Unexpected float, expected an enum (${enum.simpleName})")
 
         override val asLong: Long get() = reportAndThrow("Unexpected float, expected an integer")
@@ -69,8 +71,9 @@ class TransportConfigurationMapper(
 
     private fun tools.samt.parser.StringNode.toConfigurationValue() = object : ConfigurationValue {
         override val asString: String get() = value
+        override val asIdentifier: String get() = reportAndThrow("Unexpected string, expected an identifier")
 
-        override fun <T : Enum<T>> asEnum(enum: Class<T>): T {
+            override fun <T : Enum<T>> asEnum(enum: Class<T>): T {
             check(enum.isEnum)
             return enum.enumConstants.find { it.name.equals(value, ignoreCase = true) }
                 ?: reportAndThrow("Illegal enum value, expected one of ${enum.enumConstants.joinToString { it.name }}")
@@ -90,6 +93,7 @@ class TransportConfigurationMapper(
 
     private fun tools.samt.parser.BooleanNode.toConfigurationValue() = object : ConfigurationValue {
         override val asString: String get() = reportAndThrow("Unexpected boolean, expected a string")
+        override val asIdentifier: String get() = reportAndThrow("Unexpected boolean, expected an identifier")
 
         override fun <T : Enum<T>> asEnum(enum: Class<T>): T =
             reportAndThrow("Unexpected boolean, expected an enum (${enum.simpleName})")
@@ -108,6 +112,7 @@ class TransportConfigurationMapper(
 
     private fun tools.samt.parser.IdentifierNode.toConfigurationValue() = object : ConfigurationValue {
         override val asString: String get() = reportAndThrow("Unexpected identifier, expected a string")
+        override val asIdentifier: String get() = name
 
         override fun <T : Enum<T>> asEnum(enum: Class<T>): T =
             reportAndThrow("Unexpected identifier, expected an enum (${enum.simpleName})")

@@ -33,7 +33,7 @@ interface TransportConfigurationParserParams {
     fun reportInfo(message: String, context: ConfigurationElement? = null)
 }
 
-interface  ConfigurationElement {
+interface ConfigurationElement {
     val asObject: ConfigurationObject
     val asValue: ConfigurationValue
     val asList: ConfigurationList
@@ -51,6 +51,7 @@ interface ConfigurationList : ConfigurationElement {
 
 interface ConfigurationValue : ConfigurationElement {
     val asString: String
+    val asIdentifier: String
     fun <T : Enum<T>> asEnum(enum: Class<T>): T
     val asLong: Long
     val asDouble: Double

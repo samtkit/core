@@ -3,6 +3,7 @@ package tools.samt.codegen.kotlin.ktor
 import tools.samt.codegen.*
 import tools.samt.codegen.kotlin.GeneratedFilePreamble
 import tools.samt.codegen.kotlin.getQualifiedName
+import tools.samt.codegen.kotlin.getTargetPackage
 
 fun mappingFileContent(pack: SamtPackage, options: Map<String, String>) = buildString {
     if (pack.records.isNotEmpty() || pack.enums.isNotEmpty()) {
@@ -33,7 +34,8 @@ private fun StringBuilder.appendEncodeRecord(
     options: Map<String, String>,
 ) {
     appendLine("/** Encode and validate record ${record.qualifiedName} to JSON */")
-    appendLine("fun `encode ${record.name}`(record: ${record.getQualifiedName(options)}): JsonObject {")
+    appendLine("fun `encode ${record.name}`(record: ${record.getQualifiedName(options)}?): JsonElement {")
+    appendLine("    if (record == null) return JsonNull")
     for (field in record.fields) {
         appendEncodeRecordField(field, options)
     }
@@ -67,7 +69,8 @@ private fun StringBuilder.appendDecodeRecord(
 private fun StringBuilder.appendEncodeEnum(enum: EnumType, options: Map<String, String>) {
     val enumName = enum.getQualifiedName(options)
     appendLine("/** Encode enum ${enum.qualifiedName} to JSON */")
-    appendLine("fun `encode ${enum.name}`(value: ${enumName}) = when(value) {")
+    appendLine("fun `encode ${enum.name}`(value: ${enumName}?) = when(value) {")
+    appendLine("    null -> null")
     enum.values.forEach { value ->
         appendLine("    ${enumName}.${value} -> \"${value}\"")
     }
@@ -115,7 +118,7 @@ private fun StringBuilder.appendDecodeRecordField(field: RecordField, options: M
     appendLine("    }")
 }
 
-fun encodeJsonElement(typeReference: TypeReference, options: Map<String, String>): String =
+fun encodeJsonElement(typeReference: TypeReference, options: Map<String, String>, valueName: String = "value"): String =
     when (val type = typeReference.type) {
         is LiteralType -> {
             val getContent = when (type) {
@@ -124,46 +127,46 @@ fun encodeJsonElement(typeReference: TypeReference, options: Map<String, String>
                 is LongType,
                 is FloatType,
                 is DoubleType,
-                is BooleanType -> "value"
-                is BytesType -> "value.encodeBase64Bytes()"
-                is DecimalType -> "value.toPlainString()"
+                is BooleanType -> valueName
+                is BytesType -> "${valueName}.encodeBase64()"
+                is DecimalType -> "${valueName}.toPlainString()"
                 is DateType,
                 is DateTimeType,
-                is DurationType -> "value.toString()"
+                is DurationType -> "${valueName}.toString()"
                 else -> error("Unsupported literal type: ${type.javaClass.simpleName}")
             }
             "Json.encodeToJsonElement($getContent${validateLiteralConstraintsSuffix(typeReference)})"
         }
 
-        is ListType -> "value.map { value -> ${encodeJsonElement(type.elementType, options)} }"
-        is MapType -> "value.mapValues { value -> ${decodeJsonElement(type.valueType, options)} }"
+        is ListType -> "${valueName}.map { ${encodeJsonElement(type.elementType, options, valueName = "it")} }"
+        is MapType -> "${valueName}.mapValues { ${encodeJsonElement(type.valueType, options, valueName = "it")} }"
 
-        is UserType -> "`encode ${type.name}`(value)"
+        is UserType -> "${type.getTargetPackage(options)}`encode ${type.name}`(${valueName})"
 
         else -> error("Unsupported type: ${type.javaClass.simpleName}")
     }
 
-fun decodeJsonElement(typeReference: TypeReference, options: Map<String, String>): String =
+fun decodeJsonElement(typeReference: TypeReference, options: Map<String, String>, valueName: String = "jsonElement"): String =
     when (val type = typeReference.type) {
         is LiteralType -> when (type) {
-            is StringType -> "jsonElement.jsonPrimitive.content"
-            is BytesType -> "jsonElement.jsonPrimitive.content.decodeBase64Bytes()"
-            is IntType -> "jsonElement.jsonPrimitive.int"
-            is LongType -> "jsonElement.jsonPrimitive.long"
-            is FloatType -> "jsonElement.jsonPrimitive.float"
-            is DoubleType -> "jsonElement.jsonPrimitive.double"
-            is DecimalType -> "jsonElement.jsonPrimitive.content.let { java.math.BigDecimal(it) }"
-            is BooleanType -> "jsonElement.jsonPrimitive.boolean"
-            is DateType -> "jsonElement.jsonPrimitive.content?.let { java.time.LocalDate.parse(it) }"
-            is DateTimeType -> "jsonElement.jsonPrimitive.content?.let { java.time.LocalDateTime.parse(it) }"
-            is DurationType -> "jsonElement.jsonPrimitive.content?.let { java.time.Duration.parse(it) }"
+            is StringType -> "${valueName}.jsonPrimitive.content"
+            is BytesType -> "${valueName}.jsonPrimitive.content.decodeBase64Bytes()"
+            is IntType -> "${valueName}.jsonPrimitive.int"
+            is LongType -> "${valueName}.jsonPrimitive.long"
+            is FloatType -> "${valueName}.jsonPrimitive.float"
+            is DoubleType -> "${valueName}.jsonPrimitive.double"
+            is DecimalType -> "${valueName}.jsonPrimitive.content.let { java.math.BigDecimal(it) }"
+            is BooleanType -> "${valueName}.jsonPrimitive.boolean"
+            is DateType -> "${valueName}.jsonPrimitive.content?.let { java.time.LocalDate.parse(it) }"
+            is DateTimeType -> "${valueName}.jsonPrimitive.content?.let { java.time.LocalDateTime.parse(it) }"
+            is DurationType -> "${valueName}.jsonPrimitive.content?.let { java.time.Duration.parse(it) }"
             else -> error("Unsupported literal type: ${type.javaClass.simpleName}")
         } + validateLiteralConstraintsSuffix(typeReference)
 
-        is ListType -> "jsonElement.jsonArray.map { jsonElement -> ${decodeJsonElement(type.elementType, options)} }"
-        is MapType -> "jsonElement.jsonObject.mapValues { jsonElement -> ${decodeJsonElement(type.valueType, options)} }"
+        is ListType -> "${valueName}.jsonArray.map { ${decodeJsonElement(type.elementType, options, valueName = "it")} }"
+        is MapType -> "${valueName}.jsonObject.mapValues { ${decodeJsonElement(type.valueType, options, valueName = "it")} }"
 
-        is UserType -> "`decode ${type.name}`(jsonElement)"
+        is UserType -> "${type.getTargetPackage(options)}`decode ${type.name}`(${valueName})"
 
         else -> error("Unsupported type: ${type.javaClass.simpleName}")
     }
@@ -199,5 +202,5 @@ private fun validateLiteralConstraintsSuffix(typeReference: TypeReference): Stri
         return ""
     }
 
-    return ".also { require(${conditions.joinToString(" && ")}) }"
+    return "${if (typeReference.isOptional) "?.also" else ".also"} { require(${conditions.joinToString(" && ")}) }"
 }

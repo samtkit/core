@@ -53,7 +53,7 @@ object KotlinKtorConsumerGenerator : Generator {
         }
     }
 
-    data class ConsumerInfo(val uses: ConsumerUses) {
+    data class ConsumerInfo(val consumer: ConsumerType, val uses: ConsumerUses) {
         val service = uses.service
         val implementedOperations = uses.operations
         val notImplementedOperations = service.operations.filter { serviceOp -> implementedOperations.none { it.name == serviceOp.name } }
@@ -71,9 +71,10 @@ object KotlinKtorConsumerGenerator : Generator {
         appendLine("import kotlinx.coroutines.runBlocking")
         appendLine("import kotlinx.serialization.json.*")
         appendLine("import kotlinx.coroutines.*")
+        appendLine()
 
-        val implementedServices = consumer.uses.map { ConsumerInfo(it) }
-        appendLine("class ${consumer.provider.name}Impl(private val `consumer baseUrl`: String) : ${implementedServices.joinToString { it.service.getQualifiedName(options) }} {")
+        val implementedServices = consumer.uses.map { ConsumerInfo(consumer, it) }
+        appendLine("class ${consumer.className}(private val baseUrl: String) : ${implementedServices.joinToString { it.service.getQualifiedName(options) }} {")
         implementedServices.forEach { info ->
             appendConsumerOperations(info, transportConfiguration, options)
         }
@@ -97,7 +98,7 @@ object KotlinKtorConsumerGenerator : Generator {
             when (operation) {
                 is RequestResponseOperation -> {
                     if (operation.isAsync) {
-                        appendLine("    override suspend fun ${operation.name}($operationParameters): ${operation.returnType?.getQualifiedName(options) ?: "Unit"} {")
+                        appendLine("    override suspend fun ${operation.name}($operationParameters): ${operation.returnType?.getQualifiedName(options) ?: "Unit"} = run {")
                     } else {
                         appendLine("    override fun ${operation.name}($operationParameters): ${operation.returnType?.getQualifiedName(options) ?: "Unit"} = runBlocking {")
                     }
@@ -138,7 +139,7 @@ object KotlinKtorConsumerGenerator : Generator {
                     appendLine("    override fun ${operation.name}($operationParameters): Unit")
                 }
             }
-            appendLine("        = error(\"Not used in model and therefore not generated\")")
+            appendLine("        = error(\"Not used in SAMT consumer and therefore not generated\")")
         }
     }
 
@@ -171,21 +172,35 @@ object KotlinKtorConsumerGenerator : Generator {
         }
 
         // build request headers and body
-        appendLine("        val response = client.request(`consumer baseUrl`) {")
+        appendLine("        // Make actual network call")
+        appendLine("        val `client response` = client.request(this@${info.consumer.className}.baseUrl) {")
 
         // build request path
         // need to split transport path into path segments and query parameter slots
         // remove first empty component (paths start with a / so the first component is always empty)
         val transportPath = transport.getPath(info.service.name, operation.name)
         val transportPathComponents = transportPath.split("/")
-        appendLine("                url(`consumer baseUrl`) {")
-        transportPathComponents.drop(1).map {
+        appendLine("                url {")
+        appendLine("                    // Construct path and encode path parameters")
+        transportPathComponents.drop(1).forEach {
             if (it.startsWith("{") && it.endsWith("}")) {
                 val parameterName = it.substring(1, it.length - 1)
-                require(pathParameters.contains(parameterName)) { "${operation.name}: path parameter $parameterName is not a known path parameter" }
-                appendLine("                    appendPathSegments($parameterName)")
+                require(parameterName in pathParameters) { "${operation.name}: path parameter $parameterName is not a known path parameter" }
+                appendLine("                    appendPathSegments($parameterName, encodeSlash = true)")
             } else {
-                appendLine("                    appendPathSegments(\"$it\")")
+                appendLine("                    appendPathSegments(\"$it\", encodeSlash = true)")
+            }
+        }
+        appendLine()
+
+        appendLine("                    // Encode query parameters")
+        queryParameters.forEach { (name, queryParameter) ->
+            if (queryParameter.type.isOptional) {
+                appendLine("                    if ($name != null) {")
+                appendLine("                        this.parameters.append(\"$name\", ${encodeJsonElement(queryParameter.type, options, valueName = name)}.toString())")
+                appendLine("                    }")
+            } else {
+                appendLine("                    this.parameters.append(\"$name\", ${encodeJsonElement(queryParameter.type, options, valueName = name)}.toString())")
             }
         }
         appendLine("                }")
@@ -197,23 +212,35 @@ object KotlinKtorConsumerGenerator : Generator {
 
         // transport method
         val transportMethod = transport.getMethod(info.service.name, operation.name)
-        appendLine("                method = HttpMethod.$transportMethod")
+        appendLine("                this.method = HttpMethod.$transportMethod")
 
         // header parameters
-        headerParameters.forEach {
-            appendLine("                headers[\"${it.key}\"] = ${encodeJsonElement(it.value.type, options)}")
+        headerParameters.forEach { (name, headerParameter) ->
+            if (headerParameter.type.isOptional) {
+                appendLine("                if ($name != null) {")
+                appendLine("                    header(\"${name}\", ${encodeJsonElement(headerParameter.type, options, valueName = name)})")
+                appendLine("                }")
+            } else {
+                appendLine("                header(\"${name}\", ${encodeJsonElement(headerParameter.type, options, valueName = name)})")
+            }
         }
 
         // cookie parameters
-        cookieParameters.forEach {
-            appendLine("                cookie(\"${it.key}\", ${encodeJsonElement(it.value.type, options)})")
+        cookieParameters.forEach { (name, cookieParameter) ->
+            if (cookieParameter.type.isOptional) {
+                appendLine("                if ($name != null) {")
+                appendLine("                    cookie(\"${name}\", ${encodeJsonElement(cookieParameter.type, options, valueName = name)}.toString())")
+                appendLine("                }")
+            } else {
+                appendLine("                cookie(\"${name}\", ${encodeJsonElement(cookieParameter.type, options, valueName = name)}.toString())")
+            }
         }
 
         // body parameters
         appendLine("                setBody(")
         appendLine("                    buildJsonObject {")
-        bodyParameters.forEach { (name, parameter) ->
-            appendLine("                        put(\"$name\", ${encodeJsonElement(parameter.type, options)})")
+        bodyParameters.forEach { (name, bodyParameter) ->
+            appendLine("                        put(\"$name\", ${encodeJsonElement(bodyParameter.type, options, valueName = name)})")
         }
         appendLine("                    }")
         appendLine("                )")
@@ -222,14 +249,17 @@ object KotlinKtorConsumerGenerator : Generator {
     }
 
     private fun StringBuilder.appendCheckResponseStatus(operation: ServiceOperation) {
-        appendLine("        check(!response.status.isSuccess()) { \"${operation.name} failed with status \${response.status}\" }")
+        appendLine("        check(`client response`.status.isSuccess()) { \"${operation.name} failed with status \${`client response`.status}\" }")
     }
 
     private fun StringBuilder.appendConsumerResponseParsing(operation: RequestResponseOperation, transport: HttpTransportConfiguration, options: Map<String, String>) {
         operation.returnType?.let { returnType ->
-            appendLine("        val bodyAsText = response.bodyAsText()")
+            appendLine("        val bodyAsText = `client response`.bodyAsText()")
             appendLine("        val jsonElement = Json.parseToJsonElement(bodyAsText)")
-            appendLine("        return ${decodeJsonElement(returnType, options)}")
+            appendLine()
+            appendLine("        ${decodeJsonElement(returnType, options)}")
         }
     }
+
+    private val ConsumerType.className get() = "${provider.name}Impl"
 }

@@ -47,7 +47,7 @@ object KotlinTypesGenerator : Generator {
     }
 
     private fun StringBuilder.appendRecord(record: RecordType, options: Map<String, String>) {
-        appendLine("class ${record.name}(")
+        appendLine("data class ${record.name}(")
         record.fields.forEach { field ->
             val fullyQualifiedName = field.type.getQualifiedName(options)
             val isOptional = field.type.isOptional

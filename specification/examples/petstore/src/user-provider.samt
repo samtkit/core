@@ -1,0 +1,21 @@
+package org.openapitools.examples.petstore
+
+provide UserEndpointHTTP {
+    implements UserService
+
+    transport http {
+        serialization: "json",
+        operations: {
+            UserService: {
+                basePath: "/user",
+                createUser: "POST /",
+                createUsers: "POST /createWithList",
+                login: "GET /login {username, password in query}",
+                logout: "GET /logout",
+                getUserByUsername: "GET /{username}",
+                updateUser: "PUT /{username}",
+                deleteUser: "DELETE /{username}"
+            }
+        }
+    }
+}

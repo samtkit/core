@@ -1,7 +1,5 @@
 source: ./todo-service
 
 generators:
-  - name: kotlin-types
-    output: ./out
   - name: kotlin-ktor-consumer
     output: ./out

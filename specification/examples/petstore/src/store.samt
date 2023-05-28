@@ -1,0 +1,23 @@
+package org.openapitools.examples.petstore
+
+record Order {
+    id: ID?
+    petId: ID?
+    quantity: Int?
+    shipDate: DateTime?
+    status: OrderStatus?
+    complete: Boolean?
+}
+
+enum OrderStatus {
+    placed,
+    approved,
+    delivered
+}
+
+service StoreService {
+    getInventory(): Map<String, Int>
+    placeOrder(order: Order): Order
+    getOrderById(orderId: ID): Order
+    deleteOrder(orderId: ID)
+}

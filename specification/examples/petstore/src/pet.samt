@@ -1,0 +1,43 @@
+package org.openapitools.examples.petstore
+
+record Pet {
+    id: ID?
+    name: String
+    category: Category?
+    photoUrls: List<String>
+    tags: List<Tag>?
+    status: PetStatus
+}
+
+record Category {
+    id: ID?
+    name: String?
+}
+
+record Tag {
+    id: ID?
+    name: String?
+}
+
+record ApiResponse {
+    code: Int?
+    type: String?
+    message: String?
+}
+
+enum PetStatus {
+    available,
+    pending,
+    sold
+}
+
+service PetService {
+    addPet(newPet: Pet): Pet
+    updatePet(updatedPet: Pet): Pet
+    findPetsByStatus(status: PetStatus): List<Pet>
+    findPetsByTags(tags: List<String>): List<Pet>
+    getPetById(petId: ID): Pet
+    updatePetWithForm(petId: ID, name: String?, status: PetStatus?): Pet
+    deletePet(petId: ID): Pet
+    uploadImage(petId: ID, additionalMetadata: String?, file: Bytes): ApiResponse
+}

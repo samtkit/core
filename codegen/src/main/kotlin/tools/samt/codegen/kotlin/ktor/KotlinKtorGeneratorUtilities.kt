@@ -204,7 +204,7 @@ fun decodeJsonElement(typeReference: TypeReference, options: Map<String, String>
         is MapType -> {
             val valueDecodeStatement = decodeJsonElement(type.valueType, options, valueName = "value")
             if (type.valueType.isRuntimeOptional)
-                "${valueName}.jsonObject.mapValues { (_, value) -> value?.let { value -> $valueDecodeStatement } }"
+                "${valueName}.jsonObject.mapValues { (_, value) -> value.takeUnless { it is JsonNull }?.let { value -> $valueDecodeStatement } }"
             else
                 "${valueName}.jsonObject.mapValues { (_, value) -> $valueDecodeStatement }"
         }

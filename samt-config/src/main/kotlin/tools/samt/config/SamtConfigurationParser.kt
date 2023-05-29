@@ -3,7 +3,6 @@ package tools.samt.config
 import com.charleskorn.kaml.*
 import kotlinx.serialization.SerializationException
 import java.nio.file.Path
-import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import tools.samt.common.DiagnosticSeverity as CommonDiagnosticSeverity

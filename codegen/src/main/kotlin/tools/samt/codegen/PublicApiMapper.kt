@@ -55,14 +55,16 @@ class PublicApiMapper(
             override val name = this@toPublicRequestResponseOperation.name
             override val parameters = this@toPublicRequestResponseOperation.parameters.map { it.toPublicParameter() }
             override val returnType = this@toPublicRequestResponseOperation.returnType?.toPublicTypeReference()
-            override val raisesTypes = this@toPublicRequestResponseOperation.raisesTypes.map { it.toPublicTypeReference() }
+            override val raisesTypes =
+                this@toPublicRequestResponseOperation.raisesTypes.map { it.toPublicTypeReference() }
             override val isAsync = this@toPublicRequestResponseOperation.isAsync
         }
 
-    private fun tools.samt.semantic.ServiceType.Operation.Parameter.toPublicParameter() = object : ServiceOperationParameter {
-        override val name = this@toPublicParameter.name
-        override val type = this@toPublicParameter.type.toPublicTypeReference()
-    }
+    private fun tools.samt.semantic.ServiceType.Operation.Parameter.toPublicParameter() =
+        object : ServiceOperationParameter {
+            override val name = this@toPublicParameter.name
+            override val type = this@toPublicParameter.type.toPublicTypeReference()
+        }
 
     private fun tools.samt.semantic.ProviderType.toPublicProvider() = object : ProviderType {
         override val name = this@toPublicProvider.name
@@ -108,6 +110,7 @@ class PublicApiMapper(
                     return transportConfigurationParser.default()
                 }
             }
+
             else -> controller.reportGlobalError("Multiple transport configuration parsers found for transport '$name'")
         }
 
@@ -142,20 +145,40 @@ class PublicApiMapper(
 
     private fun tools.samt.semantic.TypeReference?.toPublicTypeReference(): TypeReference {
         check(this is tools.samt.semantic.ResolvedTypeReference)
+        val typeReference = this@toPublicTypeReference
+        val runtimeTypeReference = when (val type = typeReference.type) {
+            is tools.samt.semantic.AliasType -> checkNotNull(type.fullyResolvedType) { "Found unresolved alias when generating code" }
+            else -> typeReference
+        }
         return object : TypeReference {
-            override val type = this@toPublicTypeReference.type.toPublicType()
-            override val isOptional = this@toPublicTypeReference.isOptional
+            override val type = typeReference.type.toPublicType()
+            override val isOptional = typeReference.isOptional
             override val rangeConstraint =
-                this@toPublicTypeReference.constraints.findConstraint<tools.samt.semantic.ResolvedTypeReference.Constraint.Range>()
+                typeReference.constraints.findConstraint<tools.samt.semantic.ResolvedTypeReference.Constraint.Range>()
                     ?.toPublicRangeConstraint()
             override val sizeConstraint =
-                this@toPublicTypeReference.constraints.findConstraint<tools.samt.semantic.ResolvedTypeReference.Constraint.Size>()
+                typeReference.constraints.findConstraint<tools.samt.semantic.ResolvedTypeReference.Constraint.Size>()
                     ?.toPublicSizeConstraint()
             override val patternConstraint =
-                this@toPublicTypeReference.constraints.findConstraint<tools.samt.semantic.ResolvedTypeReference.Constraint.Pattern>()
+                typeReference.constraints.findConstraint<tools.samt.semantic.ResolvedTypeReference.Constraint.Pattern>()
                     ?.toPublicPatternConstraint()
             override val valueConstraint =
-                this@toPublicTypeReference.constraints.findConstraint<tools.samt.semantic.ResolvedTypeReference.Constraint.Value>()
+                typeReference.constraints.findConstraint<tools.samt.semantic.ResolvedTypeReference.Constraint.Value>()
+                    ?.toPublicValueConstraint()
+
+            override val runtimeType = runtimeTypeReference.type.toPublicType()
+            override val isRuntimeOptional = isOptional || runtimeTypeReference.isOptional
+            override val runtimeRangeConstraint = rangeConstraint
+                ?: runtimeTypeReference.constraints.findConstraint<tools.samt.semantic.ResolvedTypeReference.Constraint.Range>()
+                    ?.toPublicRangeConstraint()
+            override val runtimeSizeConstraint = sizeConstraint
+                ?: runtimeTypeReference.constraints.findConstraint<tools.samt.semantic.ResolvedTypeReference.Constraint.Size>()
+                    ?.toPublicSizeConstraint()
+            override val runtimePatternConstraint = patternConstraint
+                ?: runtimeTypeReference.constraints.findConstraint<tools.samt.semantic.ResolvedTypeReference.Constraint.Pattern>()
+                    ?.toPublicPatternConstraint()
+            override val runtimeValueConstraint = valueConstraint
+                ?: runtimeTypeReference.constraints.findConstraint<tools.samt.semantic.ResolvedTypeReference.Constraint.Value>()
                     ?.toPublicValueConstraint()
         }
     }
@@ -191,24 +214,27 @@ class PublicApiMapper(
         tools.samt.semantic.UnknownType -> error("Unknown type cannot be converted to public API")
     }
 
-    private fun tools.samt.semantic.ResolvedTypeReference.Constraint.Range.toPublicRangeConstraint() = object : Constraint.Range {
-        override val lowerBound = this@toPublicRangeConstraint.lowerBound
-        override val upperBound = this@toPublicRangeConstraint.upperBound
-    }
+    private fun tools.samt.semantic.ResolvedTypeReference.Constraint.Range.toPublicRangeConstraint() =
+        object : Constraint.Range {
+            override val lowerBound = this@toPublicRangeConstraint.lowerBound
+            override val upperBound = this@toPublicRangeConstraint.upperBound
+        }
 
-    private fun tools.samt.semantic.ResolvedTypeReference.Constraint.Size.toPublicSizeConstraint() = object : Constraint.Size {
-        override val lowerBound = this@toPublicSizeConstraint.lowerBound
-        override val upperBound = this@toPublicSizeConstraint.upperBound
-    }
+    private fun tools.samt.semantic.ResolvedTypeReference.Constraint.Size.toPublicSizeConstraint() =
+        object : Constraint.Size {
+            override val lowerBound = this@toPublicSizeConstraint.lowerBound
+            override val upperBound = this@toPublicSizeConstraint.upperBound
+        }
 
     private fun tools.samt.semantic.ResolvedTypeReference.Constraint.Pattern.toPublicPatternConstraint() =
         object : Constraint.Pattern {
             override val pattern = this@toPublicPatternConstraint.pattern
         }
 
-    private fun tools.samt.semantic.ResolvedTypeReference.Constraint.Value.toPublicValueConstraint() = object : Constraint.Value {
-        override val value = this@toPublicValueConstraint.value
-    }
+    private fun tools.samt.semantic.ResolvedTypeReference.Constraint.Value.toPublicValueConstraint() =
+        object : Constraint.Value {
+            override val value = this@toPublicValueConstraint.value
+        }
 
     private fun tools.samt.semantic.UserDeclaredNamedType.getQualifiedName(): String {
         val components = parentPackage.nameComponents + name

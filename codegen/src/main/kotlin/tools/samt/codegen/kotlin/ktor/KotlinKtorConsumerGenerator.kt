@@ -105,7 +105,7 @@ object KotlinKtorConsumerGenerator : Generator {
 
                     appendConsumerServiceCall(info, operation, transportConfiguration, options)
                     appendCheckResponseStatus(operation)
-                    appendConsumerResponseParsing(operation, transportConfiguration, options)
+                    appendConsumerResponseParsing(operation, options)
 
                     appendLine("    }")
                 }
@@ -121,6 +121,7 @@ object KotlinKtorConsumerGenerator : Generator {
                     appendLine("    }")
                 }
             }
+            appendLine()
         }
 
         info.notImplementedOperations.forEach { operation ->
@@ -195,7 +196,7 @@ object KotlinKtorConsumerGenerator : Generator {
 
         appendLine("                    // Encode query parameters")
         queryParameters.forEach { (name, queryParameter) ->
-            if (queryParameter.type.isOptional) {
+            if (queryParameter.type.isRuntimeOptional) {
                 appendLine("                    if ($name != null) {")
                 appendLine("                        this.parameters.append(\"$name\", ${encodeJsonElement(queryParameter.type, options, valueName = name)}.toString())")
                 appendLine("                    }")
@@ -216,7 +217,7 @@ object KotlinKtorConsumerGenerator : Generator {
 
         // header parameters
         headerParameters.forEach { (name, headerParameter) ->
-            if (headerParameter.type.isOptional) {
+            if (headerParameter.type.isRuntimeOptional) {
                 appendLine("                if ($name != null) {")
                 appendLine("                    header(\"${name}\", ${encodeJsonElement(headerParameter.type, options, valueName = name)})")
                 appendLine("                }")
@@ -227,7 +228,7 @@ object KotlinKtorConsumerGenerator : Generator {
 
         // cookie parameters
         cookieParameters.forEach { (name, cookieParameter) ->
-            if (cookieParameter.type.isOptional) {
+            if (cookieParameter.type.isRuntimeOptional) {
                 appendLine("                if ($name != null) {")
                 appendLine("                    cookie(\"${name}\", ${encodeJsonElement(cookieParameter.type, options, valueName = name)}.toString())")
                 appendLine("                }")
@@ -252,7 +253,10 @@ object KotlinKtorConsumerGenerator : Generator {
         appendLine("        check(`client response`.status.isSuccess()) { \"${operation.name} failed with status \${`client response`.status}\" }")
     }
 
-    private fun StringBuilder.appendConsumerResponseParsing(operation: RequestResponseOperation, transport: HttpTransportConfiguration, options: Map<String, String>) {
+    private fun StringBuilder.appendConsumerResponseParsing(
+        operation: RequestResponseOperation,
+        options: Map<String, String>
+    ) {
         operation.returnType?.let { returnType ->
             appendLine("        val bodyAsText = `client response`.bodyAsText()")
             appendLine("        val jsonElement = Json.parseToJsonElement(bodyAsText)")

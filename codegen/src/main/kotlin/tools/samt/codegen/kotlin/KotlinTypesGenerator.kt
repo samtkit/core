@@ -47,12 +47,17 @@ object KotlinTypesGenerator : Generator {
     }
 
     private fun StringBuilder.appendRecord(record: RecordType, options: Map<String, String>) {
+        if (record.fields.isEmpty()) {
+            appendLine("class ${record.name}")
+            appendLine()
+            return
+        }
+
         appendLine("data class ${record.name}(")
         record.fields.forEach { field ->
             val fullyQualifiedName = field.type.getQualifiedName(options)
-            val isOptional = field.type.isOptional
 
-            if (isOptional) {
+            if (field.type.isRuntimeOptional) {
                 appendLine("    val ${field.name}: $fullyQualifiedName = null,")
             } else {
                 appendLine("    val ${field.name}: $fullyQualifiedName,")
@@ -116,9 +121,8 @@ object KotlinTypesGenerator : Generator {
     private fun StringBuilder.appendServiceOperationParameterList(parameters: List<ServiceOperationParameter>, options: Map<String, String>) {
         parameters.forEach { parameter ->
             val fullyQualifiedName = parameter.type.getQualifiedName(options)
-            val isOptional = parameter.type.isOptional
 
-            if (isOptional) {
+            if (parameter.type.isRuntimeOptional) {
                 appendLine("        ${parameter.name}: $fullyQualifiedName = null,")
             } else {
                 appendLine("        ${parameter.name}: $fullyQualifiedName,")

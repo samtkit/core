@@ -193,7 +193,7 @@ object KotlinKtorProviderGenerator : Generator {
                     appendLine("            val response = ${encodeJsonElement(returnType, options)}")
                     appendLine()
                     appendLine("            // Return response with 200 OK")
-                    appendLine("            call.respondText(response.toString(), ContentType.Application.Json, HttpStatusCode.OK)")
+                    appendLine("            call.respond(HttpStatusCode.OK, response)")
                 } else {
                     appendLine("            ${getServiceCall(info, operation)}")
                     appendLine()
@@ -285,7 +285,7 @@ object KotlinKtorProviderGenerator : Generator {
     ) {
         appendLine("                // Read from ${transportMode.name.lowercase()}")
         append("                val jsonElement = ")
-        if (parameter.type.isOptional) {
+        if (parameter.type.isRuntimeOptional) {
             when (transportMode) {
                 HttpTransportConfiguration.TransportMode.Body -> append("body.jsonObject[\"${parameter.name}\"]?.takeUnless { it is JsonNull }")
                 HttpTransportConfiguration.TransportMode.Query -> append("call.request.queryParameters[\"${parameter.name}\"]?.toJsonOrNull()")

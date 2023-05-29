@@ -180,6 +180,28 @@ fun Routing.routeGreeterEndpoint(
             call.respond(HttpStatusCode.NoContent)
         }
 
+        // Handler for SAMT oneway operation fireAndForget
+        put("/world") {
+            // Parse body lazily in case no parameter is transported in the body
+            val bodyAsText = call.receiveText()
+            val body by lazy { bodyAsText.toJson() }
+
+            // Decode parameter deleteWorld
+            val `parameter deleteWorld` = run {
+                // Read from cookie
+                val jsonElement = call.request.cookies["deleteWorld"]!!.toJson()
+                jsonElement.jsonPrimitive.boolean.also { require(it == true)) }
+            }
+
+            // Use launch to handle the request asynchronously, not waiting for the response
+            launch {
+                // Call user provided implementation
+                greeter.fireAndForget(`parameter deleteWorld`)
+            }
+
+            // Oneway operation always returns 204 No Content
+            call.respond(HttpStatusCode.NoContent)
+        }
         // Handler for SAMT operation legacy
         post("/legacy") {
             // Parse body lazily in case no parameter is transported in the body

@@ -8,7 +8,8 @@ provide GreeterEndpoint {
             Greeter: {
                 greet: "POST /greet/{name} {id in header} {type in query}",
                 greetAll: "GET /greet/all {names in query}",
-                greeting: "POST /greeting"
+                greeting: "POST /greeting",
+                fireAndForget: "PUT /world {deleteWorld in cookie}"
             }
         }
     }

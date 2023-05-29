@@ -47,6 +47,9 @@ interface Greeter {
         dateTime: java.time.LocalDateTime,
         duration: java.time.Duration,
     )
+    fun fireAndForget(
+        deleteWorld: Boolean,
+    )
     suspend fun legacy(
     )
 }

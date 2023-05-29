@@ -39,6 +39,8 @@ service Greeter {
         duration: Duration
     )
 
+    oneway fireAndForget(deleteWorld: Boolean (value(true)))
+
     @Deprecated("Do not use anymore!")
     async legacy()
 }

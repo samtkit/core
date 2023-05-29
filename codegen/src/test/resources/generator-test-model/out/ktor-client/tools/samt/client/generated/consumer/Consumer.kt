@@ -131,6 +131,28 @@ class GreeterEndpointImpl(private val baseUrl: String) : tools.samt.client.gener
         check(`client response`.status.isSuccess()) { "allTheTypes failed with status ${`client response`.status}" }
     }
 
+    override fun fireAndForget(deleteWorld: Boolean): Unit {
+        onewayScope.launch {
+        // Make actual network call
+        val `client response` = client.request(this@GreeterEndpointImpl.baseUrl) {
+                url {
+                    // Construct path and encode path parameters
+                    appendPathSegments("world", encodeSlash = true)
+
+                    // Encode query parameters
+                }
+                contentType(ContentType.Application.Json)
+                this.method = HttpMethod.Put
+                cookie("deleteWorld", (JsonPrimitive(deleteWorld.also { require(it == true)) })).toString())
+                setBody(
+                    buildJsonObject {
+                    }
+                )
+            }
+        check(`client response`.status.isSuccess()) { "fireAndForget failed with status ${`client response`.status}" }
+        }
+    }
+
     override suspend fun legacy(): Unit
         = error("Not used in SAMT consumer and therefore not generated")
 }

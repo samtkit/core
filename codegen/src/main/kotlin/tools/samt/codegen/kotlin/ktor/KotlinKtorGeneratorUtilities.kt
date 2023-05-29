@@ -234,7 +234,7 @@ private fun validateLiteralConstraintsSuffix(typeReference: TypeReference): Stri
             }
         }
         typeReference.patternConstraint?.let { constraint ->
-            add("it.matches(\"${constraint.pattern}\")")
+            add("it.matches(Regex(\"${constraint.pattern}\"))")
         }
         typeReference.valueConstraint?.let { constraint ->
             add("it == ${constraint.value})")

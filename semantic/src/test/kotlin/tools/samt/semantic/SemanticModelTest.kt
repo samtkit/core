@@ -864,6 +864,21 @@ class SemanticModelTest {
                 source to List(2) { "Error: Record fields must not be cyclical" }
             )
         }
+
+        @Test
+        fun `can have List or Map of same type`() {
+            val source = """
+                package cycles
+
+                record A {
+                    children: List<A>
+                    childrenByName: Map<String, A>
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to emptyList()
+            )
+        }
     }
 
     @Nested

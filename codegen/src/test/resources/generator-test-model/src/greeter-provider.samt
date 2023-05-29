@@ -1,0 +1,15 @@
+package tools.samt.greeter
+
+provide GreeterEndpoint {
+    implements Greeter
+
+    transport http {
+        operations: {
+            Greeter: {
+                greet: "POST /greet/{name} {id in header} {type in query}",
+                greetAll: "GET /greet/all {names in query}",
+                greeting: "POST /greeting"
+            }
+        }
+    }
+}

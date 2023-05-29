@@ -1,0 +1,11 @@
+generators:
+  - name: kotlin-ktor-provider
+    output: ./out/ktor-server/
+    options:
+      removePrefixFromSamtPackage: tools.samt
+      addPrefixToKotlinPackage: tools.samt.server.generated
+  - name: kotlin-ktor-consumer
+    output: ./out/ktor-client/
+    options:
+      removePrefixFromSamtPackage: tools.samt
+      addPrefixToKotlinPackage: tools.samt.client.generated

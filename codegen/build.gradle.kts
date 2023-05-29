@@ -9,4 +9,5 @@ dependencies {
     implementation(project(":semantic"))
     implementation(project(":public-api"))
     testImplementation(project(":lexer"))
+    testImplementation(project(":samt-config"))
 }

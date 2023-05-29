@@ -50,8 +50,8 @@ class CodegenTest {
 
         val expectedFiles = testDirectory.toFile().walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
 
-        val expected = expectedFiles.associate { it.toPath() to it.readText() }.toSortedMap()
-        val actual = actualFiles.associate { Path(it.filepath) to it.source }.toSortedMap()
+        val expected = expectedFiles.associate { it.toPath().normalize() to it.readText().replace("\r\n", "\n") }.toSortedMap()
+        val actual = actualFiles.associate { Path(it.filepath).normalize() to it.source.replace("\r\n", "\n") }.toSortedMap()
 
         assertEquals(expected, actual)
     }

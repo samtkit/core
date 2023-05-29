@@ -179,39 +179,51 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
     }
 
     private fun checkCycle(rootRecord: RecordType, rootField: RecordType.Field) {
-        fun impl(field: RecordType.Field, visited: List<Type>) {
-            val type = (field.type as? ResolvedTypeReference)?.type ?: return
+        fun impl(field: RecordType.Field, visited: List<Type>, encounteredOptional: Boolean = false) {
+            val typeReference = (field.type as? ResolvedTypeReference) ?: return
+            val type = typeReference.type
             val record: RecordType
             val newVisited: List<Type>
+            var isOptional = encounteredOptional || typeReference.isOptional
             when (type) {
                 is RecordType -> {
                     record = type
                     newVisited = visited + record
                 }
                 is AliasType -> {
-                    val actualType = type.fullyResolvedType?.type
+                    val reference = type.fullyResolvedType ?: return
+                    val actualType = reference.type
                     if (actualType !is RecordType) {
                         return
                     }
                     record = actualType
                     newVisited = visited + listOf(type, actualType)
+                    isOptional = isOptional || reference.isOptional
                 }
                 else -> return
             }
 
             if (record == rootRecord) {
                 val location = rootField.declaration.location
-                controller.getOrCreateContext(location.source).error {
-                    message("Record fields must not be cyclical")
-                    val path = newVisited.joinToString(" ► ") {
-                        buildString {
-                            append(it.humanReadableName)
-                            if (it is AliasType) {
-                                append(" (typealias)")
-                            }
+                val path = newVisited.joinToString(" ► ") {
+                    buildString {
+                        append(it.humanReadableName)
+                        if (it is AliasType) {
+                            append(" (typealias)")
                         }
                     }
-                    highlight("illegal cycle: $path", location)
+                }
+                val context = controller.getOrCreateContext(location.source)
+                if (isOptional) {
+                    context.warn {
+                        message("Record fields should not be cyclical")
+                        highlight("cycle: $path", location)
+                    }
+                } else {
+                    context.error {
+                        message("Required record fields must not be cyclical")
+                        highlight("illegal cycle: $path", location)
+                    }
                 }
                 return
             }
@@ -219,7 +231,7 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
                 // we ran into a cycle from a different record
                 return
             }
-            record.fields.forEach { impl(it, newVisited) }
+            record.fields.forEach { impl(it, newVisited, isOptional) }
         }
 
         impl(rootField, listOf(rootRecord))

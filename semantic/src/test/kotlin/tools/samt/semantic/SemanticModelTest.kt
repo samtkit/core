@@ -841,7 +841,7 @@ class SemanticModelTest {
                 }
             """.trimIndent()
             parseAndCheck(
-                source to List(3) { "Error: Record fields must not be cyclical" }
+                source to List(3) { "Error: Required record fields must not be cyclical" }
             )
         }
 
@@ -861,7 +861,7 @@ class SemanticModelTest {
                 typealias C = A
             """.trimIndent()
             parseAndCheck(
-                source to List(2) { "Error: Record fields must not be cyclical" }
+                source to List(2) { "Error: Required record fields must not be cyclical" }
             )
         }
 
@@ -877,6 +877,30 @@ class SemanticModelTest {
             """.trimIndent()
             parseAndCheck(
                 source to emptyList()
+            )
+        }
+
+        @Test
+        fun `cycle with optional type is warning`() {
+            val source = """
+                package cycles
+
+                record A {
+                    b: B?
+                }
+                
+                record B {
+                    a: A
+                }
+                
+                record Recursive {
+                    recursive: R
+                }
+                
+                typealias R = Recursive?
+            """.trimIndent()
+            parseAndCheck(
+                source to List(3) { "Warning: Record fields should not be cyclical" }
             )
         }
     }

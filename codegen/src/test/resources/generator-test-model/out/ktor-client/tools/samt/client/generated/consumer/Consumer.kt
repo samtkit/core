@@ -104,6 +104,33 @@ class GreeterEndpointImpl(private val baseUrl: String) : tools.samt.client.gener
         jsonElement.jsonPrimitive.content.also { require(it.length >= 1 && it.length <= 100) }
     }
 
+    override fun allTheTypes(long: Long, float: Float, double: Double, decimal: java.math.BigDecimal, boolean: Boolean, date: java.time.LocalDate, dateTime: java.time.LocalDateTime, duration: java.time.Duration): Unit = runBlocking {
+        // Make actual network call
+        val `client response` = client.request(this@GreeterEndpointImpl.baseUrl) {
+                url {
+                    // Construct path and encode path parameters
+                    appendPathSegments("allTheTypes", encodeSlash = true)
+
+                    // Encode query parameters
+                }
+                contentType(ContentType.Application.Json)
+                this.method = HttpMethod.Post
+                setBody(
+                    buildJsonObject {
+                        put("long", JsonPrimitive(long))
+                        put("float", JsonPrimitive(float))
+                        put("double", JsonPrimitive(double))
+                        put("decimal", JsonPrimitive(decimal.toPlainString()))
+                        put("boolean", JsonPrimitive(boolean))
+                        put("date", JsonPrimitive(date.toString()))
+                        put("dateTime", JsonPrimitive(dateTime.toString()))
+                        put("duration", JsonPrimitive(duration.toString()))
+                    }
+                )
+            }
+        check(`client response`.status.isSuccess()) { "allTheTypes failed with status ${`client response`.status}" }
+    }
+
     override suspend fun legacy(): Unit
         = error("Not used in SAMT consumer and therefore not generated")
 }

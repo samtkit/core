@@ -5,5 +5,5 @@ import tools.samt.greeter.Greeter
 package tools.samt.consumer
 
 consume GreeterEndpoint {
-    uses Greeter { greet, greetAll, greeting }
+    uses Greeter { greet, greetAll, greeting, allTheTypes }
 }

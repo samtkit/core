@@ -37,6 +37,16 @@ interface Greeter {
     fun greeting(
         who: tools.samt.client.generated.greeter.Person,
     ): String
+    fun allTheTypes(
+        long: Long,
+        float: Float,
+        double: Double,
+        decimal: java.math.BigDecimal,
+        boolean: Boolean,
+        date: java.time.LocalDate,
+        dateTime: java.time.LocalDateTime,
+        duration: java.time.Duration,
+    )
     suspend fun legacy(
     )
 }

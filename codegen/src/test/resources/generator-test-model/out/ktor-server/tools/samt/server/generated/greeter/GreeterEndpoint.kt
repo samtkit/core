@@ -111,6 +111,75 @@ fun Routing.routeGreeterEndpoint(
             call.respond(HttpStatusCode.OK, response)
         }
 
+        // Handler for SAMT operation allTheTypes
+        post("/allTheTypes") {
+            // Parse body lazily in case no parameter is transported in the body
+            val bodyAsText = call.receiveText()
+            val body by lazy { bodyAsText.toJson() }
+
+            // Decode parameter long
+            val `parameter long` = run {
+                // Read from body
+                val jsonElement = body.jsonObject["long"]!!
+                jsonElement.jsonPrimitive.long
+            }
+
+            // Decode parameter float
+            val `parameter float` = run {
+                // Read from body
+                val jsonElement = body.jsonObject["float"]!!
+                jsonElement.jsonPrimitive.float
+            }
+
+            // Decode parameter double
+            val `parameter double` = run {
+                // Read from body
+                val jsonElement = body.jsonObject["double"]!!
+                jsonElement.jsonPrimitive.double
+            }
+
+            // Decode parameter decimal
+            val `parameter decimal` = run {
+                // Read from body
+                val jsonElement = body.jsonObject["decimal"]!!
+                jsonElement.jsonPrimitive.content.let { java.math.BigDecimal(it) }
+            }
+
+            // Decode parameter boolean
+            val `parameter boolean` = run {
+                // Read from body
+                val jsonElement = body.jsonObject["boolean"]!!
+                jsonElement.jsonPrimitive.boolean
+            }
+
+            // Decode parameter date
+            val `parameter date` = run {
+                // Read from body
+                val jsonElement = body.jsonObject["date"]!!
+                jsonElement.jsonPrimitive.content.let { java.time.LocalDate.parse(it) }
+            }
+
+            // Decode parameter dateTime
+            val `parameter dateTime` = run {
+                // Read from body
+                val jsonElement = body.jsonObject["dateTime"]!!
+                jsonElement.jsonPrimitive.content.let { java.time.LocalDateTime.parse(it) }
+            }
+
+            // Decode parameter duration
+            val `parameter duration` = run {
+                // Read from body
+                val jsonElement = body.jsonObject["duration"]!!
+                jsonElement.jsonPrimitive.content.let { java.time.Duration.parse(it) }
+            }
+
+            // Call user provided implementation
+            greeter.allTheTypes(`parameter long`, `parameter float`, `parameter double`, `parameter decimal`, `parameter boolean`, `parameter date`, `parameter dateTime`, `parameter duration`)
+
+            // Return 204 No Content
+            call.respond(HttpStatusCode.NoContent)
+        }
+
         // Handler for SAMT operation legacy
         post("/legacy") {
             // Parse body lazily in case no parameter is transported in the body

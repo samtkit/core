@@ -27,6 +27,18 @@ service Greeter {
     greetAll(names: List<String? (1..50)>): Map<String, Greeting?>
     greeting(who: Person): String (1..100)
 
+    @Description("Used to test all the types")
+    allTheTypes(
+        long: Long,
+        float: Float,
+        double: Double,
+        decimal: Decimal,
+        boolean: Boolean,
+        date: Date,
+        dateTime: DateTime,
+        duration: Duration
+    )
+
     @Deprecated("Do not use anymore!")
     async legacy()
 }

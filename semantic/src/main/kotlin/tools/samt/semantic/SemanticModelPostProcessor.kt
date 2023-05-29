@@ -172,7 +172,33 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
     }
 
     private fun checkRecord(record: RecordType) {
-        record.fields.forEach { checkModelType(it.type) }
+        record.fields.forEach {
+            checkModelType(it.type)
+            checkCycle(record, it)
+        }
+    }
+
+    private fun checkCycle(rootRecord: RecordType, rootField: RecordType.Field) {
+        fun impl(field: RecordType.Field, visited: List<RecordType>) {
+            val typeReference = field.type as? ResolvedTypeReference ?: return
+            val record = typeReference.type as? RecordType ?: return
+            val newVisited = visited + record
+            if (record == rootRecord) {
+                val location = rootField.declaration.location
+                controller.getOrCreateContext(location.source).error {
+                    message("Record fields must not be cyclical")
+                    highlight("illegal cycle: ${newVisited.joinToString(" ► ") { it.humanReadableName }}", location)
+                }
+                return
+            }
+            if (record in visited) {
+                // we ran into a cycle from a different record
+                return
+            }
+            record.fields.forEach { impl(it, newVisited) }
+        }
+
+        impl(rootField, listOf(rootRecord))
     }
 
     private fun checkService(service: ServiceType) {

@@ -816,6 +816,34 @@ class SemanticModelTest {
                 service to emptyList(),
             )
         }
+
+        @Test
+        fun `cannot have cyclic records`() {
+            val source = """
+                package cycles
+
+                record Recursive {
+                    recursive: Recursive
+                }
+
+                record IndirectA {
+                    b: IndirectB
+                }
+
+                record IndirectB {
+                    a: IndirectA
+                }
+                
+                record ReferencesAll {
+                    r: Recursive
+                    a: IndirectA
+                    b: IndirectB
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to List(3) { "Error: Record fields must not be cyclical" }
+            )
+        }
     }
 
     @Nested

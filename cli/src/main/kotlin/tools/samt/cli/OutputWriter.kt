@@ -11,7 +11,7 @@ internal object OutputWriter {
     fun write(outputDirectory: Path, files: List<CodegenFile>) {
         if (!outputDirectory.exists()) {
             try {
-                outputDirectory.createDirectory()
+                outputDirectory.createDirectories()
             } catch (e: IOException) {
                 throw IOException("Failed to create output directory '${outputDirectory}'", e)
             }

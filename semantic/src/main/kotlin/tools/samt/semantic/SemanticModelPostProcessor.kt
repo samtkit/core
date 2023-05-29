@@ -179,15 +179,39 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
     }
 
     private fun checkCycle(rootRecord: RecordType, rootField: RecordType.Field) {
-        fun impl(field: RecordType.Field, visited: List<RecordType>) {
-            val typeReference = field.type as? ResolvedTypeReference ?: return
-            val record = typeReference.type as? RecordType ?: return
-            val newVisited = visited + record
+        fun impl(field: RecordType.Field, visited: List<Type>) {
+            val type = (field.type as? ResolvedTypeReference)?.type ?: return
+            val record: RecordType
+            val newVisited: List<Type>
+            when (type) {
+                is RecordType -> {
+                    record = type
+                    newVisited = visited + record
+                }
+                is AliasType -> {
+                    val actualType = type.fullyResolvedType?.type
+                    if (actualType !is RecordType) {
+                        return
+                    }
+                    record = actualType
+                    newVisited = visited + listOf(type, actualType)
+                }
+                else -> return
+            }
+
             if (record == rootRecord) {
                 val location = rootField.declaration.location
                 controller.getOrCreateContext(location.source).error {
                     message("Record fields must not be cyclical")
-                    highlight("illegal cycle: ${newVisited.joinToString(" ► ") { it.humanReadableName }}", location)
+                    val path = newVisited.joinToString(" ► ") {
+                        buildString {
+                            append(it.humanReadableName)
+                            if (it is AliasType) {
+                                append(" (typealias)")
+                            }
+                        }
+                    }
+                    highlight("illegal cycle: $path", location)
                 }
                 return
             }

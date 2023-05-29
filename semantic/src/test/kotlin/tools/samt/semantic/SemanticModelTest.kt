@@ -844,6 +844,26 @@ class SemanticModelTest {
                 source to List(3) { "Error: Record fields must not be cyclical" }
             )
         }
+
+        @Test
+        fun `cannot have cyclic records with typealiases`() {
+            val source = """
+                package cycles
+
+                record A {
+                    b: B
+                }
+                
+                record B {
+                    c: C
+                }
+
+                typealias C = A
+            """.trimIndent()
+            parseAndCheck(
+                source to List(2) { "Error: Record fields must not be cyclical" }
+            )
+        }
     }
 
     @Nested

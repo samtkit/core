@@ -16,6 +16,7 @@ dependencies {
     implementation(project(":semantic"))
     implementation(project(":samt-config"))
     implementation(project(":codegen"))
+    implementation(project(":public-api"))
 }
 
 application {

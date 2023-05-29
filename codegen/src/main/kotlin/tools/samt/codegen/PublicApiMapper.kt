@@ -1,5 +1,7 @@
 package tools.samt.codegen
 
+import tools.samt.api.plugin.*
+import tools.samt.api.types.*
 import tools.samt.common.DiagnosticController
 import tools.samt.parser.reportError
 import tools.samt.parser.reportInfo

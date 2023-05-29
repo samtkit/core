@@ -1,6 +1,6 @@
 package tools.samt.codegen.kotlin
 
-import tools.samt.codegen.*
+import tools.samt.api.types.*
 
 object KotlinGeneratorConfig {
     const val removePrefixFromSamtPackage = "removePrefixFromSamtPackage"

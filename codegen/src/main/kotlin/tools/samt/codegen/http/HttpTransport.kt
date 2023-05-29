@@ -1,6 +1,9 @@
 package tools.samt.codegen.http
 
-import tools.samt.codegen.*
+import tools.samt.api.plugin.TransportConfiguration
+import tools.samt.api.plugin.TransportConfigurationParser
+import tools.samt.api.plugin.TransportConfigurationParserParams
+import tools.samt.api.plugin.asEnum
 
 object HttpTransportConfigurationParser : TransportConfigurationParser {
     override val transportName: String
@@ -24,7 +27,6 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
         val services = config.getFieldOrNull("operations")?.asObject?.let { operations ->
 
             operations.asObject.fields.map { (operationsKey, operationsField) ->
-                // TODO This currently fails horribly if an operation is called basePath
                 val servicePath = operations.getFieldOrNull("basePath")?.asValue?.asString ?: ""
                 val service = operationsKey.asServiceName
                 val serviceName = service.name
@@ -32,7 +34,7 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
 
                 val parsedOperations = operationConfiguration.fields
                     .filterKeys { it.asIdentifier != "basePath" }
-                    .map { (key, value) ->
+                    .mapNotNull { (key, value) ->
                         val operationConfig = value.asValue
                         val operation = key.asOperationName(service)
                         val operationName = operation.name
@@ -42,7 +44,7 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                                 "Invalid operation config for '$operationName', expected '<method> <path> <parameters>'. A valid example: 'POST /${operationName} {parameter1, parameter2 in query}'",
                                 operationConfig
                             )
-                            error("Invalid operation config for '$operationName', expected '<method> <path> <parameters>'")
+                            return@mapNotNull null
                         }
 
                         val methodEndpointResult = methodEndpointRegex.matchEntire(operationConfig.asString)
@@ -51,7 +53,7 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                                 "Invalid operation config for '$operationName', expected '<method> <path> <parameters>'",
                                 operationConfig
                             )
-                            error("Invalid operation config for '$operationName', expected '<method> <path> <parameters>'")
+                            return@mapNotNull null
                         }
 
                         val (method, path, parameterPart) = methodEndpointResult.destructured
@@ -64,7 +66,7 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                             "PATCH" -> HttpTransportConfiguration.HttpMethod.Patch
                             else -> {
                                 params.reportError("Invalid http method '$method'", operationConfig)
-                                error("Invalid http method '$method'")
+                                return@mapNotNull null
                             }
                         }
 
@@ -82,6 +84,11 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                                     "Expected parameter name between curly braces in '$path'",
                                     operationConfig
                                 )
+                                continue
+                            }
+
+                            if (operation.parameters.none { it.name == pathParameterName }) {
+                                params.reportError("Path parameter '$pathParameterName' not found in operation '$operationName'", operationConfig)
                                 continue
                             }
 
@@ -106,9 +113,13 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                                 }
                             }
 
-                            names.split(",").forEach { name ->
+                            for (name in names.split(",").map { it.trim() }) {
+                                if (operation.parameters.none { it.name == name }) {
+                                    params.reportError("Parameter '$name' not found in operation '$operationName'", operationConfig)
+                                    continue
+                                }
                                 parameters += HttpTransportConfiguration.ParameterConfiguration(
-                                    name = name.trim(),
+                                    name = name,
                                     transportMode = transportMode,
                                 )
                             }

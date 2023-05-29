@@ -1,14 +1,17 @@
 package tools.samt.codegen
 
+import tools.samt.api.plugin.CodegenFile
+import tools.samt.api.plugin.Generator
+import tools.samt.api.plugin.GeneratorParams
+import tools.samt.api.plugin.TransportConfigurationParser
+import tools.samt.api.types.SamtPackage
 import tools.samt.codegen.http.HttpTransportConfigurationParser
 import tools.samt.codegen.kotlin.KotlinTypesGenerator
 import tools.samt.codegen.kotlin.ktor.KotlinKtorConsumerGenerator
 import tools.samt.codegen.kotlin.ktor.KotlinKtorProviderGenerator
 import tools.samt.common.DiagnosticController
 import tools.samt.common.SamtGeneratorConfiguration
-import tools.samt.semantic.*
-
-data class CodegenFile(val filepath: String, val source: String)
+import tools.samt.semantic.SemanticModel
 
 object Codegen {
     private val generators: List<Generator> = listOf(

@@ -1,6 +1,6 @@
 package tools.samt.cli
 
-import tools.samt.codegen.CodegenFile
+import tools.samt.api.plugin.CodegenFile
 import java.io.IOException
 import java.nio.file.InvalidPathException
 import java.nio.file.Path

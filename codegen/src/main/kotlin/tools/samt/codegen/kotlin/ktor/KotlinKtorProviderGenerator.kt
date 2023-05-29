@@ -1,6 +1,9 @@
 package tools.samt.codegen.kotlin.ktor
 
-import tools.samt.codegen.*
+import tools.samt.api.plugin.CodegenFile
+import tools.samt.api.plugin.Generator
+import tools.samt.api.plugin.GeneratorParams
+import tools.samt.api.types.*
 import tools.samt.codegen.http.HttpTransportConfiguration
 import tools.samt.codegen.kotlin.GeneratedFilePreamble
 import tools.samt.codegen.kotlin.KotlinTypesGenerator

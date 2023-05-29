@@ -1,6 +1,9 @@
 package tools.samt.codegen.kotlin.ktor
 
-import tools.samt.codegen.*
+import tools.samt.api.plugin.CodegenFile
+import tools.samt.api.plugin.Generator
+import tools.samt.api.plugin.GeneratorParams
+import tools.samt.api.types.*
 import tools.samt.codegen.http.HttpTransportConfiguration
 import tools.samt.codegen.kotlin.GeneratedFilePreamble
 import tools.samt.codegen.kotlin.KotlinTypesGenerator
@@ -55,8 +58,8 @@ object KotlinKtorConsumerGenerator : Generator {
 
     data class ConsumerInfo(val consumer: ConsumerType, val uses: ConsumedService) {
         val service = uses.service
-        val implementedOperations = uses.consumedOperations
-        val notImplementedOperations = service.operations.filter { serviceOp -> implementedOperations.none { it.name == serviceOp.name } }
+        val consumedOperations = uses.consumedOperations
+        val unconsumedOperations = uses.unconsumedOperations
     }
 
     private fun StringBuilder.appendConsumer(consumer: ConsumerType, transportConfiguration: HttpTransportConfiguration, options: Map<String, String>) {
@@ -92,7 +95,7 @@ object KotlinKtorConsumerGenerator : Generator {
         appendLine("    private val onewayScope = CoroutineScope(Dispatchers.IO)")
         appendLine()
 
-        info.implementedOperations.forEach { operation ->
+        info.consumedOperations.forEach { operation ->
             val operationParameters = operation.parameters.joinToString { "${it.name}: ${it.type.getQualifiedName(options)}" }
 
             when (operation) {
@@ -124,7 +127,7 @@ object KotlinKtorConsumerGenerator : Generator {
             appendLine()
         }
 
-        info.notImplementedOperations.forEach { operation ->
+        info.unconsumedOperations.forEach { operation ->
             val operationParameters = operation.parameters.joinToString { "${it.name}: ${it.type.getQualifiedName(options)}" }
 
             when (operation) {

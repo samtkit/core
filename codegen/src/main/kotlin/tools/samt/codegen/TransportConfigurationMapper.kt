@@ -1,5 +1,12 @@
 package tools.samt.codegen
 
+import tools.samt.api.plugin.ConfigurationElement
+import tools.samt.api.plugin.ConfigurationList
+import tools.samt.api.plugin.ConfigurationObject
+import tools.samt.api.plugin.ConfigurationValue
+import tools.samt.api.types.ProviderType
+import tools.samt.api.types.ServiceOperation
+import tools.samt.api.types.ServiceType
 import tools.samt.common.DiagnosticController
 import tools.samt.parser.reportError
 

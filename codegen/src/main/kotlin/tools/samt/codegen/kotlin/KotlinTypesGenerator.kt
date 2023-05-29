@@ -1,6 +1,9 @@
 package tools.samt.codegen.kotlin
 
-import tools.samt.codegen.*
+import tools.samt.api.plugin.CodegenFile
+import tools.samt.api.plugin.Generator
+import tools.samt.api.plugin.GeneratorParams
+import tools.samt.api.types.*
 
 object KotlinTypesGenerator : Generator {
     override val name: String = "kotlin-types"

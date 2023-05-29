@@ -1,6 +1,6 @@
 package tools.samt.codegen.kotlin.ktor
 
-import tools.samt.codegen.*
+import tools.samt.api.types.*
 import tools.samt.codegen.kotlin.GeneratedFilePreamble
 import tools.samt.codegen.kotlin.getQualifiedName
 import tools.samt.codegen.kotlin.getTargetPackage

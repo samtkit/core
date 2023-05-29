@@ -133,7 +133,7 @@ object KotlinKtorConsumerGenerator : Generator {
             when (operation) {
                 is RequestResponseOperation -> {
                     if (operation.isAsync) {
-                        appendLine("    override suspend fun ${operation.name}($operationParameters): ${operation.returnType?.getQualifiedName(options) ?: "Unit"} {")
+                        appendLine("    override suspend fun ${operation.name}($operationParameters): ${operation.returnType?.getQualifiedName(options) ?: "Unit"}")
                     } else {
                         appendLine("    override fun ${operation.name}($operationParameters): ${operation.returnType?.getQualifiedName(options) ?: "Unit"}")
                     }

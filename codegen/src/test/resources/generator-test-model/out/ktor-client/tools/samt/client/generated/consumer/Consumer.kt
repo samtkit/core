@@ -104,6 +104,6 @@ class GreeterEndpointImpl(private val baseUrl: String) : tools.samt.client.gener
         jsonElement.jsonPrimitive.content.also { require(it.length >= 1 && it.length <= 100) }
     }
 
-    override suspend fun legacy(): Unit {
+    override suspend fun legacy(): Unit
         = error("Not used in SAMT consumer and therefore not generated")
 }

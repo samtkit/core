@@ -43,7 +43,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
 
     private fun reportFileSeparation(file: FileNode) {
         val statements = file.statements
-        if (statements.size <= 1) {
+        if (statements.size < 10) {
             return
         }
         for (provider in statements.filterIsInstance<ProviderDeclarationNode>()) {

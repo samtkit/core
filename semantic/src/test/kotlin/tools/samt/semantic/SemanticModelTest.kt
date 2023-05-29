@@ -1251,6 +1251,16 @@ class SemanticModelTest {
             val source = """
                 package separation
                 
+                record A {}
+                record B {}
+                record C {}
+                record D {}
+                record E {}
+                record F {}
+                record G {}
+                record H {}
+                record I {}
+                
                 service TestService {}
                 
                 provide TestProvider {
@@ -1268,6 +1278,16 @@ class SemanticModelTest {
         fun `consumer in file with other types is warning`() {
             val source = """
                 package separation
+                
+                record A {}
+                record B {}
+                record C {}
+                record D {}
+                record E {}
+                record F {}
+                record G {}
+                record H {}
+                record I {}
                 
                 service TestService {}
                 

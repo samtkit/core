@@ -62,6 +62,11 @@ interface ConfigurationValue : ConfigurationElement {
 
 inline fun <reified T : Enum<T>> ConfigurationValue.asEnum() = asEnum(T::class.java)
 
+/**
+ * A transport configuration parser.
+ * This interface is intended to be implemented by a transport configuration parser, for example HTTP.
+ * It is used to parse the configuration body into a specific [TransportConfiguration].
+ */
 interface TransportConfigurationParser {
     val transportName: String
 
@@ -79,8 +84,15 @@ interface TransportConfigurationParser {
     fun parse(params: TransportConfigurationParserParams): TransportConfiguration
 }
 
+/**
+ * A base interface for transport configurations.
+ * This interface is intended to be sub-typed and extended by transport configuration implementations.
+ */
 interface TransportConfiguration
 
+/**
+ * A SAMT type
+ */
 interface Type
 
 interface LiteralType : Type
@@ -97,12 +109,28 @@ interface DateType : LiteralType
 interface DateTimeType : LiteralType
 interface DurationType : LiteralType
 
+/**
+ * A ordered list of elements
+ */
 interface ListType : Type {
+    /**
+     * The type of the elements in the list
+     */
     val elementType: TypeReference
 }
 
+/**
+ * A map of key-value pairs
+ */
 interface MapType : Type {
+    /**
+     * The type of the keys in the map
+     */
     val keyType: TypeReference
+
+    /**
+     * The type of the values in the map
+     */
     val valueType: TypeReference
 }
 
@@ -123,61 +151,144 @@ interface AliasType : UserType {
     val fullyResolvedType: TypeReference
 }
 
+/**
+ * A SAMT record
+ */
 interface RecordType : UserType {
     val fields: List<RecordField>
 }
 
+/**
+ * A field in a record
+ */
 interface RecordField {
     val name: String
     val type: TypeReference
 }
 
+/**
+ * A SAMT enum
+ */
 interface EnumType : UserType {
     val values: List<String>
 }
 
+/**
+ * A SAMT service
+ */
 interface ServiceType : UserType {
     val operations: List<ServiceOperation>
 }
+
+/**
+ * An operation in a service
+ */
 interface ServiceOperation {
     val name: String
     val parameters: List<ServiceOperationParameter>
 }
 
+/**
+ * A parameter in a service operation
+ */
 interface ServiceOperationParameter {
     val name: String
     val type: TypeReference
 }
 
+/**
+ * A service operation that returns a response
+ */
 interface RequestResponseOperation : ServiceOperation {
+    /**
+     * The return type of this operation.
+     * If null, this operation returns nothing.
+     */
     val returnType: TypeReference?
-    val raisesTypes: List<TypeReference>
+
+    /**
+     * Is true if this operation is asynchronous.
+     * This could mean that the operation returns a future in Java, or a Promise in JavaScript.
+     */
     val isAsync: Boolean
 }
 
+/**
+ * A service operation that is fire-and-forget, never returning a response
+ */
 interface OnewayOperation : ServiceOperation
 
+/**
+ * A SAMT provider
+ */
 interface ProviderType : UserType {
-    val implements: List<ProviderImplements>
+    val implements: List<ProvidedService>
     val transport: TransportConfiguration
 }
 
-interface ProviderImplements {
+/**
+ * Connects a provider to a service
+ */
+interface ProvidedService {
+    /**
+     * The underlying service this provider implements
+     */
     val service: ServiceType
-    val operations: List<ServiceOperation>
+
+    /**
+     * The operations that are implemented by this provider
+     */
+    val implementedOperations: List<ServiceOperation>
+
+    /**
+     * The operations that are not implemented by this provider
+     */
+    val unimplementedOperations: List<ServiceOperation>
 }
 
+/**
+ * A SAMT consumer
+ */
 interface ConsumerType : Type {
+    /**
+     * The provider this consumer is connected to
+     */
     val provider: ProviderType
-    val uses: List<ConsumerUses>
-    val targetPackage: String
+
+    /**
+     * The services this consumer uses
+     */
+    val uses: List<ConsumedService>
+
+    /**
+     * The package this consumer is located in
+     */
+    val samtPackage: String
 }
 
-interface ConsumerUses {
+/**
+ * Connects a consumer to a service
+ */
+interface ConsumedService {
+    /**
+     * The underlying service this consumer uses
+     */
     val service: ServiceType
-    val operations: List<ServiceOperation>
+
+    /**
+     * The operations that are consumed by this consumer
+     */
+    val consumedOperations: List<ServiceOperation>
+
+    /**
+     * The operations that are not consumed by this consumer
+     */
+    val unconsumedOperations: List<ServiceOperation>
 }
 
+/**
+ * A type reference
+ */
 interface TypeReference {
     /**
      * The type this reference points to

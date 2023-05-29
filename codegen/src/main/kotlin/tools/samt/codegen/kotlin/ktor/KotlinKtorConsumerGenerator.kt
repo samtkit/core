@@ -53,9 +53,9 @@ object KotlinKtorConsumerGenerator : Generator {
         }
     }
 
-    data class ConsumerInfo(val consumer: ConsumerType, val uses: ConsumerUses) {
+    data class ConsumerInfo(val consumer: ConsumerType, val uses: ConsumedService) {
         val service = uses.service
-        val implementedOperations = uses.operations
+        val implementedOperations = uses.consumedOperations
         val notImplementedOperations = service.operations.filter { serviceOp -> implementedOperations.none { it.name == serviceOp.name } }
     }
 
@@ -196,13 +196,7 @@ object KotlinKtorConsumerGenerator : Generator {
 
         appendLine("                    // Encode query parameters")
         queryParameters.forEach { (name, queryParameter) ->
-            if (queryParameter.type.isRuntimeOptional) {
-                appendLine("                    if ($name != null) {")
-                appendLine("                        this.parameters.append(\"$name\", ${encodeJsonElement(queryParameter.type, options, valueName = name)}.toString())")
-                appendLine("                    }")
-            } else {
-                appendLine("                    this.parameters.append(\"$name\", ${encodeJsonElement(queryParameter.type, options, valueName = name)}.toString())")
-            }
+            appendLine("                    this.parameters.append(\"$name\", (${encodeJsonElement(queryParameter.type, options, valueName = name)}).toString())")
         }
         appendLine("                }")
 
@@ -217,24 +211,12 @@ object KotlinKtorConsumerGenerator : Generator {
 
         // header parameters
         headerParameters.forEach { (name, headerParameter) ->
-            if (headerParameter.type.isRuntimeOptional) {
-                appendLine("                if ($name != null) {")
-                appendLine("                    header(\"${name}\", ${encodeJsonElement(headerParameter.type, options, valueName = name)})")
-                appendLine("                }")
-            } else {
-                appendLine("                header(\"${name}\", ${encodeJsonElement(headerParameter.type, options, valueName = name)})")
-            }
+            appendLine("                header(\"${name}\", ${encodeJsonElement(headerParameter.type, options, valueName = name)})")
         }
 
         // cookie parameters
         cookieParameters.forEach { (name, cookieParameter) ->
-            if (cookieParameter.type.isRuntimeOptional) {
-                appendLine("                if ($name != null) {")
-                appendLine("                    cookie(\"${name}\", ${encodeJsonElement(cookieParameter.type, options, valueName = name)}.toString())")
-                appendLine("                }")
-            } else {
-                appendLine("                cookie(\"${name}\", ${encodeJsonElement(cookieParameter.type, options, valueName = name)}.toString())")
-            }
+            appendLine("                cookie(\"${name}\", (${encodeJsonElement(cookieParameter.type, options, valueName = name)}).toString())")
         }
 
         // body parameters

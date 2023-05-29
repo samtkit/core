@@ -108,7 +108,7 @@ object KotlinKtorProviderGenerator : Generator {
         emittedFiles.add(file)
     }
 
-    data class ProviderInfo(val implements: ProviderImplements) {
+    data class ProviderInfo(val implements: ProvidedService) {
         val service = implements.service
         val serviceArgumentName = implements.service.name.replaceFirstChar { it.lowercase() }
     }
@@ -159,7 +159,7 @@ object KotlinKtorProviderGenerator : Generator {
         val service = info.service
         appendLine("    // Handler for SAMT Service ${info.service.name}")
         appendLine("    route(\"${transportConfiguration.getPath(service.name)}\") {")
-        info.implements.operations.forEach { operation ->
+        info.implements.implementedOperations.forEach { operation ->
             appendProviderOperation(operation, info, service, transportConfiguration, options)
         }
         appendLine("    }")

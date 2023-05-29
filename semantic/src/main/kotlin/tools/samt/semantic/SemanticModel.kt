@@ -2,14 +2,11 @@ package tools.samt.semantic
 
 import tools.samt.common.DiagnosticController
 import tools.samt.common.SourceFile
-import tools.samt.parser.FileNode
-import tools.samt.parser.NamedDeclarationNode
-import tools.samt.parser.TypeImportNode
-import tools.samt.parser.WildcardImportNode
+import tools.samt.parser.*
 
 class SemanticModel(
-        val global: Package,
-        val userMetadata: UserMetadata,
+    val global: Package,
+    val userMetadata: UserMetadata,
 ) {
     companion object {
         fun build(files: List<FileNode>, controller: DiagnosticController): SemanticModel {
@@ -26,7 +23,7 @@ class SemanticModel(
  * - Resolve all references to types
  * - Resolve all references to their declarations in the AST
  * */
-internal class SemanticModelBuilder (
+internal class SemanticModelBuilder(
     private val files: List<FileNode>,
     private val controller: DiagnosticController,
 ) {
@@ -77,15 +74,16 @@ internal class SemanticModelBuilder (
         check(typeReference is ResolvedTypeReference)
         fun merge(base: ResolvedTypeReference, inner: ResolvedTypeReference): ResolvedTypeReference {
             if (base.isOptional && inner.isOptional) {
-                controller.getOrCreateContext(base.fullNode.location.source).warn {
+                base.fullNode.reportWarning(controller) {
                     message("Type is already optional, ignoring '?'")
                     highlight("duplicate optional", base.fullNode.location)
                     highlight("declared optional here", inner.fullNode.location)
                 }
             }
-            val overlappingConstraints = base.constraints.filter { baseConstraint -> inner.constraints.any { innerConstraint -> baseConstraint::class == innerConstraint::class } }
+            val overlappingConstraints =
+                base.constraints.filter { baseConstraint -> inner.constraints.any { innerConstraint -> baseConstraint::class == innerConstraint::class } }
             for (overlappingConstraint in overlappingConstraints) {
-                controller.getOrCreateContext(base.fullNode.location.source).error {
+                base.fullNode.reportError(controller) {
                     message("Cannot have multiple constraints of the same type")
                     val baseConstraint = base.constraints.first { it::class == overlappingConstraint::class }
                     highlight("duplicate constraint", baseConstraint.node.location)
@@ -117,6 +115,7 @@ internal class SemanticModelBuilder (
                     null
                 }
             }
+
             is MapType -> {
                 val keyType = getFullyResolvedType(type.keyType)
                 val valueType = getFullyResolvedType(type.valueType)
@@ -126,13 +125,15 @@ internal class SemanticModelBuilder (
                     null
                 }
             }
+
             is PackageType -> {
-                controller.getOrCreateContext(typeReference.typeNode.location.source).error {
+                typeReference.typeNode.reportError(controller) {
                     message("Type alias cannot reference package")
                     highlight("illegal package", typeReference.typeNode.location)
                 }
                 typeReference
             }
+
             is ConsumerType -> error("Consumer type cannot be referenced by name, this should never happen")
         }
     }
@@ -196,7 +197,7 @@ internal class SemanticModelBuilder (
             file.imports.forEach { import ->
                 fun addImportedType(name: String, type: Type) {
                     putIfAbsent(name, type)?.let { existingType ->
-                        controller.getOrCreateContext(file.sourceFile).error {
+                        file.reportError(controller) {
                             message("Import '$name' conflicts with locally defined type with same name")
                             highlight("conflicting import", import.location)
                             if (existingType is UserDeclared) {
@@ -232,7 +233,7 @@ internal class SemanticModelBuilder (
                                     addImportedType(name, type)
                                 }
                             } else {
-                                controller.getOrCreateContext(file.sourceFile).error {
+                                file.reportError(controller) {
                                     message("Import '${import.name.name}.*' must point to a package and not a type")
                                     highlight(
                                         "illegal wildcard import", import.location, suggestChange = "import ${
@@ -252,7 +253,7 @@ internal class SemanticModelBuilder (
             // Add built-in types
             fun addBuiltIn(name: String, type: Type) {
                 putIfAbsent(name, type)?.let { existingType ->
-                    controller.getOrCreateContext(file.sourceFile).error {
+                    file.reportError(controller) {
                         message("Type '$name' shadows built-in type with same name")
                         if (existingType is UserDeclared) {
                             val definition = existingType.declaration

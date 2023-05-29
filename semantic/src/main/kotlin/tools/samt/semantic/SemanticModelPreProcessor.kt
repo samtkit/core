@@ -12,7 +12,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
     ) {
         if (statement.name in parentPackage) {
             val existingType = parentPackage.types.getValue(statement.name.name)
-            controller.getOrCreateContext(statement.location.source).error {
+            statement.reportError(controller) {
                 message("'${statement.name.name}' is already declared")
                 highlight("duplicate declaration", statement.name.location)
                 if (existingType is UserDeclared) {
@@ -32,7 +32,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
             val name = identifierGetter(item).name
             val existingLocation = existingItems.putIfAbsent(name, item.location)
             if (existingLocation != null) {
-                controller.getOrCreateContext(item.location.source).error {
+                item.reportError(controller) {
                     message("$what '$name' is defined more than once")
                     highlight("duplicate declaration", identifierGetter(item).location)
                     highlight("previous declaration", existingLocation)
@@ -59,7 +59,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                         reportDuplicateDeclaration(parentPackage, statement)
                         reportDuplicates(statement.fields, "Record field") { it.name }
                         if (statement.extends.isNotEmpty()) {
-                            controller.getOrCreateContext(statement.location.source).error {
+                            statement.reportError(controller) {
                                 message("Record extends are not yet supported")
                                 highlight("cannot extend other records", statement.extends.first().location)
                             }

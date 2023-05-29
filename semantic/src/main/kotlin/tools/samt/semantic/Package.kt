@@ -2,7 +2,7 @@ package tools.samt.semantic
 
 import tools.samt.parser.*
 
-class Package(val name: String, val parent: Package?) {
+class Package(val name: String, private val parent: Package?) {
     val subPackages: MutableList<Package> = mutableListOf()
 
     val records: MutableList<RecordType> = mutableListOf()

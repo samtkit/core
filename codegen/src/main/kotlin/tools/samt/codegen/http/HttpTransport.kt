@@ -14,9 +14,9 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
         services = emptyList(),
     )
 
-    private val isValidRegex = Regex("""\w+\s+\S+(\s+\{.*? in \S+})*""")
+    private val isValidRegex = Regex("""\w+\s+\S+(\s+\{.*?\s+in\s+\S+})*""")
     private val methodEndpointRegex = Regex("""(\w+)\s+(\S+)(.*)""")
-    private val parameterRegex = Regex("""\{(.*?) in (\S+)}""")
+    private val parameterRegex = Regex("""\{(.*?)\s+in\s+(\S+)}""")
 
     override fun parse(params: TransportConfigurationParserParams): HttpTransportConfiguration {
         val config = params.config

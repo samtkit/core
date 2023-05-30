@@ -68,7 +68,7 @@ class HttpTransportTest {
                     operations: {
                         Greeter: {
                             greet: "POST /greet/{id} {name in header} {type in cookie}",
-                            greetAll: "GET /greet/all {names in query}",
+                            greetAll: "GET /greet/all {names  in query}",
                             get: "GET /",
                             put: "PUT /",
                             delete: "DELETE /",

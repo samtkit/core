@@ -27,7 +27,10 @@ class HttpTransportTest {
         assertEquals(HttpTransportConfiguration.HttpMethod.Post, config.getMethod("service", "operation"))
         assertEquals("", config.getPath("service"))
         assertEquals("/operation", config.getPath("service", "operation"))
-        assertEquals(HttpTransportConfiguration.TransportMode.Body, config.getTransportMode("service", "operation", "parameter"))
+        assertEquals(
+            HttpTransportConfiguration.TransportMode.Body,
+            config.getTransportMode("service", "operation", "parameter")
+        )
     }
 
     @Test
@@ -87,18 +90,36 @@ class HttpTransportTest {
 
         assertEquals(HttpTransportConfiguration.HttpMethod.Post, transport.getMethod("Greeter", "greet"))
         assertEquals("/greet/{id}", transport.getPath("Greeter", "greet"))
-        assertEquals(HttpTransportConfiguration.TransportMode.Path, transport.getTransportMode("Greeter", "greet", "id"))
-        assertEquals(HttpTransportConfiguration.TransportMode.Header, transport.getTransportMode("Greeter", "greet", "name"))
-        assertEquals(HttpTransportConfiguration.TransportMode.Cookie, transport.getTransportMode("Greeter", "greet", "type"))
-        assertEquals(HttpTransportConfiguration.TransportMode.Body, transport.getTransportMode("Greeter", "greet", "reference"))
+        assertEquals(
+            HttpTransportConfiguration.TransportMode.Path,
+            transport.getTransportMode("Greeter", "greet", "id")
+        )
+        assertEquals(
+            HttpTransportConfiguration.TransportMode.Header,
+            transport.getTransportMode("Greeter", "greet", "name")
+        )
+        assertEquals(
+            HttpTransportConfiguration.TransportMode.Cookie,
+            transport.getTransportMode("Greeter", "greet", "type")
+        )
+        assertEquals(
+            HttpTransportConfiguration.TransportMode.Body,
+            transport.getTransportMode("Greeter", "greet", "reference")
+        )
 
         assertEquals(HttpTransportConfiguration.HttpMethod.Get, transport.getMethod("Greeter", "greetAll"))
         assertEquals("/greet/all", transport.getPath("Greeter", "greetAll"))
-        assertEquals(HttpTransportConfiguration.TransportMode.Query, transport.getTransportMode("Greeter", "greetAll", "names"))
+        assertEquals(
+            HttpTransportConfiguration.TransportMode.Query,
+            transport.getTransportMode("Greeter", "greetAll", "names")
+        )
 
         assertEquals(HttpTransportConfiguration.HttpMethod.Get, transport.getMethod("Greeter", "get"))
         assertEquals("/", transport.getPath("Greeter", "get"))
-        assertEquals(HttpTransportConfiguration.TransportMode.Query, transport.getTransportMode("Greeter", "get", "name"))
+        assertEquals(
+            HttpTransportConfiguration.TransportMode.Query,
+            transport.getTransportMode("Greeter", "get", "name")
+        )
 
         assertEquals(HttpTransportConfiguration.HttpMethod.Put, transport.getMethod("Greeter", "put"))
         assertEquals("/", transport.getPath("Greeter", "put"))
@@ -159,7 +180,12 @@ class HttpTransportTest {
             }
         """.trimIndent()
 
-        parseAndCheck(source to listOf("Error: Invalid transport mode 'yeet'", "Error: Parameter 'name' not found in operation 'foo'"))
+        parseAndCheck(
+            source to listOf(
+                "Error: Invalid transport mode 'yeet'",
+                "Error: Parameter 'name' not found in operation 'foo'"
+            )
+        )
     }
 
     @Test
@@ -186,7 +212,12 @@ class HttpTransportTest {
             }
         """.trimIndent()
 
-        parseAndCheck(source to listOf("Error: Expected parameter name between curly braces in '/greet/{}/me'", "Error: Path parameter 'name' not found in operation 'foo'"))
+        parseAndCheck(
+            source to listOf(
+                "Error: Expected parameter name between curly braces in '/greet/{}/me'",
+                "Error: Path parameter 'name' not found in operation 'foo'"
+            )
+        )
     }
 
     @Test
@@ -291,11 +322,50 @@ class HttpTransportTest {
             }
         """.trimIndent()
 
-        parseAndCheck(source to listOf(
-            "Error: HTTP GET method doesn't accept 'name' as a BODY parameter"
-        ))
+        parseAndCheck(
+            source to listOf(
+                "Error: HTTP GET method doesn't accept 'name' as a BODY parameter"
+            )
+        )
     }
 
+
+    @Test
+    fun `cannot map two operations to the same method path combination`() {
+        val source = """
+            package tools.samt.greeter
+
+            service Greeter {
+                greet(name: String): String
+                greetTwo(name1: String, name2: String): String
+                greetThree(name: String): String
+                greetFour(name: String): String
+            }
+
+            provide GreeterEndpoint {
+                implements Greeter { greet, greetTwo, greetThree, greetFour }
+
+                transport http {
+                    operations: {
+                        Greeter: {
+                            greet: "GET /greet",
+                            greetTwo: "GET /greet",
+                            greetThree: "POST /greet/{name}",
+                            greetFour: "POST /greet/{name}"
+                        }
+                    }
+                }
+            }
+        """.trimIndent()
+
+        parseAndCheck(
+            source to listOf(
+                "Error: Operation 'greetTwo' cannot be mapped to the same method and path combination as operation 'greet'",
+                "Error: Operation 'greetFour' cannot be mapped to the same method and path combination as operation 'greetThree'"
+            )
+        )
+    }
+    
     private fun parseAndCheck(
         vararg sourceAndExpectedMessages: Pair<String, List<String>>,
     ): TransportConfiguration {
@@ -315,7 +385,9 @@ class HttpTransportTest {
 
         val publicApiMapper = PublicApiMapper(listOf(HttpTransportConfigurationParser), diagnosticController)
 
-        val transport = semanticModel.global.allSubPackages.map { publicApiMapper.toPublicApi(it) }.flatMap { it.providers }.single().transport
+        val transport =
+            semanticModel.global.allSubPackages.map { publicApiMapper.toPublicApi(it) }.flatMap { it.providers }
+                .single().transport
 
         for ((source, expectedMessages) in sourceAndExpectedMessages) {
             val messages = diagnosticController.contexts

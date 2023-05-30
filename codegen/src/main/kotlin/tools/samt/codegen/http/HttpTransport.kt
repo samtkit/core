@@ -32,9 +32,10 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                 val serviceName = service.name
                 val operationConfiguration = operationsField.asObject
 
-                val parsedOperations = operationConfiguration.fields
-                    .filterKeys { it.asIdentifier != "basePath" }
-                    .mapNotNull { (key, value) ->
+                val operationConfigurations = operationConfiguration.fields.filterKeys { it.asIdentifier != "basePath" }
+                val parsedOperations = buildList<HttpTransportConfiguration.OperationConfiguration> {
+                    val list = this
+                    operationConfigurations.forEach { (key, value) ->
                         val operationConfig = value.asValue
                         val operation = key.asOperationName(service)
                         val operationName = operation.name
@@ -44,7 +45,7 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                                 "Invalid operation config for '$operationName', expected '<method> <path> <parameters>'. A valid example: 'POST /${operationName} {parameter1, parameter2 in query}'",
                                 operationConfig
                             )
-                            return@mapNotNull null
+                            return@forEach
                         }
 
                         val methodEndpointResult = methodEndpointRegex.matchEntire(operationConfig.asString)
@@ -53,7 +54,7 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                                 "Invalid operation config for '$operationName', expected '<method> <path> <parameters>'",
                                 operationConfig
                             )
-                            return@mapNotNull null
+                            return@forEach
                         }
 
                         val (method, path, parameterPart) = methodEndpointResult.destructured
@@ -66,8 +67,17 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                             "PATCH" -> HttpTransportConfiguration.HttpMethod.Patch
                             else -> {
                                 params.reportError("Invalid http method '$method'", operationConfig)
-                                return@mapNotNull null
+                                return@forEach
                             }
+                        }
+
+                        // check for duplicate path+method combinations
+                        val duplicate = list.find { op ->
+                            op.path == path && op.method == methodEnum
+                        }
+                        if (duplicate != null) {
+                            params.reportError("Operation '${operationName}' cannot be mapped to the same method and path combination as operation '${duplicate.name}'", operationConfig)
+                            return@forEach
                         }
 
                         val parameters = mutableListOf<HttpTransportConfiguration.ParameterConfiguration>()
@@ -131,13 +141,16 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                             }
                         }
 
-                        HttpTransportConfiguration.OperationConfiguration(
-                            name = operationName,
-                            method = methodEnum,
-                            path = path,
-                            parameters = parameters,
+                        add(
+                            HttpTransportConfiguration.OperationConfiguration(
+                                name = operationName,
+                                method = methodEnum,
+                                path = path,
+                                parameters = parameters,
+                            )
                         )
                     }
+                }
 
                 HttpTransportConfiguration.ServiceConfiguration(
                     name = serviceName,

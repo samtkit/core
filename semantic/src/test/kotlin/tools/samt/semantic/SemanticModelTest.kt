@@ -335,6 +335,22 @@ class SemanticModelTest {
         }
 
         @Test
+        fun `pattern must be valid`() {
+            val source = """
+                package complex
+
+                record Foo {
+                    name: String (pattern("fo/+++!hi"))
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf(
+                    "Error: Invalid regex pattern"
+                )
+            )
+        }
+
+        @Test
         fun `cannot use non-existent constraints`() {
             val source = """
                 package color

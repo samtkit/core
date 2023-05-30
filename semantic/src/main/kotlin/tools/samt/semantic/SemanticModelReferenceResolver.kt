@@ -28,7 +28,7 @@ internal class SemanticModelReferenceResolver(
                     return ResolvedTypeReference(type, expression)
                 }
 
-                controller.getOrCreateContext(expression.location.source).error {
+                expression.reportError(controller) {
                     message("Type '${expression.name}' could not be resolved")
                     highlight("unresolved type", expression.location)
                 }
@@ -54,14 +54,14 @@ internal class SemanticModelReferenceResolver(
                     }
 
                     null -> {
-                        controller.getOrCreateContext(expression.location.source).error {
+                        expression.reportError(controller) {
                             message("Type '${expression.name}' could not be resolved")
                             highlight("unresolved type", expression.location)
                         }
                     }
 
                     else -> {
-                        controller.getOrCreateContext(expression.location.source).error {
+                        expression.reportError(controller) {
                             message("Type '${expression.components.first().name}' is not a package, cannot access sub-types")
                             highlight("not a package", expression.components.first().location)
                         }
@@ -73,14 +73,14 @@ internal class SemanticModelReferenceResolver(
                 val baseType = resolveAndLinkExpression(scope, expression.base)
                 val constraints = expression.arguments.mapNotNull { constraintBuilder.build(baseType.type, it) }
                 if (baseType.constraints.isNotEmpty()) {
-                    controller.getOrCreateContext(expression.location.source).error {
+                    expression.reportError(controller) {
                         message("Cannot have nested constraints")
                         highlight("illegal nested constraint", expression.location)
                     }
                 }
                 for (constraintInstances in constraints.groupBy { it::class }.values) {
                     if (constraintInstances.size > 1) {
-                        controller.getOrCreateContext(expression.location.source).error {
+                        expression.reportError(controller) {
                             message("Cannot have multiple constraints of the same type")
                             highlight("first constraint", constraintInstances.first().node.location)
                             for (duplicateConstraints in constraintInstances.drop(1)) {
@@ -128,7 +128,7 @@ internal class SemanticModelReferenceResolver(
                         }
                     }
                 }
-                controller.getOrCreateContext(expression.location.source).error {
+                expression.reportError(controller) {
                     message("Unsupported generic type")
                     highlight(expression.location)
                     help("Valid generic types are List<Value> and Map<Key, Value>")
@@ -138,7 +138,7 @@ internal class SemanticModelReferenceResolver(
             is OptionalDeclarationNode -> {
                 val baseType = resolveAndLinkExpression(scope, expression.base)
                 if (baseType.isOptional) {
-                    controller.getOrCreateContext(expression.location.source).warn {
+                    expression.reportWarning(controller) {
                         message("Type is already optional, ignoring '?'")
                         highlight("already optional", expression.base.location)
                     }
@@ -149,7 +149,7 @@ internal class SemanticModelReferenceResolver(
             is BooleanNode,
             is NumberNode,
             is StringNode,
-            -> controller.getOrCreateContext(expression.location.source).error {
+            -> expression.reportError(controller) {
                 message("Cannot use literal value as type")
                 highlight("not a type expression", expression.location)
             }
@@ -158,7 +158,7 @@ internal class SemanticModelReferenceResolver(
             is ArrayNode,
             is RangeExpressionNode,
             is WildcardNode,
-            -> controller.getOrCreateContext(expression.location.source).error {
+            -> expression.reportError(controller) {
                 message("Invalid type expression")
                 highlight("not a type expression", expression.location)
             }
@@ -180,7 +180,7 @@ internal class SemanticModelReferenceResolver(
                 }
 
                 null -> {
-                    controller.getOrCreateContext(component.location.source).error {
+                    component.reportError(controller) {
                         message("Could not resolve reference '${component.name}'")
                         highlight("unresolved reference", component.location)
                     }
@@ -191,7 +191,7 @@ internal class SemanticModelReferenceResolver(
                     if (iterator.hasNext()) {
                         // We resolved a non-package type but there are still components left
 
-                        controller.getOrCreateContext(component.location.source).error {
+                        component.reportError(controller) {
                             message("Type '${component.name}' is not a package, cannot access sub-types")
                             highlight("must be a package", component.location)
                         }

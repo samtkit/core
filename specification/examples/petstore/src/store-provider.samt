@@ -1,0 +1,18 @@
+package org.openapitools.examples.petstore
+
+provide StoreEndpointHTTP {
+    implements StoreService
+
+    transport http {
+        serialization: "json",
+        operations: {
+            StoreService: {
+                basePath: "/store",
+                getInventory: "GET /inventory",
+                placeOrder: "POST /order",
+                getOrderById: "GET /order/{orderId}",
+                deleteOrder: "DELETE /order/{orderId}"
+            }
+        }
+    }
+}

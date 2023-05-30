@@ -1,0 +1,7 @@
+package org.openapitools.examples.petstore
+
+typealias ID = Long
+
+typealias UUID = String ( pattern("[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}") )
+
+record NotFoundFault

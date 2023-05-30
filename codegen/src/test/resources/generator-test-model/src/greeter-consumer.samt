@@ -1,0 +1,9 @@
+import tools.samt.greeter.GreeterEndpoint
+import tools.samt.greeter.Greeter
+
+// Usually belongs to another package
+package tools.samt.consumer
+
+consume GreeterEndpoint {
+    uses Greeter { greet, greetAll, greeting, allTheTypes, fireAndForget }
+}

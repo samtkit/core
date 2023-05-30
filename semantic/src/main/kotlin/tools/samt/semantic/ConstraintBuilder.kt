@@ -12,7 +12,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
             is NumberNode -> expressionNode.value
             is WildcardNode -> null
             else -> {
-                controller.getOrCreateContext(expressionNode.location.source).error {
+                expressionNode.reportError(controller) {
                     message("Range constraint argument must be a valid number range")
                     highlight("neither a number nor '*'", expressionNode.location)
                     help("A valid constraint would be range(1..10.5) or range(1..*)")
@@ -25,7 +25,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
         val higher = resolveSide(argument.right)
 
         if (lower == null && higher == null) {
-            controller.getOrCreateContext(argument.location.source).error {
+            argument.reportError(controller) {
                 message("Range constraint must have at least one valid number")
                 highlight("invalid constraint", argument.location)
                 help("A valid constraint would be range(1..10.5) or range(1..*)")
@@ -36,11 +36,10 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
         if (lower is Double && higher is Double && lower > higher ||
             lower is Long && higher is Long && lower > higher
         ) {
-            controller.getOrCreateContext(argument.location.source)
-                .error {
-                    message("Range constraint must have a lower bound lower than the upper bound")
-                    highlight("invalid constraint", argument.location)
-                }
+            argument.reportError(controller) {
+                message("Range constraint must have a lower bound lower than the upper bound")
+                highlight("invalid constraint", argument.location)
+            }
             return null
         }
 
@@ -60,7 +59,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
             is WildcardNode -> null
 
             else -> {
-                controller.getOrCreateContext(expressionNode.location.source).error {
+                expressionNode.reportError(controller) {
                     message("Expected size constraint argument to be a whole number or wildcard")
                     highlight("expected whole number or wildcard '*'", expressionNode.location)
                     help("A valid constraint would be size(1..10), size(1..*) or size(*..10)")
@@ -73,7 +72,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
         val higher = resolveSide(argument.right)
 
         if (lower == null && higher == null) {
-            controller.getOrCreateContext(argument.location.source).error {
+            argument.reportError(controller) {
                 message("Constraint parameters cannot both be wildcards")
                 highlight("invalid constraint", argument.location)
                 help("A valid constraint would be range(1..10.5) or range(1..*)")
@@ -82,7 +81,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
         }
 
         if (lower != null && higher != null && lower > higher) {
-            controller.getOrCreateContext(argument.location.source).error {
+            argument.reportError(controller) {
                 message("Size constraint lower bound must be lower than or equal to the upper bound")
                 highlight("invalid constraint", argument.location)
             }
@@ -113,7 +112,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
             is NumberNode -> ResolvedTypeReference.Constraint.Value(expression, argument.value)
             is BooleanNode -> ResolvedTypeReference.Constraint.Value(expression, argument.value)
             else -> {
-                controller.getOrCreateContext(argument.location.source).error {
+                argument.reportError(controller) {
                     message("Value constraint must be a string, integer, float or boolean")
                     highlight("invalid constraint", argument.location)
                     help("A valid constraint would be value(\"foo\"), value(42) or value(false)")
@@ -136,7 +135,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
                 when (name) {
                     "range" -> {
                         if (expression.arguments.size != 1 || expression.arguments.firstOrNull() !is RangeExpressionNode) {
-                            controller.getOrCreateContext(expression.location.source).error {
+                            expression.reportError(controller) {
                                 message("Range constraint must have exactly one range argument")
                                 highlight("invalid constraint", expression.location)
                                 help("A valid constraint would be range(1..10.5)")
@@ -148,7 +147,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
 
                     "size" -> {
                         if (expression.arguments.size != 1 || expression.arguments.firstOrNull() !is RangeExpressionNode) {
-                            controller.getOrCreateContext(expression.location.source).error {
+                            expression.reportError(controller) {
                                 message("Size constraint must have exactly one size argument")
                                 highlight("invalid constraint", expression.location)
                                 help("A valid constraint would be size(1..10)")
@@ -163,7 +162,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
 
                     "pattern" -> {
                         if (expression.arguments.size != 1 || expression.arguments.firstOrNull() !is StringNode) {
-                            controller.getOrCreateContext(expression.location.source).error {
+                            expression.reportError(controller) {
                                 message("Pattern constraint must have exactly one string argument")
                                 highlight("invalid constraint", expression.location)
                                 help("A valid constraint would be pattern(\"a-z\")")
@@ -175,7 +174,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
 
                     "value" -> {
                         if (expression.arguments.size != 1) {
-                            controller.getOrCreateContext(expression.location.source).error {
+                            expression.reportError(controller) {
                                 message("value constraint must have exactly one argument")
                                 highlight("invalid constraint", expression.location)
                             }
@@ -185,7 +184,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
                     }
 
                     is String -> {
-                        controller.getOrCreateContext(expression.location.source).error {
+                        expression.reportError(controller) {
                             message("Constraint with name '${name}' does not exist")
                             highlight("unknown constraint", expression.base.location)
                             help("A valid constraint would be range(1..10.5), size(1..10), pattern(\"a-z\") or value(\"foo\")")
@@ -220,7 +219,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
             is StringNode -> return createPattern(expression = expression, argument = expression)
             else -> Unit
         }
-        controller.getOrCreateContext(expression.location.source).error {
+        expression.reportError(controller) {
             message("Invalid constraint")
             highlight("invalid constraint", expression.location)
         }
@@ -247,7 +246,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
         return if (validateConstraintMatches(constraint, baseType)) {
             constraint
         } else {
-            controller.getOrCreateContext(expression.location.source).error {
+            expression.reportError(controller) {
                 message("Constraint '${constraint.humanReadableName}' is not allowed for type '${baseType.humanReadableName}'")
                 highlight("illegal constraint", expression.location)
 

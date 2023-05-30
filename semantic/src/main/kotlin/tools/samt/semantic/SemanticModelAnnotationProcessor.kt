@@ -3,6 +3,7 @@ package tools.samt.semantic
 import tools.samt.common.DiagnosticController
 import tools.samt.parser.AnnotationNode
 import tools.samt.parser.StringNode
+import tools.samt.parser.reportError
 
 internal class SemanticModelAnnotationProcessor(
         private val controller: DiagnosticController
@@ -12,11 +13,10 @@ internal class SemanticModelAnnotationProcessor(
         val deprecations = mutableMapOf<UserDeclared, UserMetadata.Deprecation>()
         for (element in global.getAnnotatedElements()) {
             for (annotation in element.annotations) {
-                val context = controller.getOrCreateContext(annotation.location.source)
                 when (val name = annotation.name.name) {
                     "Description" -> {
                         if (element in descriptions) {
-                            context.error {
+                            annotation.reportError(controller) {
                                 message("Duplicate @Description annotation")
                                 highlight("duplicate annotation", annotation.location)
                                 highlight("previous annotation", element.annotations.first { it.name.name == "Description" }.location)
@@ -26,7 +26,7 @@ internal class SemanticModelAnnotationProcessor(
                     }
                     "Deprecated" -> {
                         if (element in deprecations) {
-                            context.error {
+                            annotation.reportError(controller) {
                                 message("Duplicate @Deprecated annotation")
                                 highlight("duplicate annotation", annotation.location)
                                 highlight("previous annotation", element.annotations.first { it.name.name == "Deprecated" }.location)
@@ -35,7 +35,7 @@ internal class SemanticModelAnnotationProcessor(
                         deprecations[element] = getDeprecation(annotation)
                     }
                     else -> {
-                        context.error {
+                        annotation.reportError(controller) {
                             message("Unknown annotation @${name}, allowed annotations are @Description and @Deprecated")
                             highlight("invalid annotation", annotation.location)
                         }
@@ -62,9 +62,8 @@ internal class SemanticModelAnnotationProcessor(
     private fun getDescription(annotation: AnnotationNode): String {
         check(annotation.name.name == "Description")
         val arguments = annotation.arguments
-        val context = controller.getOrCreateContext(annotation.location.source)
         if (arguments.isEmpty()) {
-            context.error {
+            annotation.reportError(controller) {
                 message("Missing argument for @Description")
                 highlight("invalid annotation", annotation.location)
             }
@@ -72,7 +71,7 @@ internal class SemanticModelAnnotationProcessor(
         }
         if (arguments.size > 1) {
             val errorLocation = arguments[1].location.copy(end = arguments.last().location.end)
-            context.error {
+            annotation.reportError(controller) {
                 message("@Description expects exactly one string argument")
                 highlight("extraneous arguments", errorLocation)
             }
@@ -80,7 +79,7 @@ internal class SemanticModelAnnotationProcessor(
         return when (val description = arguments.first()) {
             is StringNode -> description.value
             else -> {
-                context.error {
+                annotation.reportError(controller) {
                     message("Argument for @Description must be a string")
                     highlight("invalid argument type", description.location)
                 }
@@ -91,17 +90,16 @@ internal class SemanticModelAnnotationProcessor(
 
     private fun getDeprecation(annotation: AnnotationNode): UserMetadata.Deprecation {
         check(annotation.name.name == "Deprecated")
-        val context = controller.getOrCreateContext(annotation.location.source)
         val description = annotation.arguments.firstOrNull()
         if (description != null && description !is StringNode) {
-            context.error {
+            annotation.reportError(controller) {
                 message("Argument for @Deprecated must be a string")
                 highlight("invalid argument type", description.location)
             }
         }
         if (annotation.arguments.size > 1) {
             val errorLocation = annotation.arguments[1].location.copy(end = annotation.arguments.last().location.end)
-            context.error {
+            annotation.reportError(controller) {
                 message("@Deprecated expects at most one string argument")
                 highlight("extraneous arguments", errorLocation)
             }

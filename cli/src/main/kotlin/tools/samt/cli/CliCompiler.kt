@@ -1,13 +1,26 @@
 package tools.samt.cli
 
+import tools.samt.codegen.Codegen
 import tools.samt.common.DiagnosticController
 import tools.samt.common.DiagnosticException
+import tools.samt.common.collectSamtFiles
+import tools.samt.common.readSamtSource
 import tools.samt.lexer.Lexer
 import tools.samt.parser.Parser
 import tools.samt.semantic.SemanticModel
+import java.io.IOException
+import kotlin.io.path.isDirectory
+import kotlin.io.path.notExists
 
 internal fun compile(command: CompileCommand, controller: DiagnosticController) {
-    val sourceFiles = command.files.readSamtSourceFiles(controller)
+    val (configuration ,_) = CliConfigParser.readConfig(command.file, controller) ?: return
+
+    if (configuration.source.notExists() || !configuration.source.isDirectory()) {
+        controller.reportGlobalError("Source path '${configuration.source.toUri()}' does not point to valid directory")
+        return
+    }
+
+    val sourceFiles = collectSamtFiles(configuration.source.toUri()).readSamtSource(controller)
 
     if (controller.hasErrors()) {
         return
@@ -40,7 +53,24 @@ internal fun compile(command: CompileCommand, controller: DiagnosticController) 
     }
 
     // build up the semantic model from the AST
-    SemanticModel.build(fileNodes, controller)
+    val model = SemanticModel.build(fileNodes, controller)
 
-    // Code Generators will be called here
+    // if the semantic model failed to build, exit
+    if (controller.hasErrors()) {
+        return
+    }
+
+    if (configuration.generators.isEmpty()) {
+        controller.reportGlobalInfo("No generators configured, did you forget to add a 'generators' section to the 'samt.yaml' configuration?")
+        return
+    }
+
+    for (generator in configuration.generators) {
+        val files = Codegen.generate(model, generator, controller)
+        try {
+            OutputWriter.write(generator.output, files)
+        } catch (e: IOException) {
+            controller.reportGlobalError("Failed to write output for generator '${generator.name}': ${e.message}")
+        }
+    }
 }

@@ -1,0 +1,22 @@
+package org.openapitools.examples.petstore
+
+record User {
+    id: ID?
+    username: String?
+    firstName: String?
+    lastName: String?
+    email: String?
+    password: String?
+    phone: String?
+    userStatus: Int?
+}
+
+service UserService {
+    createUser(user: User): User
+    createUsers(users: List<User>): User
+    login(username: String, password: String): String
+    logout()
+    getUserByUsername(username: String): User
+    updateUser(username: String, user: User): User
+    deleteUser(username: String)
+}

@@ -15,9 +15,6 @@ internal class DiagnosticFormatter(
     companion object {
         private const val CONTEXT_ROW_COUNT = 3
 
-        // FIXME: this is a bit of a hack to get the terminal width
-        //        it also means we're assuming this output will only ever be printed in a terminal
-        //        i don't actually know what happens if it doesn't run in a tty setting
         fun format(controller: DiagnosticController, startTimestamp: Long, currentTimestamp: Long, terminalWidth: Int = Terminal().info.width): String {
             val formatter = DiagnosticFormatter(controller, startTimestamp, currentTimestamp, terminalWidth)
             return formatter.format()

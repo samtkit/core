@@ -1,0 +1,21 @@
+package org.openapitools.examples.petstore
+
+provide PetEndpointHTTP {
+    implements PetService
+
+    transport http {
+        serialization: "json",
+        operations: {
+            PetService: {
+                basePath: "/pet",
+                addPet: "POST /",
+                updatePet: "PUT /",
+                findPetsByStatus: "GET /findByStatus {status in query}",
+                findPetsByTags: "GET /findByTags {tags in query}",
+                getPetById: "GET /{petId}",
+                updatePetWithForm: "POST /{petId} {name, status in query}",
+                deletePet: "DELETE /petId}"
+            }
+        }
+    }
+}

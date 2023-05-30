@@ -644,20 +644,6 @@ class SemanticModelTest {
                 source to listOf("Error: Record extends are not yet supported")
             )
         }
-
-        @Test
-        fun `cannot use async operations`() {
-            val source = """
-                package color
-
-                service ColorService {
-                    async get(): Int
-                }
-            """.trimIndent()
-            parseAndCheck(
-                source to listOf("Error: Async operations are not yet supported")
-            )
-        }
     }
 
     @Nested
@@ -821,7 +807,7 @@ class SemanticModelTest {
                 package services
 
                 service FooService {
-                    foo()
+                    oneway foo()
                 }
             """.trimIndent()
             parseAndCheck(
@@ -901,7 +887,7 @@ class SemanticModelTest {
                 @Deprecated("service deprecation")
                 service UserService {
                     @Deprecated("operation deprecation")
-                    get(@Deprecated("parameter deprecation") id: Id): User
+                    async get(@Deprecated("parameter deprecation") id: Id): User
                 }
             """.trimIndent()
             val model = parseAndCheck(

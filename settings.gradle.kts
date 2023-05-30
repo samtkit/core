@@ -7,6 +7,8 @@ include(
     ":semantic",
     ":language-server",
     ":samt-config",
+    ":codegen",
+    ":public-api",
 )
 
 dependencyResolutionManagement {

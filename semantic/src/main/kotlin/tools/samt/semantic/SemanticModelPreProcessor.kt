@@ -12,7 +12,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
     ) {
         if (statement.name in parentPackage) {
             val existingType = parentPackage.types.getValue(statement.name.name)
-            controller.getOrCreateContext(statement.location.source).error {
+            statement.reportError(controller) {
                 message("'${statement.name.name}' is already declared")
                 highlight("duplicate declaration", statement.name.location)
                 if (existingType is UserDeclared) {
@@ -32,7 +32,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
             val name = identifierGetter(item).name
             val existingLocation = existingItems.putIfAbsent(name, item.location)
             if (existingLocation != null) {
-                controller.getOrCreateContext(item.location.source).error {
+                item.reportError(controller) {
                     message("$what '$name' is defined more than once")
                     highlight("duplicate declaration", identifierGetter(item).location)
                     highlight("previous declaration", existingLocation)
@@ -47,7 +47,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
             for (component in file.packageDeclaration.name.components) {
                 var subPackage = parentPackage.subPackages.find { it.name == component.name }
                 if (subPackage == null) {
-                    subPackage = Package(component.name)
+                    subPackage = Package(component.name, parentPackage)
                     parentPackage.subPackages.add(subPackage)
                 }
                 parentPackage = subPackage
@@ -59,7 +59,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                         reportDuplicateDeclaration(parentPackage, statement)
                         reportDuplicates(statement.fields, "Record field") { it.name }
                         if (statement.extends.isNotEmpty()) {
-                            controller.getOrCreateContext(statement.location.source).error {
+                            statement.reportError(controller) {
                                 message("Record extends are not yet supported")
                                 highlight("cannot extend other records", statement.extends.first().location)
                             }
@@ -73,7 +73,8 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                         }
                         parentPackage += RecordType(
                             fields = fields,
-                            declaration = statement
+                            declaration = statement,
+                            parentPackage = parentPackage,
                         )
                     }
 
@@ -81,7 +82,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                         reportDuplicateDeclaration(parentPackage, statement)
                         reportDuplicates(statement.values, "Enum value") { it }
                         val values = statement.values.map { it.name }
-                        parentPackage += EnumType(values, statement)
+                        parentPackage += EnumType(values, statement, parentPackage)
                     }
 
                     is ServiceDeclarationNode -> {
@@ -106,12 +107,6 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                                 }
 
                                 is RequestResponseOperationNode -> {
-                                    if (operation.isAsync) {
-                                        controller.getOrCreateContext(operation.location.source).error {
-                                            message("Async operations are not yet supported")
-                                            highlight("unsupported async operation", operation.location)
-                                        }
-                                    }
                                     ServiceType.RequestResponseOperation(
                                         name = operation.name.name,
                                         parameters = parameters,
@@ -123,7 +118,7 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                                 }
                             }
                         }
-                        parentPackage += ServiceType(operations, statement)
+                        parentPackage += ServiceType(operations, statement, parentPackage)
                     }
 
                     is ProviderDeclarationNode -> {
@@ -135,11 +130,12 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                                 implements
                             )
                         }
+
                         val transport = ProviderType.Transport(
-                            name = statement.transport.protocolName.name,
+                            name = statement.transport.protocolName.name.lowercase(),
                             configuration = statement.transport.configuration
                         )
-                        parentPackage += ProviderType(implements, transport, statement)
+                        parentPackage += ProviderType(implements, transport, statement, parentPackage)
                     }
 
                     is ConsumerDeclarationNode -> {
@@ -152,7 +148,8 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                                     node = it
                                 )
                             },
-                            declaration = statement
+                            declaration = statement,
+                            parentPackage = parentPackage,
                         )
                     }
 
@@ -160,7 +157,8 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
                         reportDuplicateDeclaration(parentPackage, statement)
                         parentPackage += AliasType(
                             aliasedType = UnresolvedTypeReference(statement.type),
-                            declaration = statement
+                            declaration = statement,
+                            parentPackage = parentPackage,
                         )
                     }
 

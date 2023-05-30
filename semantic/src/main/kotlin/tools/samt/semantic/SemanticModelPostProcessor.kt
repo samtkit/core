@@ -172,7 +172,68 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
     }
 
     private fun checkRecord(record: RecordType) {
-        record.fields.forEach { checkModelType(it.type) }
+        record.fields.forEach {
+            checkModelType(it.type)
+            checkCycle(record, it)
+        }
+    }
+
+    private fun checkCycle(rootRecord: RecordType, rootField: RecordType.Field) {
+        fun impl(field: RecordType.Field, visited: List<Type>, encounteredOptional: Boolean = false) {
+            val typeReference = (field.type as? ResolvedTypeReference) ?: return
+            val type = typeReference.type
+            val record: RecordType
+            val newVisited: List<Type>
+            var isOptional = encounteredOptional || typeReference.isOptional
+            when (type) {
+                is RecordType -> {
+                    record = type
+                    newVisited = visited + record
+                }
+                is AliasType -> {
+                    val reference = type.fullyResolvedType ?: return
+                    val actualType = reference.type
+                    if (actualType !is RecordType) {
+                        return
+                    }
+                    record = actualType
+                    newVisited = visited + listOf(type, actualType)
+                    isOptional = isOptional || reference.isOptional
+                }
+                else -> return
+            }
+
+            if (record == rootRecord) {
+                val declaration = rootField.declaration
+                val path = newVisited.joinToString(" ► ") {
+                    buildString {
+                        append(it.humanReadableName)
+                        if (it is AliasType) {
+                            append(" (typealias)")
+                        }
+                    }
+                }
+                if (isOptional) {
+                    declaration.reportWarning(controller) {
+                        message("Record fields should not be cyclical, because they might not be serializable")
+                        highlight("cycle: $path", declaration.location)
+                    }
+                } else {
+                    declaration.reportError(controller) {
+                        message("Required record fields must not be cyclical, because they cannot be serialized")
+                        highlight("illegal cycle: $path", declaration.location)
+                    }
+                }
+                return
+            }
+            if (record in visited) {
+                // we ran into a cycle from a different record
+                return
+            }
+            record.fields.forEach { impl(it, newVisited, isOptional) }
+        }
+
+        impl(rootField, listOf(rootRecord))
     }
 
     private fun checkService(service: ServiceType) {

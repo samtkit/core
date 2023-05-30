@@ -115,20 +115,36 @@ internal class DiagnosticFormatter(
         DiagnosticSeverity.Info -> formatTextForSeverity("INFO:", severity, withBold = true)
     }
 
-    private fun formatGlobalMessage(message: DiagnosticGlobalMessage): String = buildString {
-        append(formatSeverityIndicator(message.severity))
+    private fun formatSeverityAndMessage(severity: DiagnosticSeverity, message: String): String = buildString {
+        // <severity>: <message>
+        append(formatSeverityIndicator(severity))
         append(" ")
-        append(message.message)
-        appendLine()
+
+        val indentLength = when (severity) {
+            DiagnosticSeverity.Error -> 7
+            DiagnosticSeverity.Warning -> 9
+            DiagnosticSeverity.Info -> 6
+        }
+
+        val lines = message.lines()
+        if (lines.size > 1) {
+            lines.forEachIndexed { index, it ->
+                if (index > 0) {
+                    append(" ".repeat(indentLength))
+                }
+                appendLine(it)
+            }
+        } else {
+            appendLine(message)
+        }
+    }
+
+    private fun formatGlobalMessage(message: DiagnosticGlobalMessage): String = buildString {
+        append(formatSeverityAndMessage(message.severity, message.message))
     }
 
     private fun formatMessage(message: DiagnosticMessage, context: DiagnosticContext): String = buildString {
-
-        // <severity>: <message>
-        append(formatSeverityIndicator(message.severity))
-        append(" ")
-        append(message.message)
-        appendLine()
+        append(formatSeverityAndMessage(message.severity, message.message))
 
         val errorSourceFilePath = if (message.highlights.isNotEmpty()) {
             message.highlights.first().location.source.path

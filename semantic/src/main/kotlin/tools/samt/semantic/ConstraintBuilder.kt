@@ -103,7 +103,7 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
 
         try { Regex(pattern) } catch (e: Exception) {
             argument.reportError(controller) {
-                message("Invalid regex pattern")
+                message("Invalid regex pattern: '${e.message}'")
                 highlight(argument.location)
             }
             return null

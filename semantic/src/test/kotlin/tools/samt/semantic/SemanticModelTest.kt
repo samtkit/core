@@ -345,7 +345,9 @@ class SemanticModelTest {
             """.trimIndent()
             parseAndCheck(
                 source to listOf(
-                    "Error: Invalid regex pattern"
+                    "Error: Invalid regex pattern: 'Dangling meta character '+' near index 5\n" +
+                            "fo/+++!hi\n" +
+                            "     ^'"
                 )
             )
         }

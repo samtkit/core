@@ -1,0 +1,5 @@
+source: ./
+
+generators:
+  - name: kotlin-ktor-consumer
+    output: ./out

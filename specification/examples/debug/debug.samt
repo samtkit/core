@@ -1,0 +1,5 @@
+package debug.test
+
+record Foo {
+    name: String ("++")
+}

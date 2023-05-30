@@ -204,7 +204,7 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
             }
 
             if (record == rootRecord) {
-                val location = rootField.declaration.location
+                val declaration = rootField.declaration
                 val path = newVisited.joinToString(" ► ") {
                     buildString {
                         append(it.humanReadableName)
@@ -213,16 +213,15 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
                         }
                     }
                 }
-                val context = controller.getOrCreateContext(location.source)
                 if (isOptional) {
-                    context.warn {
-                        message("Record fields should not be cyclical")
-                        highlight("cycle: $path", location)
+                    declaration.reportWarning(controller) {
+                        message("Record fields should not be cyclical, because they might not be serializable")
+                        highlight("cycle: $path", declaration.location)
                     }
                 } else {
-                    context.error {
-                        message("Required record fields must not be cyclical")
-                        highlight("illegal cycle: $path", location)
+                    declaration.reportError(controller) {
+                        message("Required record fields must not be cyclical, because they cannot be serialized")
+                        highlight("illegal cycle: $path", declaration.location)
                     }
                 }
                 return

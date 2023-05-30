@@ -841,7 +841,7 @@ class SemanticModelTest {
                 }
             """.trimIndent()
             parseAndCheck(
-                source to List(3) { "Error: Required record fields must not be cyclical" }
+                source to List(3) { "Error: Required record fields must not be cyclical, because they cannot be serialized" }
             )
         }
 
@@ -861,7 +861,7 @@ class SemanticModelTest {
                 typealias C = A
             """.trimIndent()
             parseAndCheck(
-                source to List(2) { "Error: Required record fields must not be cyclical" }
+                source to List(2) { "Error: Required record fields must not be cyclical, because they cannot be serialized" }
             )
         }
 
@@ -900,7 +900,7 @@ class SemanticModelTest {
                 typealias R = Recursive?
             """.trimIndent()
             parseAndCheck(
-                source to List(3) { "Warning: Record fields should not be cyclical" }
+                source to List(3) { "Warning: Record fields should not be cyclical, because they might not be serializable" }
             )
         }
     }

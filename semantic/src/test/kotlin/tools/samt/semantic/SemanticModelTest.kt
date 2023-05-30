@@ -1244,6 +1244,74 @@ class SemanticModelTest {
         }
     }
 
+    @Nested
+    inner class FileSeparation {
+        @Test
+        fun `provider in file with other types is warning`()  {
+            val source = """
+                package separation
+                
+                record A {}
+                record B {}
+                record C {}
+                record D {}
+                record E {}
+                record F {}
+                record G {}
+                record H {}
+                record I {}
+                
+                service TestService {}
+                
+                provide TestProvider {
+                    implements TestService
+                
+                    transport http
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf("Warning: Provider declaration should be in its own file")
+            )
+        }
+
+        @Test
+        fun `consumer in file with other types is warning`() {
+            val source = """
+                package separation
+                
+                record A {}
+                record B {}
+                record C {}
+                record D {}
+                record E {}
+                record F {}
+                record G {}
+                record H {}
+                record I {}
+                
+                service TestService {}
+                
+                consume TestProvider {
+                    uses TestService
+                }
+            """.trimIndent()
+            val providerSource = """
+                package separation
+                
+                provide TestProvider {
+                    implements TestService
+                
+                    transport http
+                }
+            """.trimIndent()
+
+            parseAndCheck(
+                source to listOf("Warning: Consumer declaration should be in its own file"),
+                providerSource to emptyList()
+            )
+        }
+    }
+
     private fun parseAndCheck(
         vararg sourceAndExpectedMessages: Pair<String, List<String>>,
     ): SemanticModel {

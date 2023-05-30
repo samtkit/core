@@ -41,8 +41,29 @@ internal class SemanticModelPreProcessor(private val controller: DiagnosticContr
         }
     }
 
+    private fun reportFileSeparation(file: FileNode) {
+        val statements = file.statements
+        if (statements.size < 10) {
+            return
+        }
+        for (provider in statements.filterIsInstance<ProviderDeclarationNode>()) {
+            controller.getOrCreateContext(provider.location.source).warn {
+                message("Provider declaration should be in its own file")
+                highlight("provider declaration", provider.location, highlightBeginningOnly = true)
+            }
+        }
+        for (consumer in statements.filterIsInstance<ConsumerDeclarationNode>()) {
+            controller.getOrCreateContext(consumer.location.source).warn {
+                message("Consumer declaration should be in its own file")
+                highlight("consumer declaration", consumer.location, highlightBeginningOnly = true)
+            }
+        }
+    }
+
     fun fillPackage(samtPackage: Package, files: List<FileNode>) {
         for (file in files) {
+            reportFileSeparation(file)
+
             var parentPackage = samtPackage
             for (component in file.packageDeclaration.name.components) {
                 var subPackage = parentPackage.subPackages.find { it.name == component.name }

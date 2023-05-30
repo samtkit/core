@@ -267,6 +267,33 @@ class HttpTransportTest {
         parseAndCheck(source to listOf("Error: No operation with name 'bar' found in service 'Greeter' of provider 'GreeterEndpoint'"))
     }
 
+    @Test
+    fun `prevents body parameters in GET operations`() {
+        val source = """
+            package tools.samt.greeter
+
+            service Greeter {
+                greet(name: String, uuid: String): String
+            }
+
+            provide GreeterEndpoint {
+                implements Greeter { greet }
+
+                transport http {
+                    operations: {
+                        Greeter: {
+                            greet: "GET /greet {name in body} {uuid in header}"
+                        }
+                    }
+                }
+            }
+        """.trimIndent()
+
+        parseAndCheck(source to listOf(
+            "Error: HTTP GET method doesn't accept 'name' as a BODY parameter"
+        ))
+    }
+
     private fun parseAndCheck(
         vararg sourceAndExpectedMessages: Pair<String, List<String>>,
     ): TransportConfiguration {

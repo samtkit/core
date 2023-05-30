@@ -118,6 +118,12 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                                     params.reportError("Parameter '$name' not found in operation '$operationName'", operationConfig)
                                     continue
                                 }
+
+                                if (transportMode == HttpTransportConfiguration.TransportMode.Body && methodEnum == HttpTransportConfiguration.HttpMethod.Get) {
+                                    params.reportError("HTTP GET method doesn't accept '$name' as a BODY parameter", operationConfig)
+                                    continue
+                                }
+
                                 parameters += HttpTransportConfiguration.ParameterConfiguration(
                                     name = name,
                                     transportMode = transportMode,

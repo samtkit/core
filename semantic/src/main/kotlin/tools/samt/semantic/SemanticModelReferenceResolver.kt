@@ -115,22 +115,23 @@ internal class SemanticModelReferenceResolver(
                             expression.reportError(controller) {
                                 message("List must have exactly one type argument")
                                 highlight("expected one type argument", expression.location)
+
+                                if (expression.arguments.size == 2) {
+                                    help("Did you mean to use Map<Key, Value> instead?")
+                                }
                             }
                         }
                     }
 
                     "Map" -> {
                         if (expression.arguments.size == 2) {
-                            val keyTypeNode = expression.arguments[0]
+                            val (keyTypeNode, valueTypeNode) = expression.arguments
                             val keyType = resolveAndLinkExpression(scope, keyTypeNode)
-                            val valueType = resolveAndLinkExpression(scope, expression.arguments[1])
-                            val mapType = MapType(
-                                keyType = keyType,
-                                valueType = valueType,
-                                node = expression,
-                            )
+                            val valueType = resolveAndLinkExpression(scope, valueTypeNode)
 
                             // error if keyType does not refer to string type
+                            // serializing non-string types as keys is currently not supported,
+                            // but types like integers or enums might be supported in the future
                             if (keyType.type != StringType) {
                                 keyTypeNode.reportError(controller) {
                                     message("Map key type must be String")
@@ -138,7 +139,11 @@ internal class SemanticModelReferenceResolver(
                                 }
                             } else {
                                 return ResolvedTypeReference(
-                                    type = mapType,
+                                    type = MapType(
+                                        keyType = keyType,
+                                        valueType = valueType,
+                                        node = expression,
+                                    ),
                                     typeNode = expression.base,
                                     fullNode = expression,
                                 )
@@ -147,6 +152,10 @@ internal class SemanticModelReferenceResolver(
                             expression.reportError(controller) {
                                 message("Map must have exactly two type arguments")
                                 highlight("expected two type arguments", expression.location)
+
+                                if (expression.arguments.size == 1) {
+                                    help("Did you mean to use List<Value> instead?")
+                                }
                             }
                         }
                     }

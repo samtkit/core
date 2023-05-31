@@ -231,12 +231,13 @@ class HttpTransportConfiguration(
         val parameter = operation?.getParameter(parameterName)
         val mode = parameter?.transportMode
 
-        if (mode != null) {
+        if (mode != null)
             return mode
-        } else if (operation?.method == HttpMethod.Get) {
-            return TransportMode.Query
+
+        return if (operation?.method == HttpMethod.Get) {
+            TransportMode.Query
         } else {
-            return TransportMode.Body
+            TransportMode.Body
         }
     }
 }

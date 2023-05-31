@@ -345,8 +345,8 @@ class SemanticModelTest {
             """.trimIndent()
             parseAndCheck(
                 source to listOf(
-                    "Error: Invalid regex pattern: 'Dangling meta character '+' near index 5\n" +
-                            "fo/+++!hi\n" +
+                    "Error: Invalid regex pattern: 'Dangling meta character '+' near index 5${System.lineSeparator()}" +
+                            "fo/+++!hi${System.lineSeparator()}" +
                             "     ^'"
                 )
             )

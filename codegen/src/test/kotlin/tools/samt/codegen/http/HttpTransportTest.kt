@@ -358,12 +358,47 @@ class HttpTransportTest {
             }
         """.trimIndent()
 
-        parseAndCheck(
-            source to listOf(
-                "Error: Operation 'greetTwo' cannot be mapped to the same method and path combination as operation 'greet'",
-                "Error: Operation 'greetFour' cannot be mapped to the same method and path combination as operation 'greetThree'"
-            )
-        )
+        parseAndCheck(source to listOf(
+            "Error: Operation 'Greeter.greetTwo' cannot be mapped to the same method and path combination (GET /greet) as operation 'Greeter.greet'",
+            "Error: Operation 'Greeter.greetFour' cannot be mapped to the same method and path combination (POST /greet/{name}) as operation 'Greeter.greetThree'"
+        ))
+    }
+
+    @Test
+    fun `operations within different services cannot have the same explicit path mapping`() {
+        val source = """
+            package tools.samt.greeter
+
+            service HelloSayer {
+                say(name: String): String
+            }
+
+            service GoodbyeSayer {
+                say(name: String): String
+            }
+
+            provide SayerEndpoint {
+                implements HelloSayer { say }
+                implements GoodbyeSayer { say }
+
+                transport http {
+                    operations: {
+                        HelloSayer: {
+                            basePath: "/sayer",
+                            say: "GET /say"
+                        },
+                        GoodbyeSayer: {
+                            basePath: "/sayer",
+                            say: "GET /say"
+                        }
+                    }
+                }
+            }
+        """.trimIndent()
+
+        parseAndCheck(source to listOf(
+            "Error: Operation 'GoodbyeSayer.say' cannot be mapped to the same method and path combination (GET /sayer/say) as operation 'HelloSayer.say'",
+        ))
     }
     
     private fun parseAndCheck(

@@ -115,20 +115,40 @@ internal class DiagnosticFormatter(
         DiagnosticSeverity.Info -> formatTextForSeverity("INFO:", severity, withBold = true)
     }
 
-    private fun formatGlobalMessage(message: DiagnosticGlobalMessage): String = buildString {
-        append(formatSeverityIndicator(message.severity))
+    private fun formatSeverityAndMessage(severity: DiagnosticSeverity, message: String): String = buildString {
+        // <severity>: <message>
+        append(formatSeverityIndicator(severity))
         append(" ")
-        append(message.message)
-        appendLine()
+
+        // these magic numbers relate to the amount of space each severity indicator takes up when formatted
+        // e.g. "ERROR: ".length == 7
+        //      "WARNING: ".length == 9
+        //      "INFO: ".length == 6
+        val indentLength = when (severity) {
+            DiagnosticSeverity.Error -> 7
+            DiagnosticSeverity.Warning -> 9
+            DiagnosticSeverity.Info -> 6
+        }
+
+        val lines = message.lines()
+        if (lines.size > 1) {
+            lines.forEachIndexed { index, it ->
+                if (index > 0) {
+                    append(" ".repeat(indentLength))
+                }
+                appendLine(it)
+            }
+        } else {
+            appendLine(message)
+        }
+    }
+
+    private fun formatGlobalMessage(message: DiagnosticGlobalMessage): String = buildString {
+        append(formatSeverityAndMessage(message.severity, message.message))
     }
 
     private fun formatMessage(message: DiagnosticMessage, context: DiagnosticContext): String = buildString {
-
-        // <severity>: <message>
-        append(formatSeverityIndicator(message.severity))
-        append(" ")
-        append(message.message)
-        appendLine()
+        append(formatSeverityAndMessage(message.severity, message.message))
 
         val errorSourceFilePath = if (message.highlights.isNotEmpty()) {
             message.highlights.first().location.source.path

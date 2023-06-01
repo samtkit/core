@@ -478,6 +478,48 @@ class DiagnosticFormatterTest {
         """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
     }
 
+    @Test
+    fun `multiline error messages`() {
+        val source = """
+            package debug
+            enum Test {
+                Foo
+            }
+        """.trimIndent()
+
+        val (fileNode, context, controller) = parse(source)
+        assert(fileNode.statements.single() is EnumDeclarationNode)
+        val enumNode = fileNode.statements.single() as EnumDeclarationNode
+
+        context.error {
+            message("some error\nsome error\nsome error")
+            highlight("some highlight", enumNode.location, highlightBeginningOnly = true)
+        }
+
+        val output = DiagnosticFormatter.format(controller, 0, 0, terminalWidth = 40)
+        val outputWithoutColors = output.replace(Regex("\u001B\\[[;\\d]*m"), "")
+
+        assertEquals("""
+            ────────────────────────────────────────
+            ERROR: some error
+                   some error
+                   some error
+             ---> file:///tmp/DiagnosticFormatterTest.samt:2:1
+            
+                  1 │ package debug
+                  2 │ enum Test {
+                    │ ^
+                    │ |
+                    │ some highlight
+                    │ 
+                  3 │     Foo
+                  4 │ }
+            
+            ────────────────────────────────────────
+            FAILED in 0ms (1 error(s), 0 warning(s))
+        """.trimIndent().trim(), outputWithoutColors.trimIndent().trim())
+    }
+
     private fun parse(source: String): Triple<FileNode, DiagnosticContext, DiagnosticController> {
         val baseDirectory = URI("file:///tmp")
         val filePath = URI("file:///tmp/DiagnosticFormatterTest.samt")

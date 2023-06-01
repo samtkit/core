@@ -111,27 +111,62 @@ internal class SemanticModelReferenceResolver(
                                 typeNode = expression.base,
                                 fullNode = expression,
                             )
+                        } else {
+                            expression.reportError(controller) {
+                                message("List must have exactly one type argument")
+                                highlight("expected one type argument", expression.location)
+
+                                if (expression.arguments.size == 2) {
+                                    help("Did you mean to use Map<Key, Value> instead?")
+                                }
+                            }
                         }
                     }
 
                     "Map" -> {
                         if (expression.arguments.size == 2) {
-                            return ResolvedTypeReference(
-                                type = MapType(
-                                    keyType = resolveAndLinkExpression(scope, expression.arguments[0]),
-                                    valueType = resolveAndLinkExpression(scope, expression.arguments[1]),
-                                    node = expression,
-                                ),
-                                typeNode = expression.base,
-                                fullNode = expression,
-                            )
+                            val (keyTypeNode, valueTypeNode) = expression.arguments
+                            val keyType = resolveAndLinkExpression(scope, keyTypeNode)
+                            val valueType = resolveAndLinkExpression(scope, valueTypeNode)
+
+                            // error if keyType does not refer to string type
+                            // serializing non-string types as keys is currently not supported,
+                            // but types like integers or enums might be supported in the future
+                            if (keyType.type != StringType) {
+                                keyTypeNode.reportError(controller) {
+                                    message("Map key type must be String")
+                                    highlight("expected String", keyTypeNode.location)
+                                }
+                            } else {
+                                return ResolvedTypeReference(
+                                    type = MapType(
+                                        keyType = keyType,
+                                        valueType = valueType,
+                                        node = expression,
+                                    ),
+                                    typeNode = expression.base,
+                                    fullNode = expression,
+                                )
+                            }
+                        } else {
+                            expression.reportError(controller) {
+                                message("Map must have exactly two type arguments")
+                                highlight("expected two type arguments", expression.location)
+
+                                if (expression.arguments.size == 1) {
+                                    help("Did you mean to use List<Value> instead?")
+                                }
+                            }
                         }
                     }
-                }
-                expression.reportError(controller) {
-                    message("Unsupported generic type")
-                    highlight(expression.location)
-                    help("Valid generic types are List<Value> and Map<Key, Value>")
+
+                    else -> {
+                        expression.reportError(controller) {
+                            message("Unsupported generic type")
+                            highlight(expression.location)
+                            help("Valid generic types are List<Value> and Map<Key, Value>")
+                        }
+                    }
                 }
             }
 

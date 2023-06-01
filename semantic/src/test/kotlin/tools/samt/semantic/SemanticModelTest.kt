@@ -453,9 +453,25 @@ class SemanticModelTest {
             """.trimIndent()
             parseAndCheck(
                 source to listOf(
-                    "Error: Unsupported generic type",
-                    "Error: Unsupported generic type",
-                    "Error: Unsupported generic type",
+                    "Error: List must have exactly one type argument",
+                    "Error: Map must have exactly two type arguments",
+                    "Error: Map must have exactly two type arguments",
+                )
+            )
+        }
+
+        @Test
+        fun `cannot use non-string types as keys in maps`() {
+            val source = """
+                package foo
+
+                record Foo {
+                    arg: Map<Int, String>
+                }
+            """.trimIndent()
+            parseAndCheck(
+                source to listOf(
+                    "Error: Map key type must be String",
                 )
             )
         }

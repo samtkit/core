@@ -54,7 +54,7 @@ class HttpTransportTest {
                       reference: Greeting
                 ): Greeting
                 greetAll(names: List<String?>): Map<String, Greeting>
-                get()
+                get(name: String)
                 put()
                 oneway delete()
                 patch()
@@ -98,6 +98,8 @@ class HttpTransportTest {
 
         assertEquals(HttpTransportConfiguration.HttpMethod.Get, transport.getMethod("Greeter", "get"))
         assertEquals("/", transport.getPath("Greeter", "get"))
+        assertEquals(HttpTransportConfiguration.TransportMode.Query, transport.getTransportMode("Greeter", "get", "name"))
+
         assertEquals(HttpTransportConfiguration.HttpMethod.Put, transport.getMethod("Greeter", "put"))
         assertEquals("/", transport.getPath("Greeter", "put"))
         assertEquals(HttpTransportConfiguration.HttpMethod.Delete, transport.getMethod("Greeter", "delete"))
@@ -265,6 +267,33 @@ class HttpTransportTest {
         """.trimIndent()
 
         parseAndCheck(source to listOf("Error: No operation with name 'bar' found in service 'Greeter' of provider 'GreeterEndpoint'"))
+    }
+
+    @Test
+    fun `prevents body parameters in GET operations`() {
+        val source = """
+            package tools.samt.greeter
+
+            service Greeter {
+                greet(name: String, uuid: String): String
+            }
+
+            provide GreeterEndpoint {
+                implements Greeter { greet }
+
+                transport http {
+                    operations: {
+                        Greeter: {
+                            greet: "GET /greet {name in body} {uuid in header}"
+                        }
+                    }
+                }
+            }
+        """.trimIndent()
+
+        parseAndCheck(source to listOf(
+            "Error: HTTP GET method doesn't accept 'name' as a BODY parameter"
+        ))
     }
 
     private fun parseAndCheck(

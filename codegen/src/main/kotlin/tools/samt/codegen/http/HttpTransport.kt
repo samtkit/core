@@ -118,6 +118,12 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                                     params.reportError("Parameter '$name' not found in operation '$operationName'", operationConfig)
                                     continue
                                 }
+
+                                if (transportMode == HttpTransportConfiguration.TransportMode.Body && methodEnum == HttpTransportConfiguration.HttpMethod.Get) {
+                                    params.reportError("HTTP GET method doesn't accept '$name' as a BODY parameter", operationConfig)
+                                    continue
+                                }
+
                                 parameters += HttpTransportConfiguration.ParameterConfiguration(
                                     name = name,
                                     transportMode = transportMode,
@@ -223,6 +229,15 @@ class HttpTransportConfiguration(
         val service = getService(serviceName)
         val operation = service?.getOperation(operationName)
         val parameter = operation?.getParameter(parameterName)
-        return parameter?.transportMode ?: TransportMode.Body
+        val mode = parameter?.transportMode
+
+        if (mode != null)
+            return mode
+
+        return if (operation?.method == HttpMethod.Get) {
+            TransportMode.Query
+        } else {
+            TransportMode.Body
+        }
     }
 }

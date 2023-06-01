@@ -10,7 +10,7 @@
 
 <p align="center">
   <i>Tired of unreadable OpenAPI YAML files and a plethora of different tools?
-    <br>SAMT is a developer-focused, extendable and easy-to-learn toolkit for modeling APIs using a business-first approach</i>
+    <br>SAMT is a developer-focused, extensible and easy-to-learn toolkit for modeling APIs using a business-first approach</i>
   <br>
 </p>
 

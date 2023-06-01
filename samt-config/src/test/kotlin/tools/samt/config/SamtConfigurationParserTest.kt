@@ -2,9 +2,7 @@ package tools.samt.config
 
 import com.charleskorn.kaml.YamlException
 import org.junit.jupiter.api.assertThrows
-import kotlin.io.path.Path
-import kotlin.io.path.exists
-import kotlin.io.path.isDirectory
+import kotlin.io.path.*
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -142,5 +140,32 @@ class SamtConfigurationParserTest {
             "Unknown property 'generator'. Known properties are: extends, rules",
             exception.message
         )
+    }
+
+    @Test
+    fun `single component relative path works`() {
+        val configPath = Path("samt-minimal.yaml")
+        try {
+            testDirectory.resolve("samt-minimal.yaml").copyTo(configPath, overwrite = true)
+            val samtConfiguration = SamtConfigurationParser.parseConfiguration(configPath)
+            assertEquals(
+                tools.samt.common.SamtConfiguration(
+                    source = Path("src"),
+                    plugins = emptyList(),
+                    generators = listOf(
+                        tools.samt.common.SamtGeneratorConfiguration(
+                            name = "samt-kotlin-ktor",
+                            output = Path("out"),
+                            options = mapOf(
+                                "addPrefixToKotlinPackage" to "com.company.samt.generated",
+                            )
+                        )
+                    )
+                ),
+                samtConfiguration
+            )
+        } finally {
+            configPath.deleteIfExists()
+        }
     }
 }

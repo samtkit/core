@@ -98,9 +98,18 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
     private fun createPattern(
         expression: ExpressionNode,
         argument: StringNode,
-    ): ResolvedTypeReference.Constraint.Pattern {
-        // We will validate the pattern here in the future
-        return ResolvedTypeReference.Constraint.Pattern(expression, argument.value)
+    ): ResolvedTypeReference.Constraint.Pattern? {
+        val pattern = argument.value
+
+        try { Regex(pattern) } catch (e: Exception) {
+            argument.reportError(controller) {
+                message("Invalid regex pattern: '${e.message}'")
+                highlight(argument.location)
+            }
+            return null
+        }
+
+        return ResolvedTypeReference.Constraint.Pattern(expression, pattern)
     }
 
     private fun createValue(

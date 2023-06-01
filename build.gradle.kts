@@ -8,9 +8,7 @@ repositories {
 
 dependencies {
     kover(project(":common"))
-    kover(project(":lexer"))
-    kover(project(":parser"))
-    kover(project(":semantic"))
+    kover(project(":compiler"))
     kover(project(":cli"))
     kover(project(":language-server"))
     kover(project(":samt-config"))

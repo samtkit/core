@@ -6,5 +6,4 @@ plugins {
 dependencies {
     implementation(kotlin("reflect"))
     implementation(project(":common"))
-    implementation(project(":lexer"))
 }

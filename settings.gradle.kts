@@ -2,9 +2,7 @@ rootProject.name = "samt-core"
 include(
     ":common",
     ":cli",
-    ":lexer",
-    ":parser",
-    ":semantic",
+    ":compiler",
     ":language-server",
     ":samt-config",
     ":codegen",

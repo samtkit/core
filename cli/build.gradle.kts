@@ -11,12 +11,9 @@ dependencies {
     implementation(libs.mordant)
     implementation(libs.kotlinx.serialization.json)
     implementation(project(":common"))
-    implementation(project(":lexer"))
-    implementation(project(":parser"))
-    implementation(project(":semantic"))
+    implementation(project(":compiler"))
     implementation(project(":samt-config"))
     implementation(project(":codegen"))
-    implementation(project(":public-api"))
 }
 
 application {

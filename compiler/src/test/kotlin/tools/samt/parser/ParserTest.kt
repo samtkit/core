@@ -2,7 +2,10 @@ package tools.samt.parser
 
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.assertThrows
-import tools.samt.common.*
+import tools.samt.common.DiagnosticContext
+import tools.samt.common.DiagnosticController
+import tools.samt.common.DiagnosticException
+import tools.samt.common.SourceFile
 import tools.samt.lexer.Lexer
 import java.net.URI
 import kotlin.test.Test

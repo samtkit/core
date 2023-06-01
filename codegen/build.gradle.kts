@@ -5,9 +5,7 @@ plugins {
 
 dependencies {
     implementation(project(":common"))
-    implementation(project(":parser"))
-    implementation(project(":semantic"))
-    implementation(project(":public-api"))
-    testImplementation(project(":lexer"))
+    implementation(project(":compiler"))
+    api(project(":public-api"))
     testImplementation(project(":samt-config"))
 }

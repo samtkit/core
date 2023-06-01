@@ -120,6 +120,10 @@ internal class DiagnosticFormatter(
         append(formatSeverityIndicator(severity))
         append(" ")
 
+        // these magic numbers relate to the amount of space each severity indicator takes up when formatted
+        // e.g. "ERROR: ".length == 7
+        //      "WARNING: ".length == 9
+        //      "INFO: ".length == 6
         val indentLength = when (severity) {
             DiagnosticSeverity.Error -> 7
             DiagnosticSeverity.Warning -> 9

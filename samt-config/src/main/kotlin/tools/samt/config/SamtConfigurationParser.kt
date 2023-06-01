@@ -3,6 +3,7 @@ package tools.samt.config
 import com.charleskorn.kaml.*
 import kotlinx.serialization.SerializationException
 import java.nio.file.Path
+import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import tools.samt.common.DiagnosticSeverity as CommonDiagnosticSeverity
@@ -37,7 +38,8 @@ object SamtConfigurationParser {
             SamtConfiguration()
         }
 
-        val projectDirectory = path.parent
+        // a single component relative path like "samt.yaml" will return null as parent, fallback to working directory
+        val projectDirectory = path.parent ?: Path("")
 
         return CommonSamtConfiguration(
             source = projectDirectory.resolve(parsedConfiguration.source).normalize(),

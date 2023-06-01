@@ -1,6 +1,6 @@
 plugins {
     application
-    id("samt-core.kotlin-conventions")
+    id("samt-core.kotlin-jvm")
     alias(libs.plugins.shadow)
     kotlin("plugin.serialization")
     alias(libs.plugins.kover)

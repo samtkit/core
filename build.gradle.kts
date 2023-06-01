@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kover)
+    alias(libs.plugins.versioning)
 }
 
 repositories {
@@ -23,6 +24,18 @@ koverReport {
                     minValue = 80
                 }
             }
+        }
+    }
+}
+
+version = "0.0.0-SNAPSHOT"
+gitVersioning.apply {
+    refs {
+        branch(".+") {
+            version = "\${ref}-SNAPSHOT"
+        }
+        tag("v(?<version>.*)") {
+            version = "\${ref.version}"
         }
     }
 }

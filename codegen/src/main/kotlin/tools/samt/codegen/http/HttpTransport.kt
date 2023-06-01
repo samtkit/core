@@ -25,126 +25,159 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                 ?: HttpTransportConfiguration.SerializationMode.Json
 
         val services = config.getFieldOrNull("operations")?.asObject?.let { operations ->
+            val parsedServices = mutableListOf<HttpTransportConfiguration.ServiceConfiguration>()
 
-            operations.asObject.fields.map { (operationsKey, operationsField) ->
-                val servicePath = operations.getFieldOrNull("basePath")?.asValue?.asString ?: ""
+            for ((operationsKey, operationsField) in operations.asObject.fields) {
                 val service = operationsKey.asServiceName
                 val serviceName = service.name
                 val operationConfiguration = operationsField.asObject
+                val servicePath = operationConfiguration.getFieldOrNull("basePath")?.asValue?.asString ?: ""
 
-                val parsedOperations = operationConfiguration.fields
-                    .filterKeys { it.asIdentifier != "basePath" }
-                    .mapNotNull { (key, value) ->
-                        val operationConfig = value.asValue
-                        val operation = key.asOperationName(service)
-                        val operationName = operation.name
+                val operationConfigurations = operationConfiguration.fields.filterKeys { it.asIdentifier != "basePath" }
+                val parsedOperations = mutableListOf<HttpTransportConfiguration.OperationConfiguration>()
 
-                        if (!(operationConfig.asString matches isValidRegex)) {
-                            params.reportError(
-                                "Invalid operation config for '$operationName', expected '<method> <path> <parameters>'. A valid example: 'POST /${operationName} {parameter1, parameter2 in query}'",
-                                operationConfig
-                            )
-                            return@mapNotNull null
+                operationConfigLoop@for ((key, value) in operationConfigurations) {
+                    val operationConfig = value.asValue
+                    val operation = key.asOperationName(service)
+                    val operationName = operation.name
+
+                    if (!(operationConfig.asString matches isValidRegex)) {
+                        params.reportError(
+                            "Invalid operation config for '$operationName', expected '<method> <path> <parameters>'. A valid example: 'POST /${operationName} {parameter1, parameter2 in query}'",
+                            operationConfig
+                        )
+                        continue
+                    }
+
+                    val methodEndpointResult = methodEndpointRegex.matchEntire(operationConfig.asString)
+                    if (methodEndpointResult == null) {
+                        params.reportError(
+                            "Invalid operation config for '$operationName', expected '<method> <path> <parameters>'",
+                            operationConfig
+                        )
+                        continue
+                    }
+
+                    val (method, path, parameterPart) = methodEndpointResult.destructured
+
+                    val methodEnum = when (method) {
+                        "GET" -> HttpTransportConfiguration.HttpMethod.Get
+                        "POST" -> HttpTransportConfiguration.HttpMethod.Post
+                        "PUT" -> HttpTransportConfiguration.HttpMethod.Put
+                        "DELETE" -> HttpTransportConfiguration.HttpMethod.Delete
+                        "PATCH" -> HttpTransportConfiguration.HttpMethod.Patch
+                        else -> {
+                            params.reportError("Invalid http method '$method'", operationConfig)
+                            continue
+                        }
+                    }
+
+                    // FIXME:   This approach has the drawback that it can only detect invalid configuration if they
+                    //          are explicitly declared in the config object. If the user implements a method but does
+                    //          not provide a configuration for it, it will not be detected as an error.
+                    //
+                    //          In order to fix this we would need to pass the implemented services and operations to
+                    //          the parser and read configurations on demand. That way the parser knows all operations
+                    //          and can generate default configurations for operations that have no explicit configuration.
+
+                    // check for duplicate method/path combinations within current service
+                    for (operation in parsedOperations) {
+                        if (operation.path == path && operation.method == methodEnum) {
+                            val duplicate = operation
+                            params.reportError("Operation '${serviceName}.${operationName}' cannot be mapped to the same method and path combination ($method $servicePath$path) as operation '${serviceName}.${duplicate.name}'", operationConfig)
+                            continue@operationConfigLoop
+                        }
+                    }
+
+                    // check for duplicate method/path combinations within previously declared services
+                    for (service in parsedServices.filter { it.path == servicePath }) {
+                        val duplicate = service.operations.find { op ->
+                            op.path == path && op.method == methodEnum
                         }
 
-                        val methodEndpointResult = methodEndpointRegex.matchEntire(operationConfig.asString)
-                        if (methodEndpointResult == null) {
+                        if (duplicate != null) {
+                            params.reportError("Operation '${serviceName}.${operationName}' cannot be mapped to the same method and path combination ($method ${service.path}$path) as operation '${service.name}.${duplicate.name}'", operationConfig)
+                            continue@operationConfigLoop
+                        }
+                    }
+
+                    val parameters = mutableListOf<HttpTransportConfiguration.ParameterConfiguration>()
+
+                    // parse path and path parameters
+                    val pathComponents = path.split("/")
+                    for (component in pathComponents) {
+                        if (!component.startsWith("{") || !component.endsWith("}")) continue
+
+                        val pathParameterName = component.substring(1, component.length - 1)
+
+                        if (pathParameterName.isEmpty()) {
                             params.reportError(
-                                "Invalid operation config for '$operationName', expected '<method> <path> <parameters>'",
+                                "Expected parameter name between curly braces in '$path'",
                                 operationConfig
                             )
-                            return@mapNotNull null
+                            continue
                         }
 
-                        val (method, path, parameterPart) = methodEndpointResult.destructured
+                        if (operation.parameters.none { it.name == pathParameterName }) {
+                            params.reportError("Path parameter '$pathParameterName' not found in operation '$operationName'", operationConfig)
+                            continue
+                        }
 
-                        val methodEnum = when (method) {
-                            "GET" -> HttpTransportConfiguration.HttpMethod.Get
-                            "POST" -> HttpTransportConfiguration.HttpMethod.Post
-                            "PUT" -> HttpTransportConfiguration.HttpMethod.Put
-                            "DELETE" -> HttpTransportConfiguration.HttpMethod.Delete
-                            "PATCH" -> HttpTransportConfiguration.HttpMethod.Patch
+                        parameters += HttpTransportConfiguration.ParameterConfiguration(
+                            name = pathParameterName,
+                            transportMode = HttpTransportConfiguration.TransportMode.Path,
+                        )
+                    }
+
+                    val parameterResults = parameterRegex.findAll(parameterPart)
+                    // parse parameter declarations
+                    for (parameterResult in parameterResults) {
+                        val (names, type) = parameterResult.destructured
+                        val transportMode = when (type) {
+                            "query" -> HttpTransportConfiguration.TransportMode.Query
+                            "header" -> HttpTransportConfiguration.TransportMode.Header
+                            "body" -> HttpTransportConfiguration.TransportMode.Body
+                            "cookie" -> HttpTransportConfiguration.TransportMode.Cookie
                             else -> {
-                                params.reportError("Invalid http method '$method'", operationConfig)
-                                return@mapNotNull null
+                                params.reportError("Invalid transport mode '$type'", operationConfig)
+                                continue
                             }
                         }
 
-                        val parameters = mutableListOf<HttpTransportConfiguration.ParameterConfiguration>()
-
-                        // parse path and path parameters
-                        val pathComponents = path.split("/")
-                        for (component in pathComponents) {
-                            if (!component.startsWith("{") || !component.endsWith("}")) continue
-
-                            val pathParameterName = component.substring(1, component.length - 1)
-
-                            if (pathParameterName.isEmpty()) {
-                                params.reportError(
-                                    "Expected parameter name between curly braces in '$path'",
-                                    operationConfig
-                                )
+                        for (name in names.split(",").map { it.trim() }) {
+                            if (operation.parameters.none { it.name == name }) {
+                                params.reportError("Parameter '$name' not found in operation '$operationName'", operationConfig)
                                 continue
                             }
 
-                            if (operation.parameters.none { it.name == pathParameterName }) {
-                                params.reportError("Path parameter '$pathParameterName' not found in operation '$operationName'", operationConfig)
+                            if (transportMode == HttpTransportConfiguration.TransportMode.Body && methodEnum == HttpTransportConfiguration.HttpMethod.Get) {
+                                params.reportError("HTTP GET method doesn't accept '$name' as a BODY parameter", operationConfig)
                                 continue
                             }
 
                             parameters += HttpTransportConfiguration.ParameterConfiguration(
-                                name = pathParameterName,
-                                transportMode = HttpTransportConfiguration.TransportMode.Path,
+                                name = name,
+                                transportMode = transportMode,
                             )
                         }
-
-                        val parameterResults = parameterRegex.findAll(parameterPart)
-                        // parse parameter declarations
-                        for (parameterResult in parameterResults) {
-                            val (names, type) = parameterResult.destructured
-                            val transportMode = when (type) {
-                                "query" -> HttpTransportConfiguration.TransportMode.Query
-                                "header" -> HttpTransportConfiguration.TransportMode.Header
-                                "body" -> HttpTransportConfiguration.TransportMode.Body
-                                "cookie" -> HttpTransportConfiguration.TransportMode.Cookie
-                                else -> {
-                                    params.reportError("Invalid transport mode '$type'", operationConfig)
-                                    continue
-                                }
-                            }
-
-                            for (name in names.split(",").map { it.trim() }) {
-                                if (operation.parameters.none { it.name == name }) {
-                                    params.reportError("Parameter '$name' not found in operation '$operationName'", operationConfig)
-                                    continue
-                                }
-
-                                if (transportMode == HttpTransportConfiguration.TransportMode.Body && methodEnum == HttpTransportConfiguration.HttpMethod.Get) {
-                                    params.reportError("HTTP GET method doesn't accept '$name' as a BODY parameter", operationConfig)
-                                    continue
-                                }
-
-                                parameters += HttpTransportConfiguration.ParameterConfiguration(
-                                    name = name,
-                                    transportMode = transportMode,
-                                )
-                            }
-                        }
-
-                        HttpTransportConfiguration.OperationConfiguration(
-                            name = operationName,
-                            method = methodEnum,
-                            path = path,
-                            parameters = parameters,
-                        )
                     }
 
-                HttpTransportConfiguration.ServiceConfiguration(
+                    parsedOperations += HttpTransportConfiguration.OperationConfiguration(
+                        name = operationName,
+                        method = methodEnum,
+                        path = path,
+                        parameters = parameters,
+                    )
+                }
+
+                parsedServices += HttpTransportConfiguration.ServiceConfiguration(
                     name = serviceName,
                     operations = parsedOperations,
                     path = servicePath
                 )
             }
+
+            parsedServices
         } ?: emptyList()
 
         return HttpTransportConfiguration(

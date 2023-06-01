@@ -54,7 +54,7 @@ class HttpTransportTest {
                       reference: Greeting
                 ): Greeting
                 greetAll(names: List<String?>): Map<String, Greeting>
-                get()
+                get(name: String)
                 put()
                 oneway delete()
                 patch()
@@ -98,6 +98,8 @@ class HttpTransportTest {
 
         assertEquals(HttpTransportConfiguration.HttpMethod.Get, transport.getMethod("Greeter", "get"))
         assertEquals("/", transport.getPath("Greeter", "get"))
+        assertEquals(HttpTransportConfiguration.TransportMode.Query, transport.getTransportMode("Greeter", "get", "name"))
+
         assertEquals(HttpTransportConfiguration.HttpMethod.Put, transport.getMethod("Greeter", "put"))
         assertEquals("/", transport.getPath("Greeter", "put"))
         assertEquals(HttpTransportConfiguration.HttpMethod.Delete, transport.getMethod("Greeter", "delete"))

@@ -72,6 +72,14 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                         }
                     }
 
+                    // FIXME:   This approach has the drawback that it can only detect invalid configuration if they
+                    //          are explicitly declared in the config object. If the user implements a method but does
+                    //          not provide a configuration for it, it will not be detected as an error.
+                    //
+                    //          In order to fix this we would need to pass the implemented services and operations to
+                    //          the parser and read configurations on demand. That way the parser knows all operations
+                    //          and can generate default configurations for operations that have no explicit configuration.
+
                     // check for duplicate method/path combinations within current service
                     for (operation in parsedOperations) {
                         if (operation.path == path && operation.method == methodEnum) {

@@ -8,6 +8,11 @@ plugins {
 val mavenName: String by project.extra
 val mavenDescription: String by project.extra
 
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
 publishing {
     publications {
         create<MavenPublication>("maven") {

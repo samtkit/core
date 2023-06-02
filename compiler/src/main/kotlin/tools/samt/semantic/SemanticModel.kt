@@ -214,7 +214,7 @@ internal class SemanticModelBuilder(
                             filePackage.sourcePackage.linkType(import, type)
 
                             val name = if (import.alias != null) {
-                                import.alias!!.name
+                                import.alias.name
                             } else {
                                 import.name.components.last().name
                             }

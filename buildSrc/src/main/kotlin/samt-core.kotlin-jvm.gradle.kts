@@ -22,4 +22,4 @@ repositories {
     mavenCentral()
 }
 
-group = "samt-core"
+group = "tools.samt"

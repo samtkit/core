@@ -1,6 +1,8 @@
 package tools.samt.lexer
 
-import tools.samt.common.*
+import tools.samt.common.DiagnosticContext
+import tools.samt.common.FileOffset
+import tools.samt.common.Location
 import java.io.BufferedReader
 import java.io.Reader
 

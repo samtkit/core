@@ -1,6 +1,6 @@
 plugins {
     application
-    id("samt-core.kotlin-conventions")
+    id("samt-core.kotlin-jvm")
     alias(libs.plugins.shadow)
     alias(libs.plugins.kover)
 }
@@ -9,9 +9,7 @@ dependencies {
     implementation(libs.jCommander)
     implementation(libs.lsp4j)
     implementation(project(":common"))
-    implementation(project(":lexer"))
-    implementation(project(":parser"))
-    implementation(project(":semantic"))
+    implementation(project(":compiler"))
     implementation(project(":samt-config"))
 }
 

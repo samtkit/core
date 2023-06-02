@@ -2,9 +2,7 @@ rootProject.name = "samt-core"
 include(
     ":common",
     ":cli",
-    ":lexer",
-    ":parser",
-    ":semantic",
+    ":compiler",
     ":language-server",
     ":samt-config",
     ":codegen",
@@ -20,6 +18,7 @@ dependencyResolutionManagement {
         val kotlinxSerialization = "1.5.1"
         val kamlVersion = "0.53.0"
         val kover = "0.7.0"
+        val gitVersioning = "6.4.2"
         val lsp4j = "0.21.0"
 
         create("libs") {
@@ -32,6 +31,7 @@ dependencyResolutionManagement {
 
             plugin("shadow", "com.github.johnrengelman.shadow").version(shadow)
             plugin("kover", "org.jetbrains.kotlinx.kover").version(kover)
+            plugin("versioning", "me.qoomon.git-versioning").version(gitVersioning)
         }
     }
 }

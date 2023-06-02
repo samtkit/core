@@ -1,6 +1,8 @@
 package tools.samt.semantic
 
-import tools.samt.parser.*
+import tools.samt.parser.BundleIdentifierNode
+import tools.samt.parser.IdentifierNode
+import tools.samt.parser.Node
 
 class Package(val name: String, private val parent: Package?) {
     val subPackages: MutableList<Package> = mutableListOf()

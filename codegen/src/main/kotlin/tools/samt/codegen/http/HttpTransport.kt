@@ -81,22 +81,27 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                     //          and can generate default configurations for operations that have no explicit configuration.
 
                     // check for duplicate method/path combinations within current service
-                    for (operation in parsedOperations) {
-                        if (operation.path == path && operation.method == methodEnum) {
-                            val duplicate = operation
-                            params.reportError("Operation '${serviceName}.${operationName}' cannot be mapped to the same method and path combination ($method $servicePath$path) as operation '${serviceName}.${duplicate.name}'", operationConfig)
+                    for (parsedOperation in parsedOperations) {
+                        if (parsedOperation.path == path && parsedOperation.method == methodEnum) {
+                            params.reportError(
+                                "Operation '${serviceName}.${operationName}' cannot be mapped to the same method and path combination ($method $servicePath$path) as operation '${serviceName}.${parsedOperation.name}'",
+                                operationConfig
+                            )
                             continue@operationConfigLoop
                         }
                     }
 
                     // check for duplicate method/path combinations within previously declared services
-                    for (service in parsedServices.filter { it.path == servicePath }) {
-                        val duplicate = service.operations.find { op ->
+                    for (parsedService in parsedServices.filter { it.path == servicePath }) {
+                        val duplicate = parsedService.operations.find { op ->
                             op.path == path && op.method == methodEnum
                         }
 
                         if (duplicate != null) {
-                            params.reportError("Operation '${serviceName}.${operationName}' cannot be mapped to the same method and path combination ($method ${service.path}$path) as operation '${service.name}.${duplicate.name}'", operationConfig)
+                            params.reportError(
+                                "Operation '${serviceName}.${operationName}' cannot be mapped to the same method and path combination ($method ${parsedService.path}$path) as operation '${parsedService.name}.${duplicate.name}'",
+                                operationConfig
+                            )
                             continue@operationConfigLoop
                         }
                     }

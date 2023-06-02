@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kover)
+    alias(libs.plugins.versioning)
 }
 
 repositories {
@@ -8,9 +9,7 @@ repositories {
 
 dependencies {
     kover(project(":common"))
-    kover(project(":lexer"))
-    kover(project(":parser"))
-    kover(project(":semantic"))
+    kover(project(":compiler"))
     kover(project(":cli"))
     kover(project(":language-server"))
     kover(project(":samt-config"))
@@ -25,6 +24,18 @@ koverReport {
                     minValue = 80
                 }
             }
+        }
+    }
+}
+
+version = "0.0.0-SNAPSHOT"
+gitVersioning.apply {
+    refs {
+        branch(".+") {
+            version = "\${ref}-SNAPSHOT"
+        }
+        tag("v(?<version>.*)") {
+            version = "\${ref.version}"
         }
     }
 }

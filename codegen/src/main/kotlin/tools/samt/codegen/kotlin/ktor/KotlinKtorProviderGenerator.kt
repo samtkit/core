@@ -3,6 +3,8 @@ package tools.samt.codegen.kotlin.ktor
 import tools.samt.api.plugin.CodegenFile
 import tools.samt.api.plugin.Generator
 import tools.samt.api.plugin.GeneratorParams
+import tools.samt.api.transports.http.HttpMethod
+import tools.samt.api.transports.http.TransportMode
 import tools.samt.api.types.*
 import tools.samt.codegen.http.HttpTransportConfiguration
 import tools.samt.codegen.kotlin.GeneratedFilePreamble
@@ -161,7 +163,7 @@ object KotlinKtorProviderGenerator : Generator {
     ) {
         val service = info.service
         appendLine("    // Handler for SAMT Service ${info.service.name}")
-        appendLine("    route(\"${transportConfiguration.getPath(service.name)}\") {")
+        appendLine("    route(\"${transportConfiguration.getServicePath(service.name)}\") {")
         info.implements.implementedOperations.forEach { operation ->
             appendProviderOperation(operation, info, service, transportConfiguration, options)
         }
@@ -244,11 +246,11 @@ object KotlinKtorProviderGenerator : Generator {
         transportConfiguration: HttpTransportConfiguration,
     ): String {
         val method = when (transportConfiguration.getMethod(service.name, operation.name)) {
-            HttpTransportConfiguration.HttpMethod.Get -> "get"
-            HttpTransportConfiguration.HttpMethod.Post -> "post"
-            HttpTransportConfiguration.HttpMethod.Put -> "put"
-            HttpTransportConfiguration.HttpMethod.Delete -> "delete"
-            HttpTransportConfiguration.HttpMethod.Patch -> "patch"
+            HttpMethod.Get -> "get"
+            HttpMethod.Post -> "post"
+            HttpMethod.Put -> "put"
+            HttpMethod.Delete -> "delete"
+            HttpMethod.Patch -> "patch"
         }
         val path = transportConfiguration.getPath(service.name, operation.name)
         return "${method}(\"${path}\")"
@@ -275,7 +277,7 @@ object KotlinKtorProviderGenerator : Generator {
 
     private fun StringBuilder.appendParameterDeserialization(
         parameter: ServiceOperationParameter,
-        transportMode: HttpTransportConfiguration.TransportMode,
+        transportMode: TransportMode,
         options: Map<String, String>,
     ) {
         appendReadParameterJsonElement(parameter, transportMode)
@@ -284,26 +286,26 @@ object KotlinKtorProviderGenerator : Generator {
 
     private fun StringBuilder.appendReadParameterJsonElement(
         parameter: ServiceOperationParameter,
-        transportMode: HttpTransportConfiguration.TransportMode,
+        transportMode: TransportMode,
     ) {
         appendLine("                // Read from ${transportMode.name.replaceFirstChar { it.lowercase() }}")
         append("                val jsonElement = ")
         if (parameter.type.isRuntimeOptional) {
             when (transportMode) {
-                HttpTransportConfiguration.TransportMode.Body -> append("body.jsonObject[\"${parameter.name}\"]?.takeUnless { it is JsonNull }")
-                HttpTransportConfiguration.TransportMode.QueryParameter -> append("call.request.queryParameters[\"${parameter.name}\"]?.toJsonOrNull()")
-                HttpTransportConfiguration.TransportMode.Path -> append("call.parameters[\"${parameter.name}\"]?.toJsonOrNull()")
-                HttpTransportConfiguration.TransportMode.Header -> append("call.request.headers[\"${parameter.name}\"]?.toJsonOrNull()")
-                HttpTransportConfiguration.TransportMode.Cookie -> append("call.request.cookies[\"${parameter.name}\"]?.toJsonOrNull()")
+                TransportMode.Body -> append("body.jsonObject[\"${parameter.name}\"]?.takeUnless { it is JsonNull }")
+                TransportMode.QueryParameter -> append("call.request.queryParameters[\"${parameter.name}\"]?.toJsonOrNull()")
+                TransportMode.Path -> append("call.parameters[\"${parameter.name}\"]?.toJsonOrNull()")
+                TransportMode.Header -> append("call.request.headers[\"${parameter.name}\"]?.toJsonOrNull()")
+                TransportMode.Cookie -> append("call.request.cookies[\"${parameter.name}\"]?.toJsonOrNull()")
             }
             append(" ?: return@run null")
         } else {
             when (transportMode) {
-                HttpTransportConfiguration.TransportMode.Body -> append("body.jsonObject[\"${parameter.name}\"]!!")
-                HttpTransportConfiguration.TransportMode.QueryParameter -> append("call.request.queryParameters[\"${parameter.name}\"]!!.toJson()")
-                HttpTransportConfiguration.TransportMode.Path -> append("call.parameters[\"${parameter.name}\"]!!.toJson()")
-                HttpTransportConfiguration.TransportMode.Header -> append("call.request.headers[\"${parameter.name}\"]!!.toJson()")
-                HttpTransportConfiguration.TransportMode.Cookie -> append("call.request.cookies[\"${parameter.name}\"]!!.toJson()")
+                TransportMode.Body -> append("body.jsonObject[\"${parameter.name}\"]!!")
+                TransportMode.QueryParameter -> append("call.request.queryParameters[\"${parameter.name}\"]!!.toJson()")
+                TransportMode.Path -> append("call.parameters[\"${parameter.name}\"]!!.toJson()")
+                TransportMode.Header -> append("call.request.headers[\"${parameter.name}\"]!!.toJson()")
+                TransportMode.Cookie -> append("call.request.cookies[\"${parameter.name}\"]!!.toJson()")
             }
         }
         appendLine()

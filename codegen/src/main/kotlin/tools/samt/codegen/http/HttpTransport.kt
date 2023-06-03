@@ -1,9 +1,12 @@
 package tools.samt.codegen.http
 
-import tools.samt.api.plugin.TransportConfiguration
 import tools.samt.api.plugin.TransportConfigurationParser
 import tools.samt.api.plugin.TransportConfigurationParserParams
 import tools.samt.api.plugin.asEnum
+import tools.samt.api.transports.http.HttpMethod
+import tools.samt.api.transports.http.SamtHttpTransport
+import tools.samt.api.transports.http.SerializationMode
+import tools.samt.api.transports.http.TransportMode
 
 object HttpTransportConfigurationParser : TransportConfigurationParser {
     override val transportName: String
@@ -15,12 +18,12 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
 
     override fun parse(params: TransportConfigurationParserParams): HttpTransportConfiguration {
         val config = params.config ?: return HttpTransportConfiguration(
-            serializationMode = HttpTransportConfiguration.SerializationMode.Json,
+            serializationMode = SerializationMode.Json,
             services = emptyList(),
         )
         val serializationMode =
-            config.getFieldOrNull("serialization")?.asValue?.asEnum<HttpTransportConfiguration.SerializationMode>()
-                ?: HttpTransportConfiguration.SerializationMode.Json
+            config.getFieldOrNull("serialization")?.asValue?.asEnum<SerializationMode>()
+                ?: SerializationMode.Json
 
         val services = config.getFieldOrNull("operations")?.asObject?.let { operations ->
             val parsedServices = mutableListOf<HttpTransportConfiguration.ServiceConfiguration>()
@@ -59,11 +62,11 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                     val (method, path, parameterPart) = methodEndpointResult.destructured
 
                     val methodEnum = when (method) {
-                        "GET" -> HttpTransportConfiguration.HttpMethod.Get
-                        "POST" -> HttpTransportConfiguration.HttpMethod.Post
-                        "PUT" -> HttpTransportConfiguration.HttpMethod.Put
-                        "DELETE" -> HttpTransportConfiguration.HttpMethod.Delete
-                        "PATCH" -> HttpTransportConfiguration.HttpMethod.Patch
+                        "GET" -> HttpMethod.Get
+                        "POST" -> HttpMethod.Post
+                        "PUT" -> HttpMethod.Put
+                        "DELETE" -> HttpMethod.Delete
+                        "PATCH" -> HttpMethod.Patch
                         else -> {
                             params.reportError("Invalid http method '$method'", operationConfig)
                             continue
@@ -131,7 +134,7 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
 
                         parameters += HttpTransportConfiguration.ParameterConfiguration(
                             name = pathParameterName,
-                            transportMode = HttpTransportConfiguration.TransportMode.Path,
+                            transportMode = TransportMode.Path,
                         )
                     }
 
@@ -145,11 +148,11 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                             "queryParams",
                             "queryParameter",
                             "queryParameters",
-                            -> HttpTransportConfiguration.TransportMode.QueryParameter
+                            -> TransportMode.QueryParameter
 
-                            "header", "headers" -> HttpTransportConfiguration.TransportMode.Header
-                            "body" -> HttpTransportConfiguration.TransportMode.Body
-                            "cookie", "cookies" -> HttpTransportConfiguration.TransportMode.Cookie
+                            "header", "headers" -> TransportMode.Header
+                            "body" -> TransportMode.Body
+                            "cookie", "cookies" -> TransportMode.Cookie
                             else -> {
                                 params.reportError("Invalid transport mode '$type'", operationConfig)
                                 continue
@@ -165,7 +168,7 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                                 continue
                             }
 
-                            if (transportMode == HttpTransportConfiguration.TransportMode.Body && methodEnum == HttpTransportConfiguration.HttpMethod.Get) {
+                            if (transportMode == TransportMode.Body && methodEnum == HttpMethod.Get) {
                                 params.reportError(
                                     "HTTP GET method doesn't accept '$name' as a BODY parameter",
                                     operationConfig
@@ -206,9 +209,9 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
 }
 
 class HttpTransportConfiguration(
-    val serializationMode: SerializationMode,
+    override val serializationMode: SerializationMode,
     val services: List<ServiceConfiguration>,
-) : TransportConfiguration {
+) : SamtHttpTransport {
     class ServiceConfiguration(
         val name: String,
         val path: String,
@@ -235,57 +238,38 @@ class HttpTransportConfiguration(
         val transportMode: TransportMode,
     )
 
-    enum class SerializationMode {
-        Json,
-    }
-
-    enum class TransportMode {
-        /** encoded in request body via serializationMode */
-        Body,
-
-        /** encoded as url query parameter */
-        QueryParameter,
-
-        /** encoded as part of url path */
-        Path,
-
-        /** encoded as HTTP header */
-        Header,
-
-        /** encoded as HTTP cookie */
-        Cookie,
-    }
-
-    enum class HttpMethod {
-        Get,
-        Post,
-        Put,
-        Delete,
-        Patch,
-    }
-
     private fun getService(name: String): ServiceConfiguration? {
         return services.firstOrNull { it.name == name }
     }
 
-    fun getMethod(serviceName: String, operationName: String): HttpMethod {
+    override fun getMethod(serviceName: String, operationName: String): HttpMethod {
         val service = getService(serviceName)
         val operation = service?.getOperation(operationName)
         return operation?.method ?: HttpMethod.Post
     }
 
-    fun getPath(serviceName: String, operationName: String): String {
+    override fun getPath(serviceName: String, operationName: String): String {
         val service = getService(serviceName)
         val operation = service?.getOperation(operationName)
         return operation?.path ?: "/$operationName"
     }
 
-    fun getPath(serviceName: String): String {
+    override fun getFullPath(serviceName: String, operationName: String): String {
+        val service = getService(serviceName)
+        val operation = service?.getOperation(operationName)
+        return "${service?.path ?: ""}${operation?.path ?: "/$operationName"}"
+    }
+
+    override fun getServicePath(serviceName: String): String {
         val service = getService(serviceName)
         return service?.path ?: ""
     }
 
-    fun getTransportMode(serviceName: String, operationName: String, parameterName: String): TransportMode {
+    override fun getTransportMode(
+        serviceName: String,
+        operationName: String,
+        parameterName: String,
+    ): TransportMode {
         val service = getService(serviceName)
         val operation = service?.getOperation(operationName)
         val parameter = operation?.getParameter(parameterName)

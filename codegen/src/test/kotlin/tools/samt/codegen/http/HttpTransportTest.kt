@@ -4,6 +4,9 @@ import tools.samt.api.plugin.ConfigurationElement
 import tools.samt.api.plugin.ConfigurationObject
 import tools.samt.api.plugin.TransportConfiguration
 import tools.samt.api.plugin.TransportConfigurationParserParams
+import tools.samt.api.transports.http.HttpMethod
+import tools.samt.api.transports.http.SerializationMode
+import tools.samt.api.transports.http.TransportMode
 import tools.samt.codegen.PublicApiMapper
 import tools.samt.common.DiagnosticController
 import tools.samt.common.SourceFile
@@ -38,13 +41,14 @@ class HttpTransportTest {
                 fail("Unexpected error message: $message")
             }
         })
-        assertEquals(HttpTransportConfiguration.SerializationMode.Json, config.serializationMode)
+        assertEquals(SerializationMode.Json, config.serializationMode)
         assertEquals(emptyList(), config.services)
-        assertEquals(HttpTransportConfiguration.HttpMethod.Post, config.getMethod("service", "operation"))
-        assertEquals("", config.getPath("service"))
+        assertEquals(HttpMethod.Post, config.getMethod("service", "operation"))
+        assertEquals("", config.getServicePath("service"))
         assertEquals("/operation", config.getPath("service", "operation"))
+        assertEquals("/operation", config.getFullPath("service", "operation"))
         assertEquals(
-            HttpTransportConfiguration.TransportMode.Body,
+            TransportMode.Body,
             config.getTransportMode("service", "operation", "parameter")
         )
     }
@@ -86,6 +90,7 @@ class HttpTransportTest {
                 transport http {
                     operations: {
                         Greeter: {
+                            basePath: "/greeter",
                             greet: "POST /greet/{id} {name in header} {type in cookie}",
                             greetAll: "GET /greet/all {names  in queryParam}",
                             get: "GET /",
@@ -101,50 +106,52 @@ class HttpTransportTest {
         val transport = parseAndCheck(source to emptyList())
         assertIs<HttpTransportConfiguration>(transport)
 
-        assertEquals(HttpTransportConfiguration.SerializationMode.Json, transport.serializationMode)
+        assertEquals(SerializationMode.Json, transport.serializationMode)
         assertEquals(listOf("Greeter"), transport.services.map { it.name })
 
-        assertEquals(HttpTransportConfiguration.HttpMethod.Post, transport.getMethod("Greeter", "greet"))
+        assertEquals(HttpMethod.Post, transport.getMethod("Greeter", "greet"))
         assertEquals("/greet/{id}", transport.getPath("Greeter", "greet"))
         assertEquals(
-            HttpTransportConfiguration.TransportMode.Path,
+            TransportMode.Path,
             transport.getTransportMode("Greeter", "greet", "id")
         )
         assertEquals(
-            HttpTransportConfiguration.TransportMode.Header,
+            TransportMode.Header,
             transport.getTransportMode("Greeter", "greet", "name")
         )
         assertEquals(
-            HttpTransportConfiguration.TransportMode.Cookie,
+            TransportMode.Cookie,
             transport.getTransportMode("Greeter", "greet", "type")
         )
         assertEquals(
-            HttpTransportConfiguration.TransportMode.Body,
+            TransportMode.Body,
             transport.getTransportMode("Greeter", "greet", "reference")
         )
 
-        assertEquals(HttpTransportConfiguration.HttpMethod.Get, transport.getMethod("Greeter", "greetAll"))
+        assertEquals("/greeter", transport.getServicePath("Greeter"))
+
+        assertEquals(HttpMethod.Get, transport.getMethod("Greeter", "greetAll"))
         assertEquals("/greet/all", transport.getPath("Greeter", "greetAll"))
+        assertEquals("/greeter/greet/all", transport.getFullPath("Greeter", "greetAll"))
         assertEquals(
-            HttpTransportConfiguration.TransportMode.QueryParameter,
+            TransportMode.QueryParameter,
             transport.getTransportMode("Greeter", "greetAll", "names")
         )
 
-        assertEquals(HttpTransportConfiguration.HttpMethod.Get, transport.getMethod("Greeter", "get"))
+        assertEquals(HttpMethod.Get, transport.getMethod("Greeter", "get"))
         assertEquals("/", transport.getPath("Greeter", "get"))
+        assertEquals("/greeter/", transport.getFullPath("Greeter", "get"))
         assertEquals(
-            HttpTransportConfiguration.TransportMode.QueryParameter,
+            TransportMode.QueryParameter,
             transport.getTransportMode("Greeter", "get", "name")
         )
 
-        assertEquals(HttpTransportConfiguration.HttpMethod.Put, transport.getMethod("Greeter", "put"))
-        assertEquals("/", transport.getPath("Greeter", "put"))
-        assertEquals(HttpTransportConfiguration.HttpMethod.Delete, transport.getMethod("Greeter", "delete"))
-        assertEquals("/", transport.getPath("Greeter", "delete"))
-        assertEquals(HttpTransportConfiguration.HttpMethod.Patch, transport.getMethod("Greeter", "patch"))
-        assertEquals("/", transport.getPath("Greeter", "patch"))
-        assertEquals(HttpTransportConfiguration.HttpMethod.Post, transport.getMethod("Greeter", "default"))
+        assertEquals(HttpMethod.Put, transport.getMethod("Greeter", "put"))
+        assertEquals(HttpMethod.Delete, transport.getMethod("Greeter", "delete"))
+        assertEquals(HttpMethod.Patch, transport.getMethod("Greeter", "patch"))
+        assertEquals(HttpMethod.Post, transport.getMethod("Greeter", "default"))
         assertEquals("/default", transport.getPath("Greeter", "default"))
+        assertEquals("/greeter/default", transport.getFullPath("Greeter", "default"))
     }
 
     @Test

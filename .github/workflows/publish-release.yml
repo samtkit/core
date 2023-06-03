@@ -23,8 +23,8 @@ jobs:
 
       - name: Rename cli-shadow to cli
         run: |
-          mv cli/build/distributions/cli-shadow-*.zip cli/build/distributions/cli.zip
-          mv cli/build/distributions/cli-shadow-*.tar cli/build/distributions/cli.tar
+          mv cli/build/distributions/cli-shadow.zip cli/build/distributions/cli.zip
+          mv cli/build/distributions/cli-shadow.tar cli/build/distributions/cli.tar
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1

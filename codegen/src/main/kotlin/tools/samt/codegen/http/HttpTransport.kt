@@ -36,14 +36,14 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                 val operationConfigurations = operationConfiguration.fields.filterKeys { it.asIdentifier != "basePath" }
                 val parsedOperations = mutableListOf<HttpTransportConfiguration.OperationConfiguration>()
 
-                operationConfigLoop@for ((key, value) in operationConfigurations) {
+                operationConfigLoop@ for ((key, value) in operationConfigurations) {
                     val operationConfig = value.asValue
                     val operation = key.asOperationName(service)
                     val operationName = operation.name
 
                     if (!(operationConfig.asString matches isValidRegex)) {
                         params.reportError(
-                            "Invalid operation config for '$operationName', expected '<method> <path> <parameters>'. A valid example: 'POST /${operationName} {parameter1, parameter2 in query}'",
+                            "Invalid operation config for '$operationName', expected '<method> <path> <parameters>'. A valid example: 'POST /${operationName} {parameter1, parameter2 in queryParam}'",
                             operationConfig
                         )
                         continue
@@ -124,7 +124,10 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                         }
 
                         if (operation.parameters.none { it.name == pathParameterName }) {
-                            params.reportError("Path parameter '$pathParameterName' not found in operation '$operationName'", operationConfig)
+                            params.reportError(
+                                "Path parameter '$pathParameterName' not found in operation '$operationName'",
+                                operationConfig
+                            )
                             continue
                         }
 
@@ -139,10 +142,16 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
                     for (parameterResult in parameterResults) {
                         val (names, type) = parameterResult.destructured
                         val transportMode = when (type) {
-                            "query" -> HttpTransportConfiguration.TransportMode.Query
-                            "header" -> HttpTransportConfiguration.TransportMode.Header
+                            "query",
+                            "queryParam",
+                            "queryParams",
+                            "queryParameter",
+                            "queryParameters",
+                            -> HttpTransportConfiguration.TransportMode.QueryParameter
+
+                            "header", "headers" -> HttpTransportConfiguration.TransportMode.Header
                             "body" -> HttpTransportConfiguration.TransportMode.Body
-                            "cookie" -> HttpTransportConfiguration.TransportMode.Cookie
+                            "cookie", "cookies" -> HttpTransportConfiguration.TransportMode.Cookie
                             else -> {
                                 params.reportError("Invalid transport mode '$type'", operationConfig)
                                 continue
@@ -151,12 +160,18 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
 
                         for (name in names.split(",").map { it.trim() }) {
                             if (operation.parameters.none { it.name == name }) {
-                                params.reportError("Parameter '$name' not found in operation '$operationName'", operationConfig)
+                                params.reportError(
+                                    "Parameter '$name' not found in operation '$operationName'",
+                                    operationConfig
+                                )
                                 continue
                             }
 
                             if (transportMode == HttpTransportConfiguration.TransportMode.Body && methodEnum == HttpTransportConfiguration.HttpMethod.Get) {
-                                params.reportError("HTTP GET method doesn't accept '$name' as a BODY parameter", operationConfig)
+                                params.reportError(
+                                    "HTTP GET method doesn't accept '$name' as a BODY parameter",
+                                    operationConfig
+                                )
                                 continue
                             }
 
@@ -199,7 +214,7 @@ class HttpTransportConfiguration(
     class ServiceConfiguration(
         val name: String,
         val path: String,
-        val operations: List<OperationConfiguration>
+        val operations: List<OperationConfiguration>,
     ) {
         fun getOperation(name: String): OperationConfiguration? {
             return operations.firstOrNull { it.name == name }
@@ -227,11 +242,20 @@ class HttpTransportConfiguration(
     }
 
     enum class TransportMode {
-        Body,       // encoded in request body via serializationMode
-        Query,      // encoded as url query parameter
-        Path,       // encoded as part of url path
-        Header,     // encoded as HTTP header
-        Cookie,     // encoded as HTTP cookie
+        /** encoded in request body via serializationMode */
+        Body,
+
+        /** encoded as url query parameter */
+        QueryParameter,
+
+        /** encoded as part of url path */
+        Path,
+
+        /** encoded as HTTP header */
+        Header,
+
+        /** encoded as HTTP cookie */
+        Cookie,
     }
 
     enum class HttpMethod {
@@ -273,7 +297,7 @@ class HttpTransportConfiguration(
             return mode
 
         return if (operation?.method == HttpMethod.Get) {
-            TransportMode.Query
+            TransportMode.QueryParameter
         } else {
             TransportMode.Body
         }

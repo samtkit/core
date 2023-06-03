@@ -169,7 +169,8 @@ object KotlinKtorConsumerGenerator : Generator {
                 HttpTransportConfiguration.TransportMode.Path -> {
                     pathParameters[name] = it
                 }
-                HttpTransportConfiguration.TransportMode.Query -> {
+
+                HttpTransportConfiguration.TransportMode.QueryParameter -> {
                     queryParameters[name] = it
                 }
             }

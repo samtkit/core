@@ -286,12 +286,12 @@ object KotlinKtorProviderGenerator : Generator {
         parameter: ServiceOperationParameter,
         transportMode: HttpTransportConfiguration.TransportMode,
     ) {
-        appendLine("                // Read from ${transportMode.name.lowercase()}")
+        appendLine("                // Read from ${transportMode.name.replaceFirstChar { it.lowercase() }}")
         append("                val jsonElement = ")
         if (parameter.type.isRuntimeOptional) {
             when (transportMode) {
                 HttpTransportConfiguration.TransportMode.Body -> append("body.jsonObject[\"${parameter.name}\"]?.takeUnless { it is JsonNull }")
-                HttpTransportConfiguration.TransportMode.Query -> append("call.request.queryParameters[\"${parameter.name}\"]?.toJsonOrNull()")
+                HttpTransportConfiguration.TransportMode.QueryParameter -> append("call.request.queryParameters[\"${parameter.name}\"]?.toJsonOrNull()")
                 HttpTransportConfiguration.TransportMode.Path -> append("call.parameters[\"${parameter.name}\"]?.toJsonOrNull()")
                 HttpTransportConfiguration.TransportMode.Header -> append("call.request.headers[\"${parameter.name}\"]?.toJsonOrNull()")
                 HttpTransportConfiguration.TransportMode.Cookie -> append("call.request.cookies[\"${parameter.name}\"]?.toJsonOrNull()")
@@ -300,7 +300,7 @@ object KotlinKtorProviderGenerator : Generator {
         } else {
             when (transportMode) {
                 HttpTransportConfiguration.TransportMode.Body -> append("body.jsonObject[\"${parameter.name}\"]!!")
-                HttpTransportConfiguration.TransportMode.Query -> append("call.request.queryParameters[\"${parameter.name}\"]!!.toJson()")
+                HttpTransportConfiguration.TransportMode.QueryParameter -> append("call.request.queryParameters[\"${parameter.name}\"]!!.toJson()")
                 HttpTransportConfiguration.TransportMode.Path -> append("call.parameters[\"${parameter.name}\"]!!.toJson()")
                 HttpTransportConfiguration.TransportMode.Header -> append("call.request.headers[\"${parameter.name}\"]!!.toJson()")
                 HttpTransportConfiguration.TransportMode.Cookie -> append("call.request.cookies[\"${parameter.name}\"]!!.toJson()")

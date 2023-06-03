@@ -10,10 +10,10 @@ provide PetEndpointHTTP {
                 basePath: "/pet",
                 addPet: "POST /",
                 updatePet: "PUT /",
-                findPetsByStatus: "GET /findByStatus {status in query}",
-                findPetsByTags: "GET /findByTags {tags in query}",
+                findPetsByStatus: "GET /findByStatus {status in queryParam}",
+                findPetsByTags: "GET /findByTags {tags in queryParam}",
                 getPetById: "GET /{petId}",
-                updatePetWithForm: "POST /{petId} {name, status in query}",
+                updatePetWithForm: "POST /{petId} {name, status in queryParams}",
                 deletePet: "DELETE /petId}"
             }
         }

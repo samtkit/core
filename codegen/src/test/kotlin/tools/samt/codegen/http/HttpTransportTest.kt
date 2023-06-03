@@ -71,7 +71,7 @@ class HttpTransportTest {
                     operations: {
                         Greeter: {
                             greet: "POST /greet/{id} {name in header} {type in cookie}",
-                            greetAll: "GET /greet/all {names  in query}",
+                            greetAll: "GET /greet/all {names  in queryParam}",
                             get: "GET /",
                             put: "PUT /",
                             delete: "DELETE /",
@@ -110,14 +110,14 @@ class HttpTransportTest {
         assertEquals(HttpTransportConfiguration.HttpMethod.Get, transport.getMethod("Greeter", "greetAll"))
         assertEquals("/greet/all", transport.getPath("Greeter", "greetAll"))
         assertEquals(
-            HttpTransportConfiguration.TransportMode.Query,
+            HttpTransportConfiguration.TransportMode.QueryParameter,
             transport.getTransportMode("Greeter", "greetAll", "names")
         )
 
         assertEquals(HttpTransportConfiguration.HttpMethod.Get, transport.getMethod("Greeter", "get"))
         assertEquals("/", transport.getPath("Greeter", "get"))
         assertEquals(
-            HttpTransportConfiguration.TransportMode.Query,
+            HttpTransportConfiguration.TransportMode.QueryParameter,
             transport.getTransportMode("Greeter", "get", "name")
         )
 
@@ -242,7 +242,7 @@ class HttpTransportTest {
             }
         """.trimIndent()
 
-        parseAndCheck(source to listOf("Error: Invalid operation config for 'greet', expected '<method> <path> <parameters>'. A valid example: 'POST /greet {parameter1, parameter2 in query}'"))
+        parseAndCheck(source to listOf("Error: Invalid operation config for 'greet', expected '<method> <path> <parameters>'. A valid example: 'POST /greet {parameter1, parameter2 in queryParam}'"))
     }
 
     @Test

@@ -4,12 +4,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class SamtLinterConfiguration(
+internal data class SamtLinterConfiguration(
     val extends: String = "recommended",
     val rules: List<SamtRuleConfiguration> = emptyList(),
 )
 
-enum class DiagnosticSeverity {
+internal enum class DiagnosticSeverity {
     @SerialName("error")
     Error,
 
@@ -24,19 +24,19 @@ enum class DiagnosticSeverity {
 }
 
 @Serializable
-sealed interface SamtRuleConfiguration {
+internal sealed interface SamtRuleConfiguration {
     val level: DiagnosticSeverity?
 }
 
 @Serializable
 @SerialName("split-model-and-providers")
-data class SplitModelAndProvidersConfiguration(
+internal data class SplitModelAndProvidersConfiguration(
     override val level: DiagnosticSeverity? = null,
 ) : SamtRuleConfiguration
 
 @Serializable
 @SerialName("naming-conventions")
-data class NamingConventionsConfiguration(
+internal data class NamingConventionsConfiguration(
     override val level: DiagnosticSeverity? = null,
     val record: NamingConventions? = null,
     val recordField: NamingConventions? = null,
@@ -51,15 +51,19 @@ data class NamingConventionsConfiguration(
     val samtPackage: NamingConventions? = null,
     val fileName: NamingConventions? = null,
 ) : SamtRuleConfiguration {
-    enum class NamingConventions {
+    internal enum class NamingConventions {
         @SerialName("PascalCase")
         PascalCase,
+
         @SerialName("camelCase")
         CamelCase,
+
         @SerialName("snake_case")
         SnakeCase,
+
         @SerialName("kebab-case")
         KebabCase,
+
         @SerialName("SCREAMING_SNAKE_CASE")
         ScreamingSnakeCase,
     }

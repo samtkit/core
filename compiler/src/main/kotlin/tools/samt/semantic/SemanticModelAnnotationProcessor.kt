@@ -6,7 +6,7 @@ import tools.samt.parser.StringNode
 import tools.samt.parser.reportError
 
 internal class SemanticModelAnnotationProcessor(
-        private val controller: DiagnosticController
+    private val controller: DiagnosticController,
 ) {
     fun process(global: Package): UserMetadata {
         val descriptions = mutableMapOf<UserDeclared, String>()
@@ -19,21 +19,29 @@ internal class SemanticModelAnnotationProcessor(
                             annotation.reportError(controller) {
                                 message("Duplicate @Description annotation")
                                 highlight("duplicate annotation", annotation.location)
-                                highlight("previous annotation", element.annotations.first { it.name.name == "Description" }.location)
+                                highlight(
+                                    "previous annotation",
+                                    element.annotations.first { it.name.name == "Description" }.location
+                                )
                             }
                         }
                         descriptions[element] = getDescription(annotation)
                     }
+
                     "Deprecated" -> {
                         if (element in deprecations) {
                             annotation.reportError(controller) {
                                 message("Duplicate @Deprecated annotation")
                                 highlight("duplicate annotation", annotation.location)
-                                highlight("previous annotation", element.annotations.first { it.name.name == "Deprecated" }.location)
+                                highlight(
+                                    "previous annotation",
+                                    element.annotations.first { it.name.name == "Deprecated" }.location
+                                )
                             }
                         }
                         deprecations[element] = getDeprecation(annotation)
                     }
+
                     else -> {
                         annotation.reportError(controller) {
                             message("Unknown annotation @${name}, allowed annotations are @Description and @Deprecated")

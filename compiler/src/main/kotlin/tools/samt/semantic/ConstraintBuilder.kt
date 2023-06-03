@@ -101,7 +101,9 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
     ): ResolvedTypeReference.Constraint.Pattern? {
         val pattern = argument.value
 
-        try { Regex(pattern) } catch (e: Exception) {
+        try {
+            Regex(pattern)
+        } catch (e: Exception) {
             argument.reportError(controller) {
                 message("Invalid regex pattern: '${e.message}'")
                 highlight(argument.location)

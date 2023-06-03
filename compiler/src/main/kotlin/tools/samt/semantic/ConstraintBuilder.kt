@@ -60,22 +60,33 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
 
             else -> {
                 expressionNode.reportError(controller) {
-                    message("Expected size constraint argument to be a whole number or wildcard")
+                    message("Expected size constraint argument to be a positive whole number or wildcard")
                     highlight("expected whole number or wildcard '*'", expressionNode.location)
-                    help("A valid constraint would be size(1..10), size(1..*) or size(*..10)")
+                    help("A valid constraint would be size(1..10), size(1..*) or size(0..10)")
                 }
                 null
             }
         }
 
-        val lower = resolveSide(argument.left)
+        val lower = when (val lowerRaw = resolveSide(argument.left)) {
+            null -> {
+                argument.left.reportWarning(controller) {
+                    message("Size constraint lower bound should be '0' instead of '*' to avoid confusion")
+                    highlight("dubious wildcard", argument.left.location, suggestChange = "0")
+                }
+                null
+            }
+
+            0L -> null
+            else -> lowerRaw
+        }
         val higher = resolveSide(argument.right)
 
         if (lower == null && higher == null) {
-            argument.reportError(controller) {
-                message("Constraint parameters cannot both be wildcards")
+            argument.reportWarning(controller) {
+                message("Constraint has no effect as it has no valid number, ignoring")
                 highlight("invalid constraint", argument.location)
-                help("A valid constraint would be range(1..10.5) or range(1..*)")
+                help("A valid constraint would be size(1..10), size(1..*) or size(0..10)")
             }
             return null
         }
@@ -83,6 +94,22 @@ internal class ConstraintBuilder(private val controller: DiagnosticController) {
         if (lower != null && higher != null && lower > higher) {
             argument.reportError(controller) {
                 message("Size constraint lower bound must be lower than or equal to the upper bound")
+                highlight("invalid constraint", argument.location)
+            }
+            return null
+        }
+
+        if (lower != null && lower < 0) {
+            argument.left.reportError(controller) {
+                message("Size constraint lower bound must be greater than or equal to 0")
+                highlight("invalid constraint", argument.location)
+            }
+            return null
+        }
+
+        if (higher != null && higher < 0) {
+            argument.right.reportError(controller) {
+                message("Size constraint upper bound must be greater than or equal to 0")
                 highlight("invalid constraint", argument.location)
             }
             return null

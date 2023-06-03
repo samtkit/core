@@ -289,7 +289,7 @@ data class ResolvedTypeReference(
             val upperBound: Long?,
         ) : Constraint {
             override val humanReadableName: String
-                get() = "size(${lowerBound ?: '*'}..${upperBound ?: '*'})"
+                get() = "size(${lowerBound ?: '0'}..${upperBound ?: '*'})"
         }
 
         data class Pattern(

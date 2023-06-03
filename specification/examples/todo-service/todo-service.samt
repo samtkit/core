@@ -7,7 +7,7 @@ package tools.samt.examples.todo
 record TodoItem {
     id: UUID
     title: String ( size(1..*) )
-    description: String ( size(*..1000) )
+    description: String ( size(0..1000) )
     completed: Boolean
 }
 
@@ -26,7 +26,7 @@ service TodoManager {
     updateTodo(
         id: UUID,
         newTitle: String? ( size(1..*) ),
-        newDescription: String? ( size(*..1000) )
+        newDescription: String? ( size(0..1000) )
     ) raises NotFoundFault, MissingPermissionsFault
     deleteTodo(id: UUID) raises NotFoundFault, MissingPermissionsFault
     markAsCompleted(id: UUID) raises NotFoundFault, MissingPermissionsFault

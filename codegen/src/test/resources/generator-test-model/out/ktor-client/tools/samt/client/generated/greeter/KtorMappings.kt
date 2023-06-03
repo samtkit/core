@@ -15,7 +15,7 @@ fun `encode Greeting`(record: tools.samt.client.generated.greeter.Greeting): Jso
     // Encode field message
     val `field message` = run {
         val value = record.message
-        JsonPrimitive(value.also { require(it.length >= 0 && it.length <= 128) })
+        JsonPrimitive(value.also { require(it.length <= 128) })
     }
     // Create JSON for tools.samt.greeter.Greeting
     return buildJsonObject {
@@ -27,7 +27,7 @@ fun `decode Greeting`(json: JsonElement): tools.samt.client.generated.greeter.Gr
     // Decode field message
     val `field message` = run {
         val jsonElement = json.jsonObject["message"]!!
-        jsonElement.jsonPrimitive.content.also { require(it.length >= 0 && it.length <= 128) }
+        jsonElement.jsonPrimitive.content.also { require(it.length <= 128) }
     }
     // Create record tools.samt.greeter.Greeting
     return tools.samt.client.generated.greeter.Greeting(

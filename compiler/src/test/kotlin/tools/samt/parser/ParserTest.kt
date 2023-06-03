@@ -170,7 +170,7 @@ class ParserTest {
 
             record Person {
                 password: String ( size(16..100) )
-                name: String ( size(*..256), pattern("A-Za-z", true) )?
+                name: String ( size(0..256), pattern("A-Za-z", true) )?
                 age: Integer? ( range(18..*) )
             }
         """
@@ -194,7 +194,7 @@ class ParserTest {
                             callExpression({ bundleIdentifier("String") }) {
                                 callExpression({ bundleIdentifier("size") }) {
                                     rangeExpression(
-                                        { wildcard() },
+                                        { integer(0) },
                                         { integer(256) }
                                     )
                                 }

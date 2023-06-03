@@ -319,7 +319,10 @@ class SemanticModelTest {
                 package complex
 
                 record Complex {
-                    int: List<Int> (size(1..5.5))
+                    list1: List<Int> (size(1..5.5))
+                    list2: List<Int> (size(-10..*))
+                    list3: List<Int> (size(0..-10))
+                    list4: List<Int> (size(*..100))
                 }
 
                 service Foo {
@@ -328,7 +331,10 @@ class SemanticModelTest {
             """.trimIndent()
             parseAndCheck(
                 source to listOf(
-                    "Error: Expected size constraint argument to be a whole number or wildcard",
+                    "Error: Expected size constraint argument to be a positive whole number or wildcard",
+                    "Error: Size constraint lower bound must be greater than or equal to 0",
+                    "Error: Size constraint upper bound must be greater than or equal to 0",
+                    "Warning: Size constraint lower bound should be '0' instead of '*' to avoid confusion",
                     "Error: Size constraint lower bound must be lower than or equal to the upper bound",
                 )
             )

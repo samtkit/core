@@ -26,10 +26,6 @@ jobs:
           mv cli/build/distributions/cli-shadow-*.zip cli/build/distributions/cli.zip
           mv cli/build/distributions/cli-shadow-*.tar cli/build/distributions/cli.tar
 
-      - name: Rename samt-ls-version to samt-ls
-        run: |
-          mv language-server/build/libs/samt-ls-*.jar language-server/build/libs/samt-ls.jar
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:

@@ -129,25 +129,15 @@ internal class SemanticModelReferenceResolver(
                             val keyType = resolveAndLinkExpression(scope, keyTypeNode)
                             val valueType = resolveAndLinkExpression(scope, valueTypeNode)
 
-                            // error if keyType does not refer to string type
-                            // serializing non-string types as keys is currently not supported,
-                            // but types like integers or enums might be supported in the future
-                            if (keyType.type != StringType) {
-                                keyTypeNode.reportError(controller) {
-                                    message("Map key type must be String")
-                                    highlight("expected String", keyTypeNode.location)
-                                }
-                            } else {
-                                return ResolvedTypeReference(
-                                    type = MapType(
-                                        keyType = keyType,
-                                        valueType = valueType,
-                                        node = expression,
-                                    ),
-                                    typeNode = expression.base,
-                                    fullNode = expression,
-                                )
-                            }
+                            return ResolvedTypeReference(
+                                type = MapType(
+                                    keyType = keyType,
+                                    valueType = valueType,
+                                    node = expression,
+                                ),
+                                typeNode = expression.base,
+                                fullNode = expression,
+                            )
                         } else {
                             expression.reportError(controller) {
                                 message("Map must have exactly two type arguments")

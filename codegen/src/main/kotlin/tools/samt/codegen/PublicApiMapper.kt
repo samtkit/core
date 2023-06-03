@@ -85,8 +85,8 @@ class PublicApiMapper(
     }
 
     private class Params(
-        override val config: ConfigurationObject,
-        val controller: DiagnosticController
+        override val config: ConfigurationObject?,
+        val controller: DiagnosticController,
     ) : TransportConfigurationParserParams {
 
         override fun reportError(message: String, context: ConfigurationElement?) {
@@ -129,16 +129,13 @@ class PublicApiMapper(
             0 -> controller.reportGlobalWarning("No transport configuration parser found for transport '$name'")
             1 -> {
                 val transportConfigurationParser = transportConfigurationParsers.single()
-                if (configuration != null) {
-                    val transportConfigNode = TransportConfigurationMapper(provider, controller).parse(configuration!!)
-                    val config = Params(transportConfigNode, controller)
-                    try {
-                        return transportConfigurationParser.parse(config)
-                    } catch (e: Exception) {
-                        controller.reportGlobalError("Failed to parse transport configuration for transport '$name': ${e.message}")
-                    }
-                } else {
-                    return transportConfigurationParser.default()
+                val transportConfigNode =
+                    configuration?.let { TransportConfigurationMapper(provider, controller).parse(it) }
+                val config = Params(transportConfigNode, controller)
+                try {
+                    return transportConfigurationParser.parse(config)
+                } catch (e: Exception) {
+                    controller.reportGlobalError("Failed to parse transport configuration for transport '$name': ${e.message}")
                 }
             }
 

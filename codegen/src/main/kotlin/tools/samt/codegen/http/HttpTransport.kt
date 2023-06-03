@@ -9,17 +9,15 @@ object HttpTransportConfigurationParser : TransportConfigurationParser {
     override val transportName: String
         get() = "http"
 
-    override fun default(): HttpTransportConfiguration = HttpTransportConfiguration(
-        serializationMode = HttpTransportConfiguration.SerializationMode.Json,
-        services = emptyList(),
-    )
-
     private val isValidRegex = Regex("""\w+\s+\S+(\s+\{.*?\s+in\s+\S+})*""")
     private val methodEndpointRegex = Regex("""(\w+)\s+(\S+)(.*)""")
     private val parameterRegex = Regex("""\{(.*?)\s+in\s+(\S+)}""")
 
     override fun parse(params: TransportConfigurationParserParams): HttpTransportConfiguration {
-        val config = params.config
+        val config = params.config ?: return HttpTransportConfiguration(
+            serializationMode = HttpTransportConfiguration.SerializationMode.Json,
+            services = emptyList(),
+        )
         val serializationMode =
             config.getFieldOrNull("serialization")?.asValue?.asEnum<HttpTransportConfiguration.SerializationMode>()
                 ?: HttpTransportConfiguration.SerializationMode.Json

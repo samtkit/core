@@ -1,6 +1,9 @@
 package tools.samt.codegen.http
 
+import tools.samt.api.plugin.ConfigurationElement
+import tools.samt.api.plugin.ConfigurationObject
 import tools.samt.api.plugin.TransportConfiguration
+import tools.samt.api.plugin.TransportConfigurationParserParams
 import tools.samt.codegen.PublicApiMapper
 import tools.samt.common.DiagnosticController
 import tools.samt.common.SourceFile
@@ -21,7 +24,20 @@ class HttpTransportTest {
 
     @Test
     fun `default configuration return default values for operations`() {
-        val config = HttpTransportConfigurationParser.default()
+        val config = HttpTransportConfigurationParser.parse(object : TransportConfigurationParserParams {
+            override val config: ConfigurationObject? get() = null
+            override fun reportInfo(message: String, context: ConfigurationElement?) {
+                fail("Unexpected info message: $message")
+            }
+
+            override fun reportWarning(message: String, context: ConfigurationElement?) {
+                fail("Unexpected warning message: $message")
+            }
+
+            override fun reportError(message: String, context: ConfigurationElement?) {
+                fail("Unexpected error message: $message")
+            }
+        })
         assertEquals(HttpTransportConfiguration.SerializationMode.Json, config.serializationMode)
         assertEquals(emptyList(), config.services)
         assertEquals(HttpTransportConfiguration.HttpMethod.Post, config.getMethod("service", "operation"))
@@ -358,10 +374,12 @@ class HttpTransportTest {
             }
         """.trimIndent()
 
-        parseAndCheck(source to listOf(
-            "Error: Operation 'Greeter.greetTwo' cannot be mapped to the same method and path combination (GET /greet) as operation 'Greeter.greet'",
-            "Error: Operation 'Greeter.greetFour' cannot be mapped to the same method and path combination (POST /greet/{name}) as operation 'Greeter.greetThree'"
-        ))
+        parseAndCheck(
+            source to listOf(
+                "Error: Operation 'Greeter.greetTwo' cannot be mapped to the same method and path combination (GET /greet) as operation 'Greeter.greet'",
+                "Error: Operation 'Greeter.greetFour' cannot be mapped to the same method and path combination (POST /greet/{name}) as operation 'Greeter.greetThree'"
+            )
+        )
     }
 
     @Test
@@ -396,11 +414,13 @@ class HttpTransportTest {
             }
         """.trimIndent()
 
-        parseAndCheck(source to listOf(
-            "Error: Operation 'GoodbyeSayer.say' cannot be mapped to the same method and path combination (GET /sayer/say) as operation 'HelloSayer.say'",
-        ))
+        parseAndCheck(
+            source to listOf(
+                "Error: Operation 'GoodbyeSayer.say' cannot be mapped to the same method and path combination (GET /sayer/say) as operation 'HelloSayer.say'",
+            )
+        )
     }
-    
+
     private fun parseAndCheck(
         vararg sourceAndExpectedMessages: Pair<String, List<String>>,
     ): TransportConfiguration {

@@ -15,13 +15,7 @@ interface TransportConfigurationParser {
     val transportName: String
 
     /**
-     * Create the default configuration for this transport, used when no configuration body is specified
-     * @return Default configuration
-     */
-    fun default(): TransportConfiguration
-
-    /**
-     * Parses the configuration body and returns the configuration object
+     * Parses the configuration and returns the configuration object
      * @throws RuntimeException if the configuration is invalid and graceful error handling is not possible
      * @return Parsed configuration
      */
@@ -39,9 +33,9 @@ interface TransportConfiguration
  */
 interface TransportConfigurationParserParams {
     /**
-     * The configuration body to parse
+     * The configuration body to parse, or null if no configuration body was specified
      */
-    val config: ConfigurationObject
+    val config: ConfigurationObject?
 
     /**
      * Report an error

@@ -27,6 +27,7 @@ object SamtConfigurationParser {
 
     class ParseException(exception: Throwable) : RuntimeException(exception.message, exception)
 
+    @JvmStatic
     fun parseConfiguration(path: Path): CommonSamtConfiguration {
         val parsedConfiguration: SamtConfiguration = if (path.exists()) {
             try {
@@ -74,6 +75,7 @@ object SamtConfigurationParser {
         )
     }
 
+    @JvmStatic
     fun parseLinterConfiguration(path: Path): CommonLinterConfiguration {
         val parsedLinterConfiguration: SamtLinterConfiguration = if (path.exists()) {
             yaml.decodeFromStream(path.inputStream())

@@ -410,7 +410,7 @@ class Lexer private constructor(
     }
 
     companion object {
-        val KEYWORDS: Map<String, (location: Location) -> StaticToken> = mapOf(
+        private val KEYWORDS: Map<String, (location: Location) -> StaticToken> = mapOf(
             "record" to { RecordToken(it) },
             "enum" to { EnumToken(it) },
             "service" to { ServiceToken(it) },
@@ -431,6 +431,7 @@ class Lexer private constructor(
             "false" to { FalseToken(it) },
         )
 
+        @JvmStatic
         fun scan(reader: Reader, diagnostics: DiagnosticContext): Sequence<Token> {
             return Lexer(reader, diagnostics).readTokenStream()
         }

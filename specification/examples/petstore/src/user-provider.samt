@@ -10,7 +10,7 @@ provide UserEndpointHTTP {
                 basePath: "/user",
                 createUser: "POST /",
                 createUsers: "POST /createWithList",
-                login: "GET /login {username, password in query}",
+                login: "GET /login {username, password in queryParams}",
                 logout: "GET /logout",
                 getUserByUsername: "GET /{username}",
                 updateUser: "PUT /{username}",

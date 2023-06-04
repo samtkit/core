@@ -9,6 +9,7 @@ class SemanticModel(
     val userMetadata: UserMetadata,
 ) {
     companion object {
+        @JvmStatic
         fun build(files: List<FileNode>, controller: DiagnosticController): SemanticModel {
             // Sort by path to ensure deterministic order
             return SemanticModelBuilder(files.sortedBy { it.sourceFile.path }, controller).build()

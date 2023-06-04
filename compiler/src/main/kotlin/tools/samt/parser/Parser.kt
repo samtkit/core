@@ -324,7 +324,11 @@ class Parser private constructor(
                         diagnostic.error {
                             message("Too many transport declarations for provider '${name.name}'")
                             highlight("extraneous declaration", transport!!.location, highlightBeginningOnly = true)
-                            highlight("previous declaration", previousDeclaration.location, highlightBeginningOnly = true)
+                            highlight(
+                                "previous declaration",
+                                previousDeclaration.location,
+                                highlightBeginningOnly = true
+                            )
                         }
 
                     }
@@ -654,6 +658,7 @@ class Parser private constructor(
     private fun locationFromStart(start: FileOffset) = Location(diagnostic.source, start, previousEnd)
 
     companion object {
+        @JvmStatic
         fun parse(source: SourceFile, tokenStream: Sequence<Token>, context: DiagnosticContext): FileNode {
             return Parser(source, tokenStream, context).parseFile()
         }

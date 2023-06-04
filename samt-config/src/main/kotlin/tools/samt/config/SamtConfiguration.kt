@@ -13,7 +13,7 @@ internal data class SamtConfiguration(
 
 @Serializable
 internal data class SamtRepositoriesConfiguration(
-    val maven: String = "https://repo.maven.apache.org/maven2"
+    val maven: String = "https://repo.maven.apache.org/maven2",
 )
 
 @Serializable

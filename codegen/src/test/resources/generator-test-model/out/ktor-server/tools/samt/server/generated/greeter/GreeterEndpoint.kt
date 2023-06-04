@@ -50,7 +50,7 @@ fun Routing.routeGreeterEndpoint(
 
             // Decode parameter type
             val `parameter type` = run {
-                // Read from query
+                // Read from queryParameter
                 val jsonElement = call.request.queryParameters["type"]?.toJsonOrNull() ?: return@run null
                 tools.samt.server.generated.greeter.`decode GreetingType`(jsonElement)
             }
@@ -73,7 +73,7 @@ fun Routing.routeGreeterEndpoint(
 
             // Decode parameter names
             val `parameter names` = run {
-                // Read from query
+                // Read from queryParameter
                 val jsonElement = call.request.queryParameters["names"]!!.toJson()
                 jsonElement.jsonArray.map { it.takeUnless { it is JsonNull }?.let { it.jsonPrimitive.content.also { require(it.length >= 1 && it.length <= 50) } } }
             }

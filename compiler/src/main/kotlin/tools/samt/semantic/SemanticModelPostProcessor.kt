@@ -201,6 +201,7 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
                     record = type
                     newVisited = visited + record
                 }
+
                 is AliasType -> {
                     val reference = type.fullyResolvedType ?: return
                     val actualType = reference.type
@@ -211,6 +212,7 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
                     newVisited = visited + listOf(type, actualType)
                     isOptional = isOptional || reference.isOptional
                 }
+
                 else -> return
             }
 

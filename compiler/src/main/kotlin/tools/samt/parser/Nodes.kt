@@ -6,7 +6,11 @@ sealed interface Node {
     val location: Location
 }
 
-inline fun Node.report(controller: DiagnosticController, severity: DiagnosticSeverity, block: DiagnosticMessageBuilder.() -> Unit) {
+inline fun Node.report(
+    controller: DiagnosticController,
+    severity: DiagnosticSeverity,
+    block: DiagnosticMessageBuilder.() -> Unit,
+) {
     controller.getOrCreateContext(location.source).report(severity, block)
 }
 

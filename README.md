@@ -3,6 +3,7 @@
 <div align="center">
 
 [![Latest Stable Release on GitHub](https://img.shields.io/github/v/release/samtkit/core?display_name=tag&sort=semver)](https://github.com/samtkit/core/releases/latest)
+[![Maven Central](https://img.shields.io/maven-central/v/tools.samt/public-api)](https://central.sonatype.com/namespace/tools.samt)
 [![Total Downloads on GitHub](https://img.shields.io/github/downloads/samtkit/core/total)](https://github.com/samtkit/core/releases/latest)
 [![MIT License](https://img.shields.io/github/license/samtkit/core)](./LICENSE)
 

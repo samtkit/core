@@ -493,6 +493,21 @@ class SemanticModelTest {
                 )
             )
         }
+
+        @Test
+        fun `can use typealiases of String as keys in maps`() {
+            val source = """
+                package foo
+
+                typealias StringAlias = String
+                typealias StringAliasAlias = StringAlias
+
+                record Foo {
+                    arg: Map<StringAliasAlias, String>
+                }
+            """.trimIndent()
+            parseAndCheck(source to emptyList())
+        }
     }
 
     @Nested

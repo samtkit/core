@@ -22,6 +22,7 @@ tasks {
     shadowJar {
         archiveBaseName.set("samt-ls")
         archiveClassifier.set("")
+        archiveVersion.set("")
         manifest {
             attributes("Main-Class" to "tools.samt.ls.AppKt")
         }

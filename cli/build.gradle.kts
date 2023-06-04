@@ -30,8 +30,15 @@ tasks {
     shadowJar {
         archiveBaseName.set("samt-cli")
         archiveClassifier.set("")
+        archiveVersion.set("")
         manifest {
             attributes("Main-Class" to "tools.samt.cli.AppKt")
         }
+    }
+    shadowDistTar {
+        archiveVersion.set("")
+    }
+    shadowDistZip{
+        archiveVersion.set("")
     }
 }

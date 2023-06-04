@@ -57,6 +57,17 @@ internal class SemanticModelPostProcessor(private val controller: DiagnosticCont
             is MapType -> {
                 checkModelType(type.keyType)
                 checkModelType(type.valueType)
+
+                val keyType = type.keyType as ResolvedTypeReference
+                // error if keyType does not refer to string type
+                // serializing non-string types as keys is currently not supported,
+                // but types like integers or enums might be supported in the future
+                if (keyType.type.let { it != StringType && !(it is AliasType && it.fullyResolvedType?.type == StringType) }) {
+                    keyType.typeNode.reportError(controller) {
+                        message("Map key type must be String")
+                        highlight("expected String", keyType.typeNode.location)
+                    }
+                }
             }
 
             is AliasType -> {

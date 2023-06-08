@@ -160,10 +160,10 @@ internal class DiagnosticFormatter(
         append(gray(" ---> "))
         append(errorSourceFilePath.toString())
         if (message.highlights.isNotEmpty()) {
-            val firstHighlight = message.highlights.first()
-            val firstHighlightLocation = firstHighlight.location
+            val leftmostHighlight = message.highlights.minBy { it.location.start.col }
+            val leftmostHighlightLocation = leftmostHighlight.location
             append(":")
-            append(firstHighlightLocation.toString())
+            append(leftmostHighlightLocation.toString())
         }
         appendLine()
 
@@ -340,6 +340,7 @@ internal class DiagnosticFormatter(
         // remove highlights that do not have a message or change suggestion
         val highlightsRemainingStack = highlights.toMutableList()
         highlightsRemainingStack.removeAll { it.message == null && it.changeSuggestion == null }
+        highlightsRemainingStack.sortBy { it.location.start.col }
         while (highlightsRemainingStack.isNotEmpty()) {
             repeat(2) { iterationStep ->
                 append(formatNonHighlightedEmptySection())

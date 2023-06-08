@@ -281,7 +281,7 @@ class DiagnosticFormatterTest {
 
         context.error {
             message("some error")
-            for (value in enumNode.values) {
+            for (value in enumNode.values.reversed()) {
                 highlight("enum value '${value.name}'", value.location)
             }
         }

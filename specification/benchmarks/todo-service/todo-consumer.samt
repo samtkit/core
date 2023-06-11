@@ -1,0 +1,9 @@
+package tools.samt.examples.somepackage
+
+consume tools.samt.examples.todo.TodoEndpointHTTP {
+    uses tools.samt.examples.todo.TodoManager
+    uses tools.samt.examples.todo.TodoListManager {
+        addTodoToList,
+        removeTodoFromList
+    }
+}

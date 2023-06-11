@@ -8,19 +8,19 @@ provide TodoEndpointHTTP {
         serialization: "json",
         operations: {
             TodoManager: {
-                 createTodo: "POST /todo {cookie:session}",
-                 searchTodo: "GET /todo {query:title}",
+                 createTodo: "POST /todo {session in cookie}",
+                 searchTodo: "GET /todo/search {title in query}",
                  getTodo: "GET /todo/{id}",
                  getTodos: "GET /todo",
                  updateTodo: "PUT /todo/{id}",
                  deleteTodo: "DELETE /todo/{id}",
-                 markAsCompleted: "PUT /todo/{id} {query:completed}"
+                 markAsCompleted: "PUT /todo/{id}/completed {id in queryParam}"
             },
             TodoListManager: {
                createTodoList: "POST /todo-list",
-               searchTodoList: "GET /todo-list {query:title}",
+               searchTodoList: "GET /todo-list {title in query}",
                getTodoList: "GET /todo-list/{id}",
-               getTodoLists: "GET /todo-list",
+               getTodoLists: "GET /todo-lists",
                updateTodoList: "PUT /todo-list/{id}",
                deleteTodoList: "DELETE /todo-list/{id}",
                addTodoToList: "PUT /todo-list/{listId}/todo/{todoId}",

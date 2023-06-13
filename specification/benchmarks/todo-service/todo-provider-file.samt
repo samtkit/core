@@ -1,0 +1,37 @@
+package tools.samt.examples.todo
+
+provide TodosFileInput {
+    implements TodoManager { getTodos }
+
+    transport FILE {
+        serialization: "CSV",
+        options: {
+            delimiter: ",",
+            encoding: "UTF-8"
+        },
+        primitives: {
+            String: {
+                enquote: "AUTO"
+            }
+        },
+        records: {
+            TodoItem: {
+                id: {
+                    enquote: "NEVER"
+                },
+                id: {
+                    enquote: "NEVER"
+                },
+                description: {
+                    enquote: "ALWAYS"
+                },
+                completed: {
+                    boolean: {
+                        ^true: "1",
+                        ^false: "0"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -96,10 +96,13 @@ class Package(val name: String, private val parent: Package?) {
     val allSubPackages: List<Package>
         get() = subPackages + subPackages.flatMap { it.allSubPackages }
 
-    val nameComponents: List<String>
-        get() = if (isRootPackage) {
-            emptyList() // root package
+    val qualifiedName: String by lazy(LazyThreadSafetyMode.NONE) {
+        if (parent == null) {
+            "" // root package
+        } else if (parent.isRootPackage) {
+            name
         } else {
-            parent!!.nameComponents + name
+            "${parent.qualifiedName}.$name"
         }
+    }
 }

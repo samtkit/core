@@ -21,7 +21,7 @@ class PublicApiMapper(
 
     fun toPublicApi(samtPackage: tools.samt.semantic.Package) = object : SamtPackage {
         override val name = samtPackage.name
-        override val qualifiedName = samtPackage.nameComponents.joinToString(".")
+        override val qualifiedName = samtPackage.qualifiedName
         override val records = samtPackage.records.map { it.toPublicRecord() }
         override val enums = samtPackage.enums.map { it.toPublicEnum() }
         override val services = samtPackage.services.map { it.toPublicService() }
@@ -146,7 +146,7 @@ class PublicApiMapper(
     }
 
     private fun tools.samt.semantic.ProviderType.Implements.toPublicImplements() = object : ProvidedService {
-        override val service = this@toPublicImplements.service.toPublicTypeReference().type as ServiceType
+        override val service by unsafeLazy { this@toPublicImplements.service.toPublicTypeReference().type as ServiceType }
         private val implementedOperationNames by unsafeLazy { this@toPublicImplements.operations.mapTo(mutableSetOf()) { it.name } }
         override val implementedOperations by unsafeLazy { service.operations.filter { it.name in implementedOperationNames } }
         override val unimplementedOperations by unsafeLazy { service.operations.filter { it.name !in implementedOperationNames } }
@@ -155,7 +155,7 @@ class PublicApiMapper(
     private fun tools.samt.semantic.ConsumerType.toPublicConsumer() = object : ConsumerType {
         override val provider by unsafeLazy { this@toPublicConsumer.provider.toPublicTypeReference().type as ProviderType }
         override val uses by unsafeLazy { this@toPublicConsumer.uses.map { it.toPublicUses() } }
-        override val samtPackage by unsafeLazy { this@toPublicConsumer.parentPackage.nameComponents.joinToString(".") }
+        override val samtPackage get() = this@toPublicConsumer.parentPackage.qualifiedName
     }
 
     private fun tools.samt.semantic.ConsumerType.Uses.toPublicUses() = object : ConsumedService {
@@ -283,7 +283,10 @@ class PublicApiMapper(
         }
 
     private fun tools.samt.semantic.UserDeclaredNamedType.getQualifiedName(): String {
-        val components = parentPackage.nameComponents + name
-        return components.joinToString(".")
+        return if (parentPackage.qualifiedName.isEmpty()) {
+            name
+        } else {
+            "${parentPackage.qualifiedName}.$name"
+        }
     }
 }

@@ -1,0 +1,2033 @@
+import tools.samt.examples.common.UUID
+import tools.samt.examples.common.NotFoundFault
+import tools.samt.examples.common.MissingPermissionsFault
+
+package tools.samt.examples.todo
+
+record TodoItem {
+    id: UUID
+    title: String ( size(1..*) )
+    description: String ( size(0..1000), pattern("foo") )
+    completed: Boolean
+}
+
+record TodoItem0 {
+    id: UUID
+    title: String (1..772)
+    description: String (size(0..570), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem1 {
+    id: UUID
+    title: String (1..124)
+    description: String (size(0..522), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem2 {
+    id: UUID
+    title: String (1..457)
+    description: String (size(0..266), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem3 {
+    id: UUID
+    title: String (1..516)
+    description: String (size(0..781), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem4 {
+    id: UUID
+    title: String (1..296)
+    description: String (size(0..378), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem5 {
+    id: UUID
+    title: String (1..402)
+    description: String (size(0..248), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem6 {
+    id: UUID
+    title: String (1..887)
+    description: String (size(0..403), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem7 {
+    id: UUID
+    title: String (1..740)
+    description: String (size(0..364), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem8 {
+    id: UUID
+    title: String (1..349)
+    description: String (size(0..402), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem9 {
+    id: UUID
+    title: String (1..839)
+    description: String (size(0..508), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem10 {
+    id: UUID
+    title: String (1..607)
+    description: String (size(0..670), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem11 {
+    id: UUID
+    title: String (1..889)
+    description: String (size(0..505), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem12 {
+    id: UUID
+    title: String (1..425)
+    description: String (size(0..523), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem13 {
+    id: UUID
+    title: String (1..260)
+    description: String (size(0..364), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem14 {
+    id: UUID
+    title: String (1..430)
+    description: String (size(0..416), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem15 {
+    id: UUID
+    title: String (1..390)
+    description: String (size(0..512), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem16 {
+    id: UUID
+    title: String (1..970)
+    description: String (size(0..450), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem17 {
+    id: UUID
+    title: String (1..733)
+    description: String (size(0..293), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem18 {
+    id: UUID
+    title: String (1..605)
+    description: String (size(0..770), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem19 {
+    id: UUID
+    title: String (1..690)
+    description: String (size(0..44), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem20 {
+    id: UUID
+    title: String (1..218)
+    description: String (size(0..224), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem21 {
+    id: UUID
+    title: String (1..654)
+    description: String (size(0..626), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem22 {
+    id: UUID
+    title: String (1..216)
+    description: String (size(0..189), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem23 {
+    id: UUID
+    title: String (1..304)
+    description: String (size(0..905), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem24 {
+    id: UUID
+    title: String (1..70)
+    description: String (size(0..392), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem25 {
+    id: UUID
+    title: String (1..63)
+    description: String (size(0..294), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem26 {
+    id: UUID
+    title: String (1..482)
+    description: String (size(0..126), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem27 {
+    id: UUID
+    title: String (1..218)
+    description: String (size(0..136), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem28 {
+    id: UUID
+    title: String (1..796)
+    description: String (size(0..304), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem29 {
+    id: UUID
+    title: String (1..505)
+    description: String (size(0..420), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem30 {
+    id: UUID
+    title: String (1..881)
+    description: String (size(0..369), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem31 {
+    id: UUID
+    title: String (1..126)
+    description: String (size(0..29), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem32 {
+    id: UUID
+    title: String (1..610)
+    description: String (size(0..211), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem33 {
+    id: UUID
+    title: String (1..63)
+    description: String (size(0..483), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem34 {
+    id: UUID
+    title: String (1..234)
+    description: String (size(0..885), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem35 {
+    id: UUID
+    title: String (1..215)
+    description: String (size(0..947), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem36 {
+    id: UUID
+    title: String (1..383)
+    description: String (size(0..110), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem37 {
+    id: UUID
+    title: String (1..401)
+    description: String (size(0..66), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem38 {
+    id: UUID
+    title: String (1..191)
+    description: String (size(0..224), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem39 {
+    id: UUID
+    title: String (1..482)
+    description: String (size(0..68), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem40 {
+    id: UUID
+    title: String (1..45)
+    description: String (size(0..539), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem41 {
+    id: UUID
+    title: String (1..907)
+    description: String (size(0..447), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem42 {
+    id: UUID
+    title: String (1..744)
+    description: String (size(0..799), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem43 {
+    id: UUID
+    title: String (1..800)
+    description: String (size(0..447), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem44 {
+    id: UUID
+    title: String (1..458)
+    description: String (size(0..741), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem45 {
+    id: UUID
+    title: String (1..294)
+    description: String (size(0..537), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem46 {
+    id: UUID
+    title: String (1..712)
+    description: String (size(0..621), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem47 {
+    id: UUID
+    title: String (1..200)
+    description: String (size(0..13), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem48 {
+    id: UUID
+    title: String (1..787)
+    description: String (size(0..910), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem49 {
+    id: UUID
+    title: String (1..252)
+    description: String (size(0..906), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem50 {
+    id: UUID
+    title: String (1..328)
+    description: String (size(0..285), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem51 {
+    id: UUID
+    title: String (1..106)
+    description: String (size(0..382), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem52 {
+    id: UUID
+    title: String (1..667)
+    description: String (size(0..447), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem53 {
+    id: UUID
+    title: String (1..1)
+    description: String (size(0..918), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem54 {
+    id: UUID
+    title: String (1..360)
+    description: String (size(0..293), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem55 {
+    id: UUID
+    title: String (1..477)
+    description: String (size(0..623), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem56 {
+    id: UUID
+    title: String (1..685)
+    description: String (size(0..422), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem57 {
+    id: UUID
+    title: String (1..837)
+    description: String (size(0..217), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem58 {
+    id: UUID
+    title: String (1..414)
+    description: String (size(0..18), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem59 {
+    id: UUID
+    title: String (1..99)
+    description: String (size(0..343), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem60 {
+    id: UUID
+    title: String (1..984)
+    description: String (size(0..682), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem61 {
+    id: UUID
+    title: String (1..30)
+    description: String (size(0..74), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem62 {
+    id: UUID
+    title: String (1..332)
+    description: String (size(0..881), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem63 {
+    id: UUID
+    title: String (1..481)
+    description: String (size(0..730), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem64 {
+    id: UUID
+    title: String (1..999)
+    description: String (size(0..305), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem65 {
+    id: UUID
+    title: String (1..654)
+    description: String (size(0..343), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem66 {
+    id: UUID
+    title: String (1..848)
+    description: String (size(0..558), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem67 {
+    id: UUID
+    title: String (1..93)
+    description: String (size(0..432), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem68 {
+    id: UUID
+    title: String (1..630)
+    description: String (size(0..319), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem69 {
+    id: UUID
+    title: String (1..218)
+    description: String (size(0..43), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem70 {
+    id: UUID
+    title: String (1..911)
+    description: String (size(0..273), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem71 {
+    id: UUID
+    title: String (1..903)
+    description: String (size(0..392), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem72 {
+    id: UUID
+    title: String (1..380)
+    description: String (size(0..909), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem73 {
+    id: UUID
+    title: String (1..180)
+    description: String (size(0..797), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem74 {
+    id: UUID
+    title: String (1..331)
+    description: String (size(0..514), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem75 {
+    id: UUID
+    title: String (1..454)
+    description: String (size(0..32), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem76 {
+    id: UUID
+    title: String (1..239)
+    description: String (size(0..525), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem77 {
+    id: UUID
+    title: String (1..691)
+    description: String (size(0..659), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem78 {
+    id: UUID
+    title: String (1..660)
+    description: String (size(0..716), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem79 {
+    id: UUID
+    title: String (1..939)
+    description: String (size(0..397), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem80 {
+    id: UUID
+    title: String (1..358)
+    description: String (size(0..596), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem81 {
+    id: UUID
+    title: String (1..185)
+    description: String (size(0..59), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem82 {
+    id: UUID
+    title: String (1..479)
+    description: String (size(0..743), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem83 {
+    id: UUID
+    title: String (1..123)
+    description: String (size(0..164), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem84 {
+    id: UUID
+    title: String (1..789)
+    description: String (size(0..796), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem85 {
+    id: UUID
+    title: String (1..634)
+    description: String (size(0..888), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem86 {
+    id: UUID
+    title: String (1..480)
+    description: String (size(0..225), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem87 {
+    id: UUID
+    title: String (1..228)
+    description: String (size(0..610), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem88 {
+    id: UUID
+    title: String (1..831)
+    description: String (size(0..38), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem89 {
+    id: UUID
+    title: String (1..596)
+    description: String (size(0..964), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem90 {
+    id: UUID
+    title: String (1..22)
+    description: String (size(0..79), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem91 {
+    id: UUID
+    title: String (1..586)
+    description: String (size(0..953), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem92 {
+    id: UUID
+    title: String (1..774)
+    description: String (size(0..653), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem93 {
+    id: UUID
+    title: String (1..379)
+    description: String (size(0..392), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem94 {
+    id: UUID
+    title: String (1..61)
+    description: String (size(0..766), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem95 {
+    id: UUID
+    title: String (1..218)
+    description: String (size(0..670), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem96 {
+    id: UUID
+    title: String (1..55)
+    description: String (size(0..435), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem97 {
+    id: UUID
+    title: String (1..934)
+    description: String (size(0..566), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem98 {
+    id: UUID
+    title: String (1..620)
+    description: String (size(0..109), pattern("foo"))
+    completed: Boolean
+}
+record TodoItem99 {
+    id: UUID
+    title: String (1..384)
+    description: String (size(0..682), pattern("foo"))
+    completed: Boolean
+}
+
+record TodoList {
+    id: UUID
+    title: String ( "[a-z]" )
+    items: List<TodoItem>
+}
+record TodoList0 {
+    id: UUID
+    items: List<TodoItem0>
+}
+record TodoList1 {
+    id: UUID
+    items: List<TodoItem1>
+}
+record TodoList2 {
+    id: UUID
+    items: List<TodoItem2>
+}
+record TodoList3 {
+    id: UUID
+    items: List<TodoItem3>
+}
+record TodoList4 {
+    id: UUID
+    items: List<TodoItem4>
+}
+record TodoList5 {
+    id: UUID
+    items: List<TodoItem5>
+}
+record TodoList6 {
+    id: UUID
+    items: List<TodoItem6>
+}
+record TodoList7 {
+    id: UUID
+    items: List<TodoItem7>
+}
+record TodoList8 {
+    id: UUID
+    items: List<TodoItem8>
+}
+record TodoList9 {
+    id: UUID
+    items: List<TodoItem9>
+}
+record TodoList10 {
+    id: UUID
+    items: List<TodoItem10>
+}
+record TodoList11 {
+    id: UUID
+    items: List<TodoItem11>
+}
+record TodoList12 {
+    id: UUID
+    items: List<TodoItem12>
+}
+record TodoList13 {
+    id: UUID
+    items: List<TodoItem13>
+}
+record TodoList14 {
+    id: UUID
+    items: List<TodoItem14>
+}
+record TodoList15 {
+    id: UUID
+    items: List<TodoItem15>
+}
+record TodoList16 {
+    id: UUID
+    items: List<TodoItem16>
+}
+record TodoList17 {
+    id: UUID
+    items: List<TodoItem17>
+}
+record TodoList18 {
+    id: UUID
+    items: List<TodoItem18>
+}
+record TodoList19 {
+    id: UUID
+    items: List<TodoItem19>
+}
+record TodoList20 {
+    id: UUID
+    items: List<TodoItem20>
+}
+record TodoList21 {
+    id: UUID
+    items: List<TodoItem21>
+}
+record TodoList22 {
+    id: UUID
+    items: List<TodoItem22>
+}
+record TodoList23 {
+    id: UUID
+    items: List<TodoItem23>
+}
+record TodoList24 {
+    id: UUID
+    items: List<TodoItem24>
+}
+record TodoList25 {
+    id: UUID
+    items: List<TodoItem25>
+}
+record TodoList26 {
+    id: UUID
+    items: List<TodoItem26>
+}
+record TodoList27 {
+    id: UUID
+    items: List<TodoItem27>
+}
+record TodoList28 {
+    id: UUID
+    items: List<TodoItem28>
+}
+record TodoList29 {
+    id: UUID
+    items: List<TodoItem29>
+}
+record TodoList30 {
+    id: UUID
+    items: List<TodoItem30>
+}
+record TodoList31 {
+    id: UUID
+    items: List<TodoItem31>
+}
+record TodoList32 {
+    id: UUID
+    items: List<TodoItem32>
+}
+record TodoList33 {
+    id: UUID
+    items: List<TodoItem33>
+}
+record TodoList34 {
+    id: UUID
+    items: List<TodoItem34>
+}
+record TodoList35 {
+    id: UUID
+    items: List<TodoItem35>
+}
+record TodoList36 {
+    id: UUID
+    items: List<TodoItem36>
+}
+record TodoList37 {
+    id: UUID
+    items: List<TodoItem37>
+}
+record TodoList38 {
+    id: UUID
+    items: List<TodoItem38>
+}
+record TodoList39 {
+    id: UUID
+    items: List<TodoItem39>
+}
+record TodoList40 {
+    id: UUID
+    items: List<TodoItem40>
+}
+record TodoList41 {
+    id: UUID
+    items: List<TodoItem41>
+}
+record TodoList42 {
+    id: UUID
+    items: List<TodoItem42>
+}
+record TodoList43 {
+    id: UUID
+    items: List<TodoItem43>
+}
+record TodoList44 {
+    id: UUID
+    items: List<TodoItem44>
+}
+record TodoList45 {
+    id: UUID
+    items: List<TodoItem45>
+}
+record TodoList46 {
+    id: UUID
+    items: List<TodoItem46>
+}
+record TodoList47 {
+    id: UUID
+    items: List<TodoItem47>
+}
+record TodoList48 {
+    id: UUID
+    items: List<TodoItem48>
+}
+record TodoList49 {
+    id: UUID
+    items: List<TodoItem49>
+}
+record TodoList50 {
+    id: UUID
+    items: List<TodoItem50>
+}
+record TodoList51 {
+    id: UUID
+    items: List<TodoItem51>
+}
+record TodoList52 {
+    id: UUID
+    items: List<TodoItem52>
+}
+record TodoList53 {
+    id: UUID
+    items: List<TodoItem53>
+}
+record TodoList54 {
+    id: UUID
+    items: List<TodoItem54>
+}
+record TodoList55 {
+    id: UUID
+    items: List<TodoItem55>
+}
+record TodoList56 {
+    id: UUID
+    items: List<TodoItem56>
+}
+record TodoList57 {
+    id: UUID
+    items: List<TodoItem57>
+}
+record TodoList58 {
+    id: UUID
+    items: List<TodoItem58>
+}
+record TodoList59 {
+    id: UUID
+    items: List<TodoItem59>
+}
+record TodoList60 {
+    id: UUID
+    items: List<TodoItem60>
+}
+record TodoList61 {
+    id: UUID
+    items: List<TodoItem61>
+}
+record TodoList62 {
+    id: UUID
+    items: List<TodoItem62>
+}
+record TodoList63 {
+    id: UUID
+    items: List<TodoItem63>
+}
+record TodoList64 {
+    id: UUID
+    items: List<TodoItem64>
+}
+record TodoList65 {
+    id: UUID
+    items: List<TodoItem65>
+}
+record TodoList66 {
+    id: UUID
+    items: List<TodoItem66>
+}
+record TodoList67 {
+    id: UUID
+    items: List<TodoItem67>
+}
+record TodoList68 {
+    id: UUID
+    items: List<TodoItem68>
+}
+record TodoList69 {
+    id: UUID
+    items: List<TodoItem69>
+}
+record TodoList70 {
+    id: UUID
+    items: List<TodoItem70>
+}
+record TodoList71 {
+    id: UUID
+    items: List<TodoItem71>
+}
+record TodoList72 {
+    id: UUID
+    items: List<TodoItem72>
+}
+record TodoList73 {
+    id: UUID
+    items: List<TodoItem73>
+}
+record TodoList74 {
+    id: UUID
+    items: List<TodoItem74>
+}
+record TodoList75 {
+    id: UUID
+    items: List<TodoItem75>
+}
+record TodoList76 {
+    id: UUID
+    items: List<TodoItem76>
+}
+record TodoList77 {
+    id: UUID
+    items: List<TodoItem77>
+}
+record TodoList78 {
+    id: UUID
+    items: List<TodoItem78>
+}
+record TodoList79 {
+    id: UUID
+    items: List<TodoItem79>
+}
+record TodoList80 {
+    id: UUID
+    items: List<TodoItem80>
+}
+record TodoList81 {
+    id: UUID
+    items: List<TodoItem81>
+}
+record TodoList82 {
+    id: UUID
+    items: List<TodoItem82>
+}
+record TodoList83 {
+    id: UUID
+    items: List<TodoItem83>
+}
+record TodoList84 {
+    id: UUID
+    items: List<TodoItem84>
+}
+record TodoList85 {
+    id: UUID
+    items: List<TodoItem85>
+}
+record TodoList86 {
+    id: UUID
+    items: List<TodoItem86>
+}
+record TodoList87 {
+    id: UUID
+    items: List<TodoItem87>
+}
+record TodoList88 {
+    id: UUID
+    items: List<TodoItem88>
+}
+record TodoList89 {
+    id: UUID
+    items: List<TodoItem89>
+}
+record TodoList90 {
+    id: UUID
+    items: List<TodoItem90>
+}
+record TodoList91 {
+    id: UUID
+    items: List<TodoItem91>
+}
+record TodoList92 {
+    id: UUID
+    items: List<TodoItem92>
+}
+record TodoList93 {
+    id: UUID
+    items: List<TodoItem93>
+}
+record TodoList94 {
+    id: UUID
+    items: List<TodoItem94>
+}
+record TodoList95 {
+    id: UUID
+    items: List<TodoItem95>
+}
+record TodoList96 {
+    id: UUID
+    items: List<TodoItem96>
+}
+record TodoList97 {
+    id: UUID
+    items: List<TodoItem97>
+}
+record TodoList98 {
+    id: UUID
+    items: List<TodoItem98>
+}
+record TodoList99 {
+    id: UUID
+    items: List<TodoItem99>
+}
+
+typealias MyValue0 = Float (881.3678031120527..891.3678031120527)
+typealias MyNestedValue0 = MyValue0
+
+record MySecret0 {
+    value: MyValue0
+    nestedValue: MyNestedValue0
+}
+typealias MyValue1 = Float (217.89819335116644..227.89819335116644)
+typealias MyNestedValue1 = MyValue1
+
+record MySecret1 {
+    value: MyValue1
+    nestedValue: MyNestedValue1
+}
+typealias MyValue2 = Float (286.1814374333751..296.1814374333751)
+typealias MyNestedValue2 = MyValue2
+
+record MySecret2 {
+    value: MyValue2
+    nestedValue: MyNestedValue2
+}
+typealias MyValue3 = Float (958.6707773798763..968.6707773798763)
+typealias MyNestedValue3 = MyValue3
+
+record MySecret3 {
+    value: MyValue3
+    nestedValue: MyNestedValue3
+}
+typealias MyValue4 = Float (875.336565887528..885.336565887528)
+typealias MyNestedValue4 = MyValue4
+
+record MySecret4 {
+    value: MyValue4
+    nestedValue: MyNestedValue4
+}
+typealias MyValue5 = Float (955.0602905093554..965.0602905093554)
+typealias MyNestedValue5 = MyValue5
+
+record MySecret5 {
+    value: MyValue5
+    nestedValue: MyNestedValue5
+}
+typealias MyValue6 = Float (193.2442004671483..203.2442004671483)
+typealias MyNestedValue6 = MyValue6
+
+record MySecret6 {
+    value: MyValue6
+    nestedValue: MyNestedValue6
+}
+typealias MyValue7 = Float (204.49884728959788..214.49884728959788)
+typealias MyNestedValue7 = MyValue7
+
+record MySecret7 {
+    value: MyValue7
+    nestedValue: MyNestedValue7
+}
+typealias MyValue8 = Float (45.590216107896374..55.590216107896374)
+typealias MyNestedValue8 = MyValue8
+
+record MySecret8 {
+    value: MyValue8
+    nestedValue: MyNestedValue8
+}
+typealias MyValue9 = Float (714.7624327377184..724.7624327377184)
+typealias MyNestedValue9 = MyValue9
+
+record MySecret9 {
+    value: MyValue9
+    nestedValue: MyNestedValue9
+}
+typealias MyValue10 = Float (332.61517016314315..342.61517016314315)
+typealias MyNestedValue10 = MyValue10
+
+record MySecret10 {
+    value: MyValue10
+    nestedValue: MyNestedValue10
+}
+typealias MyValue11 = Float (130.0473279478368..140.0473279478368)
+typealias MyNestedValue11 = MyValue11
+
+record MySecret11 {
+    value: MyValue11
+    nestedValue: MyNestedValue11
+}
+typealias MyValue12 = Float (775.3736898483128..785.3736898483128)
+typealias MyNestedValue12 = MyValue12
+
+record MySecret12 {
+    value: MyValue12
+    nestedValue: MyNestedValue12
+}
+typealias MyValue13 = Float (616.6875304047251..626.6875304047251)
+typealias MyNestedValue13 = MyValue13
+
+record MySecret13 {
+    value: MyValue13
+    nestedValue: MyNestedValue13
+}
+typealias MyValue14 = Float (803.7087746943494..813.7087746943494)
+typealias MyNestedValue14 = MyValue14
+
+record MySecret14 {
+    value: MyValue14
+    nestedValue: MyNestedValue14
+}
+typealias MyValue15 = Float (687.7420556386638..697.7420556386638)
+typealias MyNestedValue15 = MyValue15
+
+record MySecret15 {
+    value: MyValue15
+    nestedValue: MyNestedValue15
+}
+typealias MyValue16 = Float (251.28214908099167..261.28214908099164)
+typealias MyNestedValue16 = MyValue16
+
+record MySecret16 {
+    value: MyValue16
+    nestedValue: MyNestedValue16
+}
+typealias MyValue17 = Float (300.63793248528225..310.63793248528225)
+typealias MyNestedValue17 = MyValue17
+
+record MySecret17 {
+    value: MyValue17
+    nestedValue: MyNestedValue17
+}
+typealias MyValue18 = Float (962.9207781417374..972.9207781417374)
+typealias MyNestedValue18 = MyValue18
+
+record MySecret18 {
+    value: MyValue18
+    nestedValue: MyNestedValue18
+}
+typealias MyValue19 = Float (246.1254052152284..256.1254052152284)
+typealias MyNestedValue19 = MyValue19
+
+record MySecret19 {
+    value: MyValue19
+    nestedValue: MyNestedValue19
+}
+typealias MyValue20 = Float (467.65444055809166..477.65444055809166)
+typealias MyNestedValue20 = MyValue20
+
+record MySecret20 {
+    value: MyValue20
+    nestedValue: MyNestedValue20
+}
+typealias MyValue21 = Float (72.68141197467315..82.68141197467315)
+typealias MyNestedValue21 = MyValue21
+
+record MySecret21 {
+    value: MyValue21
+    nestedValue: MyNestedValue21
+}
+typealias MyValue22 = Float (840.1375838740461..850.1375838740461)
+typealias MyNestedValue22 = MyValue22
+
+record MySecret22 {
+    value: MyValue22
+    nestedValue: MyNestedValue22
+}
+typealias MyValue23 = Float (24.006479644673952..34.00647964467395)
+typealias MyNestedValue23 = MyValue23
+
+record MySecret23 {
+    value: MyValue23
+    nestedValue: MyNestedValue23
+}
+typealias MyValue24 = Float (174.80380636638094..184.80380636638094)
+typealias MyNestedValue24 = MyValue24
+
+record MySecret24 {
+    value: MyValue24
+    nestedValue: MyNestedValue24
+}
+typealias MyValue25 = Float (377.34401946524343..387.34401946524343)
+typealias MyNestedValue25 = MyValue25
+
+record MySecret25 {
+    value: MyValue25
+    nestedValue: MyNestedValue25
+}
+typealias MyValue26 = Float (470.34991029396923..480.34991029396923)
+typealias MyNestedValue26 = MyValue26
+
+record MySecret26 {
+    value: MyValue26
+    nestedValue: MyNestedValue26
+}
+typealias MyValue27 = Float (279.0795775548778..289.0795775548778)
+typealias MyNestedValue27 = MyValue27
+
+record MySecret27 {
+    value: MyValue27
+    nestedValue: MyNestedValue27
+}
+typealias MyValue28 = Float (484.37296285553145..494.37296285553145)
+typealias MyNestedValue28 = MyValue28
+
+record MySecret28 {
+    value: MyValue28
+    nestedValue: MyNestedValue28
+}
+typealias MyValue29 = Float (506.64714771168184..516.6471477116818)
+typealias MyNestedValue29 = MyValue29
+
+record MySecret29 {
+    value: MyValue29
+    nestedValue: MyNestedValue29
+}
+
+record CreateTodoRequest0 {
+    todo: TodoItem0
+    color: MyColor0
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest1 {
+    todo: TodoItem1
+    color: MyColor1
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest2 {
+    todo: TodoItem2
+    color: MyColor2
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest3 {
+    todo: TodoItem3
+    color: MyColor3
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest4 {
+    todo: TodoItem4
+    color: MyColor4
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest5 {
+    todo: TodoItem5
+    color: MyColor5
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest6 {
+    todo: TodoItem6
+    color: MyColor6
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest7 {
+    todo: TodoItem7
+    color: MyColor7
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest8 {
+    todo: TodoItem8
+    color: MyColor8
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest9 {
+    todo: TodoItem9
+    color: MyColor9
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest10 {
+    todo: TodoItem10
+    color: MyColor10
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest11 {
+    todo: TodoItem11
+    color: MyColor11
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest12 {
+    todo: TodoItem12
+    color: MyColor12
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest13 {
+    todo: TodoItem13
+    color: MyColor13
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest14 {
+    todo: TodoItem14
+    color: MyColor14
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest15 {
+    todo: TodoItem15
+    color: MyColor0
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest16 {
+    todo: TodoItem16
+    color: MyColor1
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest17 {
+    todo: TodoItem17
+    color: MyColor2
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest18 {
+    todo: TodoItem18
+    color: MyColor3
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest19 {
+    todo: TodoItem19
+    color: MyColor4
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest20 {
+    todo: TodoItem20
+    color: MyColor5
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest21 {
+    todo: TodoItem21
+    color: MyColor6
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest22 {
+    todo: TodoItem22
+    color: MyColor7
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest23 {
+    todo: TodoItem23
+    color: MyColor8
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest24 {
+    todo: TodoItem24
+    color: MyColor9
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest25 {
+    todo: TodoItem25
+    color: MyColor10
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest26 {
+    todo: TodoItem26
+    color: MyColor11
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest27 {
+    todo: TodoItem27
+    color: MyColor12
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest28 {
+    todo: TodoItem28
+    color: MyColor13
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest29 {
+    todo: TodoItem29
+    color: MyColor14
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest30 {
+    todo: TodoItem30
+    color: MyColor0
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest31 {
+    todo: TodoItem31
+    color: MyColor1
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest32 {
+    todo: TodoItem32
+    color: MyColor2
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest33 {
+    todo: TodoItem33
+    color: MyColor3
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest34 {
+    todo: TodoItem34
+    color: MyColor4
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest35 {
+    todo: TodoItem35
+    color: MyColor5
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest36 {
+    todo: TodoItem36
+    color: MyColor6
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest37 {
+    todo: TodoItem37
+    color: MyColor7
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest38 {
+    todo: TodoItem38
+    color: MyColor8
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest39 {
+    todo: TodoItem39
+    color: MyColor9
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest40 {
+    todo: TodoItem40
+    color: MyColor10
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest41 {
+    todo: TodoItem41
+    color: MyColor11
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest42 {
+    todo: TodoItem42
+    color: MyColor12
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest43 {
+    todo: TodoItem43
+    color: MyColor13
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest44 {
+    todo: TodoItem44
+    color: MyColor14
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest45 {
+    todo: TodoItem45
+    color: MyColor0
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest46 {
+    todo: TodoItem46
+    color: MyColor1
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest47 {
+    todo: TodoItem47
+    color: MyColor2
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest48 {
+    todo: TodoItem48
+    color: MyColor3
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest49 {
+    todo: TodoItem49
+    color: MyColor4
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest50 {
+    todo: TodoItem50
+    color: MyColor5
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest51 {
+    todo: TodoItem51
+    color: MyColor6
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest52 {
+    todo: TodoItem52
+    color: MyColor7
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest53 {
+    todo: TodoItem53
+    color: MyColor8
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest54 {
+    todo: TodoItem54
+    color: MyColor9
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest55 {
+    todo: TodoItem55
+    color: MyColor10
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest56 {
+    todo: TodoItem56
+    color: MyColor11
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest57 {
+    todo: TodoItem57
+    color: MyColor12
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest58 {
+    todo: TodoItem58
+    color: MyColor13
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest59 {
+    todo: TodoItem59
+    color: MyColor14
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest60 {
+    todo: TodoItem60
+    color: MyColor0
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest61 {
+    todo: TodoItem61
+    color: MyColor1
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest62 {
+    todo: TodoItem62
+    color: MyColor2
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest63 {
+    todo: TodoItem63
+    color: MyColor3
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest64 {
+    todo: TodoItem64
+    color: MyColor4
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest65 {
+    todo: TodoItem65
+    color: MyColor5
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest66 {
+    todo: TodoItem66
+    color: MyColor6
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest67 {
+    todo: TodoItem67
+    color: MyColor7
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest68 {
+    todo: TodoItem68
+    color: MyColor8
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+record CreateTodoRequest69 {
+    todo: TodoItem69
+    color: MyColor9
+    requestId: UUID
+    @Deprecated("Use requestId instead")
+    somethingLegacy: Int?
+}
+
+enum MyColor0 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor1 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor2 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor3 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor4 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor5 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor6 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor7 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor8 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor9 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor10 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor11 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor12 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor13 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+enum MyColor14 {
+    GREEN,
+    RED,
+    BLUE,
+    PURPLE,
+    ORANGE,
+    UNKNOWN
+}
+
+@Description("A service for managing todo items")
+service TodoManager {
+    createTodo(title: String, description: String, session: String): TodoItem
+    searchTodo(title: String): TodoItem?
+    getTodo(id: UUID): TodoItem raises NotFoundFault
+    getTodos(): List<TodoItem>
+    updateTodo(
+        id: UUID,
+        newTitle: String? ( size(1..*) ),
+        newDescription: String? ( size(0..1000) )
+    ) raises NotFoundFault, MissingPermissionsFault
+    deleteTodo(id: String ( size(0..1000), pattern("foo") )) raises NotFoundFault, MissingPermissionsFault
+    markAsCompleted(id: Map<
+        String (
+            size(1..100),
+            pattern("banana")
+        ),
+        List<Int? (*..50)>? (1..*)>?) raises NotFoundFault, MissingPermissionsFault
+}
+
+@Description("A service for managing todo lists")
+service TodoListManager {
+    createTodoList(title: String): TodoList
+    searchTodoList(title: String): TodoList?
+    getTodoList(id: UUID): TodoList raises NotFoundFault
+    getTodoLists(): List<TodoList>
+    updateTodoList(
+        id: UUID,
+        newTitle: String? ( size(1..*) )
+    ) raises NotFoundFault, MissingPermissionsFault
+    deleteTodoList(id: UUID) raises NotFoundFault, MissingPermissionsFault
+    addTodoToList(listId: UUID, todoId: UUID) raises NotFoundFault, MissingPermissionsFault
+    removeTodoFromList(listId: UUID, todoId: UUID) raises NotFoundFault, MissingPermissionsFault
+}
+
+service TodoManager99 {
+    createTodo(title: String, description: String, session: String): TodoItem99
+    searchTodo(title: String): TodoItem99?
+    getTodo(id: UUID): TodoItem99 raises NotFoundFault
+    getTodos(): List<TodoItem99>
+    updateTodo(
+        id: UUID,
+        newTitle: String? ( size(1..*) ),
+        newDescription: String? ( size(0..1000) )
+    ) raises NotFoundFault, MissingPermissionsFault
+    deleteTodo(id: String ( size(0..1000), pattern("foo") )) raises NotFoundFault, MissingPermissionsFault
+    markAsCompleted(id: Map<
+        String (
+            size(1..100),
+            pattern("banana")
+        ),
+        List<Int? (*..50)>? (1..*)>?) raises NotFoundFault, MissingPermissionsFault
+}
+
+@Description("A service for managing todo lists")
+service TodoListManager99 {
+    createTodoList(title: String): TodoList99
+    searchTodoList(title: String): TodoList99?
+    getTodoList(id: UUID): TodoList99 raises NotFoundFault
+    getTodoLists(): List<TodoList99>
+    updateTodoList(
+        id: UUID,
+        newTitle: String? ( size(1..*) )
+    ) raises NotFoundFault, MissingPermissionsFault
+    deleteTodoList(id: UUID) raises NotFoundFault, MissingPermissionsFault
+    addTodoToList(listId: UUID, todoId: UUID) raises NotFoundFault, MissingPermissionsFault
+    removeTodoFromList(listId: UUID, todoId: UUID) raises NotFoundFault, MissingPermissionsFault
+}
+
+service AsyncTodoManager99 {
+    async createTodo(title: String, description: String, session: String): TodoItem99
+    async searchTodo(title: String): TodoItem99?
+    async getTodo(id: UUID): TodoItem99 raises NotFoundFault
+    async getTodos(): List<TodoItem99>
+    async updateTodo(
+        id: UUID,
+        newTitle: String? ( size(1..*) ),
+        newDescription: String? ( size(0..1000) )
+    ) raises NotFoundFault, MissingPermissionsFault
+    async deleteTodo(id: String ( size(0..1000), pattern("foo") )) raises NotFoundFault, MissingPermissionsFault
+    async markAsCompleted(id: Map<
+        String (
+            size(1..100),
+            pattern("banana")
+        ),
+        List<Int? (*..50)>? (1..*)>?) raises NotFoundFault, MissingPermissionsFault
+}
+
+@Description("A async service for managing todo lists")
+service AsyncTodoListManager99 {
+    async createTodoList(title: String): TodoList99
+    async searchTodoList(title: String): TodoList99?
+    async getTodoList(id: UUID): TodoList99 raises NotFoundFault
+    async getTodoLists(): List<TodoList99>
+    async updateTodoList(
+        id: UUID,
+        newTitle: String? ( size(1..*) )
+    ) raises NotFoundFault, MissingPermissionsFault
+    async deleteTodoList(id: UUID) raises NotFoundFault, MissingPermissionsFault
+    async addTodoToList(listId: UUID, todoId: UUID) raises NotFoundFault, MissingPermissionsFault
+    async removeTodoFromList(listId: UUID, todoId: UUID) raises NotFoundFault, MissingPermissionsFault
+}
+
+service WorldDestroyer {
+    oneway destroy()
+}
+
+service DummyService0 {
+    createTodo0(request: CreateTodoRequest0): TodoItem0
+}
+
+service DummyService1 {
+    async createTodo1(request: CreateTodoRequest1): TodoItem1
+}
+
+service DummyService2 {
+    createTodo2(request: CreateTodoRequest2): TodoItem2
+}
+
+service DummyService3 {
+    async createTodo3(request: CreateTodoRequest3): TodoItem3
+}
+
+service DummyService4 {
+    createTodo4(request: CreateTodoRequest4): TodoItem4
+}
+
+service DummyService5 {
+    createTodo5(request: CreateTodoRequest5): TodoItem5
+}
+
+service DummyService6 {
+    async createTodo6(request: CreateTodoRequest6): TodoItem6
+}
+
+service DummyService7 {
+    createTodo7(request: CreateTodoRequest7): TodoItem7
+}
+
+service DummyService8 {
+    createTodo8(request: CreateTodoRequest8): TodoItem8
+}
+
+service DummyService9 {
+    async createTodo9(request: CreateTodoRequest9): TodoItem9
+}
+
+service DummyService10 {
+    createTodo10(request: CreateTodoRequest10): TodoItem10
+}
+
+service DummyService11 {
+    createTodo11(request: CreateTodoRequest11): TodoItem11
+}
+
+service DummyService12 {
+    createTodo12(request: CreateTodoRequest12): TodoItem12
+}
+
+service DummyService13 {
+    createTodo13(request: CreateTodoRequest13): TodoItem13
+}
+
+service DummyService14 {
+    createTodo14(request: CreateTodoRequest14): TodoItem14
+}
+
+service DummyService15 {
+    createTodo15(request: CreateTodoRequest15): TodoItem15
+}
+
+service DummyService16 {
+    createTodo16(request: CreateTodoRequest16): TodoItem16
+}
+
+service DummyService17 {
+    createTodo17(request: CreateTodoRequest17): TodoItem17
+}
+
+service DummyService18 {
+    async createTodo18(request: CreateTodoRequest18): TodoItem18
+}
+
+service DummyService19 {
+    createTodo19(request: CreateTodoRequest19): TodoItem19
+}
+
+service DummyService20 {
+    async createTodo20(request: CreateTodoRequest20): TodoItem20
+}

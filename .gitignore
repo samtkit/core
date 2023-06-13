@@ -21,3 +21,6 @@ samtw.bat
 
 # Random files used for debugging
 specification/examples/debug.samt
+
+# Codegen Output
+out/

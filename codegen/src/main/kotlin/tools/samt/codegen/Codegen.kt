@@ -12,12 +12,23 @@ import tools.samt.semantic.SemanticModel
 object Codegen {
     private val generators: MutableList<Generator> = mutableListOf()
 
+    /**
+     * Register the [generator] to be used when generating code.
+     * The generator is called when a user configures it within their `samt.yaml` configuration, where the generator is referenced by its [Generator.name].
+     * Only generators registered here will be considered when calling [generate].
+     */
+    @JvmStatic
     fun registerGenerator(generator: Generator) {
         generators += generator
     }
 
     private val transports: MutableList<TransportConfigurationParser> = mutableListOf()
 
+    /**
+     * Register the [parser] as a transport configuration, which will be used to parse the `transport` section of a SAMT provider.
+     * Only transport configurations registered here will be considered when calling [generate].
+     */
+    @JvmStatic
     fun registerTransportParser(parser: TransportConfigurationParser) {
         transports += parser
     }
@@ -43,6 +54,12 @@ object Codegen {
         }
     }
 
+    /**
+     * Run the appropriate generator for the given [configuration], using the given [semanticModel].
+     * To ensure binary compatibility, the types within the [semanticModel] will be mapped to their [tools.samt.api] equivalents.
+     * @return a list of generated files
+     */
+    @JvmStatic
     fun generate(
         semanticModel: SemanticModel,
         configuration: SamtGeneratorConfiguration,

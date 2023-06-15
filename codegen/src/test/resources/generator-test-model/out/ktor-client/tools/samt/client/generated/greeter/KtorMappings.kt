@@ -15,7 +15,7 @@ fun `encode Greeting`(record: tools.samt.client.generated.greeter.Greeting): Jso
     // Encode field message
     val `field message` = run {
         val value = record.message
-        JsonPrimitive(value.also { require(it.length <= 128) })
+        JsonPrimitive(value.also { require(it.codePointCount(0, it.length) <= 128) })
     }
     // Create JSON for tools.samt.greeter.Greeting
     return buildJsonObject {
@@ -27,7 +27,7 @@ fun `decode Greeting`(json: JsonElement): tools.samt.client.generated.greeter.Gr
     // Decode field message
     val `field message` = run {
         val jsonElement = json.jsonObject["message"]!!
-        jsonElement.jsonPrimitive.content.also { require(it.length <= 128) }
+        jsonElement.jsonPrimitive.content.also { require(it.codePointCount(0, it.length) <= 128) }
     }
     // Create record tools.samt.greeter.Greeting
     return tools.samt.client.generated.greeter.Greeting(
@@ -103,10 +103,10 @@ fun `decode GreetingType`(json: JsonElement): tools.samt.client.generated.greete
 
 /** Encode alias tools.samt.greeter.ID to JSON */
 fun `encode ID`(value: tools.samt.client.generated.greeter.ID): JsonElement =
-    value?.let { value -> JsonPrimitive(value.also { require(it.length >= 1 && it.length <= 50) }) } ?: JsonNull
+    value?.let { value -> JsonPrimitive(value.also { require(it.codePointCount(0, it.length) >= 1 && it.codePointCount(0, it.length) <= 50) }) } ?: JsonNull
 /** Decode alias tools.samt.greeter.ID from JSON */
 fun `decode ID`(json: JsonElement): String? {
     if (json is JsonNull) return null
-    return json.jsonPrimitive.content.also { require(it.length >= 1 && it.length <= 50) }
+    return json.jsonPrimitive.content.also { require(it.codePointCount(0, it.length) >= 1 && it.codePointCount(0, it.length) <= 50) }
 }
 

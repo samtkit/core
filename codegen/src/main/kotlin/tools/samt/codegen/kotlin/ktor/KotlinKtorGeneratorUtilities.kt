@@ -225,12 +225,12 @@ private fun validateLiteralConstraintsSuffix(typeReference: TypeReference): Stri
             }
         }
         typeReference.sizeConstraint?.let { constraint ->
-            val property = if (typeReference.type is StringType) "length" else "size"
+            val accessor = if (typeReference.type is StringType) "codePointCount(0, it.length)" else "size"
             constraint.lowerBound?.let {
-                add("it.${property} >= ${constraint.lowerBound}")
+                add("it.${accessor} >= ${constraint.lowerBound}")
             }
             constraint.upperBound?.let {
-                add("it.${property} <= ${constraint.upperBound}")
+                add("it.${accessor} <= ${constraint.upperBound}")
             }
         }
         typeReference.patternConstraint?.let { constraint ->

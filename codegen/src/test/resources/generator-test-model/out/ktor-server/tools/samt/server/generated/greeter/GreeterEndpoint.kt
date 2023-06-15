@@ -45,7 +45,7 @@ fun Routing.routeGreeterEndpoint(
             val `parameter name` = run {
                 // Read from path
                 val jsonElement = call.parameters["name"]!!.toJson()
-                jsonElement.jsonPrimitive.content.also { require(it.length >= 1 && it.length <= 50) }
+                jsonElement.jsonPrimitive.content.also { require(it.codePointCount(0, it.length) >= 1 && it.codePointCount(0, it.length) <= 50) }
             }
 
             // Decode parameter type
@@ -75,7 +75,7 @@ fun Routing.routeGreeterEndpoint(
             val `parameter names` = run {
                 // Read from queryParameter
                 val jsonElement = call.request.queryParameters["names"]!!.toJson()
-                jsonElement.jsonArray.map { it.takeUnless { it is JsonNull }?.let { it.jsonPrimitive.content.also { require(it.length >= 1 && it.length <= 50) } } }
+                jsonElement.jsonArray.map { it.takeUnless { it is JsonNull }?.let { it.jsonPrimitive.content.also { require(it.codePointCount(0, it.length) >= 1 && it.codePointCount(0, it.length) <= 50) } } }
             }
 
             // Call user provided implementation
@@ -105,7 +105,7 @@ fun Routing.routeGreeterEndpoint(
             val value = greeter.greeting(`parameter who`)
 
             // Encode response
-            val response = JsonPrimitive(value.also { require(it.length >= 1 && it.length <= 100) })
+            val response = JsonPrimitive(value.also { require(it.codePointCount(0, it.length) >= 1 && it.codePointCount(0, it.length) <= 100) })
 
             // Return response with 200 OK
             call.respond(HttpStatusCode.OK, response)

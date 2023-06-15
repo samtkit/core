@@ -64,7 +64,7 @@ class GreeterEndpointImpl(private val baseUrl: String) : tools.samt.client.gener
                     appendPathSegments("all", encodeSlash = true)
 
                     // Encode query parameters
-                    this.parameters.append("names", (JsonArray(names.map { it?.let { it -> JsonPrimitive(it.also { require(it.length >= 1 && it.length <= 50) }) } ?: JsonNull })).toString())
+                    this.parameters.append("names", (JsonArray(names.map { it?.let { it -> JsonPrimitive(it.also { require(it.codePointCount(0, it.length) >= 1 && it.codePointCount(0, it.length) <= 50) }) } ?: JsonNull })).toString())
                 }
                 contentType(ContentType.Application.Json)
                 this.method = HttpMethod.Get
@@ -101,7 +101,7 @@ class GreeterEndpointImpl(private val baseUrl: String) : tools.samt.client.gener
         val bodyAsText = `client response`.bodyAsText()
         val jsonElement = Json.parseToJsonElement(bodyAsText)
 
-        jsonElement.jsonPrimitive.content.also { require(it.length >= 1 && it.length <= 100) }
+        jsonElement.jsonPrimitive.content.also { require(it.codePointCount(0, it.length) >= 1 && it.codePointCount(0, it.length) <= 100) }
     }
 
     override fun allTheTypes(long: Long, float: Float, double: Double, decimal: java.math.BigDecimal, boolean: Boolean, date: java.time.LocalDate, dateTime: java.time.LocalDateTime, duration: java.time.Duration): Unit = runBlocking {

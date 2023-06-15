@@ -11,6 +11,9 @@ import tools.samt.semantic.SemanticModel
 import java.io.IOException
 import kotlin.io.path.isDirectory
 import kotlin.io.path.notExists
+import tools.samt.codegen.kotlin.KotlinTypesGenerator
+import tools.samt.codegen.kotlin.ktor.KotlinKtorConsumerGenerator
+import tools.samt.codegen.kotlin.ktor.KotlinKtorProviderGenerator
 
 internal fun compile(command: CompileCommand, controller: DiagnosticController) {
     val (configuration ,_) = CliConfigParser.readConfig(command.file, controller) ?: return
@@ -65,12 +68,16 @@ internal fun compile(command: CompileCommand, controller: DiagnosticController) 
         return
     }
 
-    for (generator in configuration.generators) {
-        val files = Codegen.generate(model, generator, controller)
+    Codegen.registerGenerator(KotlinTypesGenerator)
+    Codegen.registerGenerator(KotlinKtorProviderGenerator)
+    Codegen.registerGenerator(KotlinKtorConsumerGenerator)
+
+    for (generatorConfig in configuration.generators) {
+        val files = Codegen.generate(model, generatorConfig, controller)
         try {
-            OutputWriter.write(generator.output, files)
+            OutputWriter.write(generatorConfig.output, files)
         } catch (e: IOException) {
-            controller.reportGlobalError("Failed to write output for generator '${generator.name}': ${e.message}")
+            controller.reportGlobalError("Failed to write output for generator '${generatorConfig.name}': ${e.message}")
         }
     }
 }

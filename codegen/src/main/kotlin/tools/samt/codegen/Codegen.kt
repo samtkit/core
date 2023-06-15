@@ -6,19 +6,16 @@ import tools.samt.api.plugin.GeneratorParams
 import tools.samt.api.plugin.TransportConfigurationParser
 import tools.samt.api.types.SamtPackage
 import tools.samt.codegen.http.HttpTransportConfigurationParser
-import tools.samt.codegen.kotlin.KotlinTypesGenerator
-import tools.samt.codegen.kotlin.ktor.KotlinKtorConsumerGenerator
-import tools.samt.codegen.kotlin.ktor.KotlinKtorProviderGenerator
 import tools.samt.common.DiagnosticController
 import tools.samt.common.SamtGeneratorConfiguration
 import tools.samt.semantic.SemanticModel
 
 object Codegen {
-    private val generators: List<Generator> = listOf(
-        KotlinTypesGenerator,
-        KotlinKtorProviderGenerator,
-        KotlinKtorConsumerGenerator,
-    )
+    private val generators: MutableList<Generator> = mutableListOf()
+
+    fun registerGenerator(generator: Generator) {
+        generators += generator
+    }
 
     private val transports: List<TransportConfigurationParser> = listOf(
         HttpTransportConfigurationParser,

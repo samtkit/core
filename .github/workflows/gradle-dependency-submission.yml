@@ -23,6 +23,7 @@ jobs:
         with:
           gradle-build-module: |-
             cli
+            language-server
           gradle-build-configuration: |-
             compileClasspath
           sub-module-mode: 'INDIVIDUAL_DEEP'

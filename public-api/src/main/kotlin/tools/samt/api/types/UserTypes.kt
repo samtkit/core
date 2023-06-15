@@ -2,11 +2,17 @@ package tools.samt.api.types
 
 import tools.samt.api.plugin.TransportConfiguration
 
+/**
+ * A user declared type
+ */
 interface UserType : Type {
     val name: String
     val qualifiedName: String
 }
 
+/**
+ * A type alias to another type
+ */
 interface AliasType : UserType {
     /**
      * The type this alias stands for, could be another alias

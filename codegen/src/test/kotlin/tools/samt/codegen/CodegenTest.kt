@@ -1,6 +1,7 @@
 package tools.samt.codegen
 
 import tools.samt.api.plugin.CodegenFile
+import tools.samt.codegen.http.HttpTransportConfigurationParser
 import tools.samt.common.DiagnosticController
 import tools.samt.common.collectSamtFiles
 import tools.samt.common.readSamtSource
@@ -13,6 +14,9 @@ import kotlin.io.path.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import tools.samt.codegen.kotlin.KotlinTypesGenerator
+import tools.samt.codegen.kotlin.ktor.KotlinKtorConsumerGenerator
+import tools.samt.codegen.kotlin.ktor.KotlinKtorProviderGenerator
 
 class CodegenTest {
     private val testDirectory = Path("src/test/resources/generator-test-model")
@@ -42,6 +46,11 @@ class CodegenTest {
         val model = SemanticModel.build(fileNodes, controller)
 
         assertFalse(controller.hasErrors())
+
+        Codegen.registerGenerator(KotlinTypesGenerator)
+        Codegen.registerGenerator(KotlinKtorProviderGenerator)
+        Codegen.registerGenerator(KotlinKtorConsumerGenerator)
+        Codegen.registerTransportParser(HttpTransportConfigurationParser)
 
         val actualFiles = mutableListOf<CodegenFile>()
         for (generator in configuration.generators) {

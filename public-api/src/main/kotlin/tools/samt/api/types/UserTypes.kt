@@ -20,9 +20,9 @@ interface AliasType : UserType {
     val aliasedType: TypeReference
 
     /**
-     * The fully resolved type, will not contain any type aliases anymore, just the underlying merged type
+     * The runtime type, which will not contain any type aliases, just the underlying merged type
      */
-    val fullyResolvedType: TypeReference
+    val runtimeType: TypeReference
 }
 
 /**

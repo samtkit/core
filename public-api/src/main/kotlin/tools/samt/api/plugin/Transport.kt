@@ -26,7 +26,13 @@ interface TransportConfigurationParser {
  * A base interface for transport configurations.
  * This interface is intended to be sub-typed and extended by transport configuration implementations.
  */
-interface TransportConfiguration
+interface TransportConfiguration {
+    /**
+     * The name of this transport protocol.
+     * Can be used to display to a user.
+     */
+    val name: String
+}
 
 /**
  * The parameters for a [TransportConfigurationParser].

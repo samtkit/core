@@ -121,16 +121,16 @@ private fun StringBuilder.appendDecodeRecordField(field: RecordField, options: M
 private fun StringBuilder.appendEncodeAlias(alias: AliasType, options: Map<String, String>) {
     appendLine("/** Encode alias ${alias.qualifiedName} to JSON */")
     appendLine("fun `encode ${alias.name}`(value: ${alias.getQualifiedName(options)}): JsonElement =")
-    appendLine("    ${encodeJsonElement(alias.fullyResolvedType, options, valueName = "value")}")
+    appendLine("    ${encodeJsonElement(alias.runtimeType, options, valueName = "value")}")
 }
 
 private fun StringBuilder.appendDecodeAlias(alias: AliasType, options: Map<String, String>) {
     appendLine("/** Decode alias ${alias.qualifiedName} from JSON */")
-    appendLine("fun `decode ${alias.name}`(json: JsonElement): ${alias.fullyResolvedType.getQualifiedName(options)} {")
-    if (alias.fullyResolvedType.isRuntimeOptional) {
+    appendLine("fun `decode ${alias.name}`(json: JsonElement): ${alias.runtimeType.getQualifiedName(options)} {")
+    if (alias.runtimeType.isRuntimeOptional) {
         appendLine("    if (json is JsonNull) return null")
     }
-    appendLine("    return ${decodeJsonElement(alias.fullyResolvedType, options, valueName = "json")}")
+    appendLine("    return ${decodeJsonElement(alias.runtimeType, options, valueName = "json")}")
     appendLine("}")
 }
 

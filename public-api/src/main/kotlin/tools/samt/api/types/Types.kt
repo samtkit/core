@@ -1,5 +1,8 @@
 package tools.samt.api.types
 
+/**
+ * A SAMT package
+ */
 interface SamtPackage {
     val name: String
     val qualifiedName: String
@@ -88,20 +91,33 @@ interface TypeReference {
 }
 
 interface Constraint {
+
+    /**
+     * Range constraints limit the lower and upper bounds a number can have
+     */
     interface Range : Constraint {
         val lowerBound: Number?
         val upperBound: Number?
     }
 
+    /**
+     * Size constraints limit the size of a string or list
+     */
     interface Size : Constraint {
         val lowerBound: Long?
         val upperBound: Long?
     }
 
+    /**
+     * Pattern constraints limit the format of a string to a specific regex pattern
+     */
     interface Pattern : Constraint {
         val pattern: String
     }
 
+    /**
+     * Value constraints limit the value of a type to a specific value
+     */
     interface Value : Constraint {
         val value: Any
     }

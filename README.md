@@ -46,7 +46,7 @@ If you want to start SAMT locally, simply clone the repository and compile it us
 And then use this locally compiled SAMT to compile your SAMT files:
 
 ```shell
-java -jar ./cli/build/libs/samt-cli.jar compile ./specification/examples/todo-service/*.samt
+java -jar ./cli/build/libs/samt-cli.jar compile ./specification/examples/samt.yaml
 ```
 
 If you are interested in learning about the functionality and operation of the [SAMT Visual Studio Code Plugin](https://github.com/samtkit/vscode)

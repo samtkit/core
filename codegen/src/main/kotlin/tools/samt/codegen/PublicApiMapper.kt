@@ -142,7 +142,10 @@ class PublicApiMapper(
             else -> controller.reportGlobalError("Multiple transport configuration parsers found for transport '$name'")
         }
 
-        return object : TransportConfiguration {}
+        return object : TransportConfiguration {
+            override val name: String
+                get() = this@toPublicTransport.name
+        }
     }
 
     private fun tools.samt.semantic.ProviderType.Implements.toPublicImplements() = object : ProvidedService {
@@ -169,7 +172,7 @@ class PublicApiMapper(
         override val name get() = this@toPublicAlias.name
         override val qualifiedName by unsafeLazy { this@toPublicAlias.getQualifiedName() }
         override val aliasedType by unsafeLazy { this@toPublicAlias.aliasedType.toPublicTypeReference() }
-        override val fullyResolvedType by unsafeLazy { this@toPublicAlias.fullyResolvedType.toPublicTypeReference() }
+        override val runtimeType by unsafeLazy { this@toPublicAlias.fullyResolvedType.toPublicTypeReference() }
     }
 
     private inline fun <reified T : tools.samt.semantic.ResolvedTypeReference.Constraint> List<tools.samt.semantic.ResolvedTypeReference.Constraint>.findConstraint() =

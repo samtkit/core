@@ -5,7 +5,6 @@ import tools.samt.api.plugin.Generator
 import tools.samt.api.plugin.GeneratorParams
 import tools.samt.api.plugin.TransportConfigurationParser
 import tools.samt.api.types.SamtPackage
-import tools.samt.codegen.http.HttpTransportConfigurationParser
 import tools.samt.common.DiagnosticController
 import tools.samt.common.SamtGeneratorConfiguration
 import tools.samt.semantic.SemanticModel
@@ -17,9 +16,11 @@ object Codegen {
         generators += generator
     }
 
-    private val transports: List<TransportConfigurationParser> = listOf(
-        HttpTransportConfigurationParser,
-    )
+    private val transports: MutableList<TransportConfigurationParser> = mutableListOf()
+
+    fun registerTransportParser(parser: TransportConfigurationParser) {
+        transports += parser
+    }
 
     internal class SamtGeneratorParams(
         semanticModel: SemanticModel,

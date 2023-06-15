@@ -1,6 +1,7 @@
 package tools.samt.codegen
 
 import tools.samt.api.plugin.CodegenFile
+import tools.samt.codegen.http.HttpTransportConfigurationParser
 import tools.samt.common.DiagnosticController
 import tools.samt.common.collectSamtFiles
 import tools.samt.common.readSamtSource
@@ -49,6 +50,7 @@ class CodegenTest {
         Codegen.registerGenerator(KotlinTypesGenerator)
         Codegen.registerGenerator(KotlinKtorProviderGenerator)
         Codegen.registerGenerator(KotlinKtorConsumerGenerator)
+        Codegen.registerTransportParser(HttpTransportConfigurationParser)
 
         val actualFiles = mutableListOf<CodegenFile>()
         for (generator in configuration.generators) {

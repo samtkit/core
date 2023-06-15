@@ -1,6 +1,7 @@
 package tools.samt.cli
 
 import tools.samt.codegen.Codegen
+import tools.samt.codegen.http.HttpTransportConfigurationParser
 import tools.samt.common.DiagnosticController
 import tools.samt.common.DiagnosticException
 import tools.samt.common.collectSamtFiles
@@ -71,6 +72,7 @@ internal fun compile(command: CompileCommand, controller: DiagnosticController) 
     Codegen.registerGenerator(KotlinTypesGenerator)
     Codegen.registerGenerator(KotlinKtorProviderGenerator)
     Codegen.registerGenerator(KotlinKtorConsumerGenerator)
+    Codegen.registerTransportParser(HttpTransportConfigurationParser)
 
     for (generatorConfig in configuration.generators) {
         val files = Codegen.generate(model, generatorConfig, controller)

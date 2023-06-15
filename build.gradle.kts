@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kover)
     alias(libs.plugins.versioning)
+    alias(libs.plugins.dokka)
 }
 
 repositories {
@@ -38,4 +39,8 @@ gitVersioning.apply {
             version = "\${ref.version}"
         }
     }
+}
+
+subprojects {
+    apply(plugin = "org.jetbrains.dokka")
 }

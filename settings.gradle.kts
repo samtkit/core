@@ -20,6 +20,7 @@ dependencyResolutionManagement {
         val kover = "0.7.1"
         val gitVersioning = "6.4.2"
         val lsp4j = "0.21.0"
+        val dokka = "1.8.20"
 
         create("libs") {
             version("kotlin", kotlin)
@@ -32,6 +33,7 @@ dependencyResolutionManagement {
             plugin("shadow", "com.github.johnrengelman.shadow").version(shadow)
             plugin("kover", "org.jetbrains.kotlinx.kover").version(kover)
             plugin("versioning", "me.qoomon.git-versioning").version(gitVersioning)
+            plugin("dokka", "org.jetbrains.dokka").version(dokka)
         }
     }
 }

@@ -197,14 +197,14 @@ class SamtSemanticTokens private constructor(userMetadata: UserMetadata) : SamtS
             val async = TokenModifier(1 shl 1)
             val defaultLibrary = TokenModifier(1 shl 2)
             val deprecated = TokenModifier(1 shl 3)
-            fun values() = arrayOf(::declaration, ::async, ::defaultLibrary, ::deprecated)
+            val entries = arrayOf(::declaration, ::async, ::defaultLibrary, ::deprecated)
         }
     }
 
     companion object {
         val legend = SemanticTokensLegend(
-            TokenType.values().map { it.name },
-            TokenModifier.values().map { it.name },
+            TokenType.entries.map { it.name },
+            TokenModifier.entries.map { it.name },
         )
 
         fun analyze(fileNode: FileNode, filePackage: Package, userMetadata: UserMetadata) =

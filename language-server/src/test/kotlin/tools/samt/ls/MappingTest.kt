@@ -69,7 +69,7 @@ class MappingTest {
                 DiagnosticSeverity.Warning to org.eclipse.lsp4j.DiagnosticSeverity.Warning,
                 DiagnosticSeverity.Info to org.eclipse.lsp4j.DiagnosticSeverity.Information
         )
-        assertEquals(expected, DiagnosticSeverity.values().associateWith { it.toLspSeverity() })
+        assertEquals(expected, DiagnosticSeverity.entries.associateWith { it.toLspSeverity() })
     }
 
     @Test

@@ -16,7 +16,7 @@ dependencyResolutionManagement {
         val jCommander = "1.82"
         val mordant = "2.1.0"
         val kotlinxSerialization = "1.6.0"
-        val kamlVersion = "0.54.0"
+        val kamlVersion = "0.55.0"
         val kover = "0.7.1"
         val gitVersioning = "6.4.2"
         val lsp4j = "0.21.0"

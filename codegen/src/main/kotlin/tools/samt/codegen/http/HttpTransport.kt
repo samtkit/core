@@ -9,7 +9,7 @@ import tools.samt.api.transports.http.SerializationMode
 import tools.samt.api.transports.http.TransportMode
 
 object HttpTransportConfigurationParser : TransportConfigurationParser {
-    override val transportName: String get() = HttpTransportConfiguration.name
+    override val transportName: String get() = HttpTransportConfiguration.NAME
 
     private val isValidRegex = Regex("""\w+\s+\S+(\s+\{.*?\s+in\s+\S+})*""")
     private val methodEndpointRegex = Regex("""(\w+)\s+(\S+)(.*)""")
@@ -211,7 +211,7 @@ class HttpTransportConfiguration(
     override val serializationMode: SerializationMode,
     val services: List<ServiceConfiguration>,
 ) : SamtHttpTransport {
-    override val name: String = HttpTransportConfiguration.name
+    override val name: String = NAME
 
     class ServiceConfiguration(
         val name: String,
@@ -287,6 +287,6 @@ class HttpTransportConfiguration(
     }
 
     companion object {
-        const val name = "http"
+        const val NAME = "http"
     }
 }

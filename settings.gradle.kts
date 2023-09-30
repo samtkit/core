@@ -11,15 +11,15 @@ include(
 
 dependencyResolutionManagement {
     versionCatalogs {
-        val kotlin = "1.8.22"
+        val kotlin = "1.9.10"
         val shadow = "8.1.1"
         val jCommander = "1.82"
-        val mordant = "2.0.0-beta13"
-        val kotlinxSerialization = "1.5.1"
-        val kamlVersion = "0.54.0"
-        val kover = "0.7.1"
+        val mordant = "2.1.0"
+        val kotlinxSerialization = "1.6.0"
+        val kamlVersion = "0.55.0"
+        val kover = "0.7.3"
         val gitVersioning = "6.4.2"
-        val lsp4j = "0.21.0"
+        val lsp4j = "0.21.1"
         val dokka = "1.8.20"
 
         create("libs") {

@@ -3,8 +3,8 @@ package tools.samt.codegen.kotlin
 import tools.samt.api.types.*
 
 object KotlinGeneratorConfig {
-    const val removePrefixFromSamtPackage = "removePrefixFromSamtPackage"
-    const val addPrefixToKotlinPackage = "addPrefixToKotlinPackage"
+    const val REMOVE_PREFIX_FROM_SAMT_PACKAGE = "removePrefixFromSamtPackage"
+    const val ADD_PREFIX_TO_KOTLIN_PACKAGE = "addPrefixToKotlinPackage"
 }
 
 val GeneratedFilePreamble = """
@@ -17,8 +17,8 @@ val GeneratedFilePreamble = """
 """.trimIndent()
 
 internal fun String.replacePackage(options: Map<String, String>): String {
-    val removePrefix = options[KotlinGeneratorConfig.removePrefixFromSamtPackage]
-    val addPrefix = options[KotlinGeneratorConfig.addPrefixToKotlinPackage]
+    val removePrefix = options[KotlinGeneratorConfig.REMOVE_PREFIX_FROM_SAMT_PACKAGE]
+    val addPrefix = options[KotlinGeneratorConfig.ADD_PREFIX_TO_KOTLIN_PACKAGE]
 
     var result = this
 

@@ -13,7 +13,7 @@ import tools.samt.codegen.kotlin.getQualifiedName
 
 object KotlinKtorProviderGenerator : Generator {
     override val name: String = "kotlin-ktor-provider"
-    private const val skipKtorServer = "skipKtorServer"
+    private const val SKIP_KTOR_SERVER = "skipKtorServer"
 
     override fun generate(generatorParams: GeneratorParams): List<CodegenFile> {
         generatorParams.packages.forEach {
@@ -39,7 +39,7 @@ object KotlinKtorProviderGenerator : Generator {
     private fun generatePackage(pack: SamtPackage, options: Map<String, String>) {
         val relevantProviders = pack.providers.filter { it.transport is HttpTransportConfiguration }
         if (relevantProviders.isNotEmpty()) {
-            if (options[skipKtorServer] != "true") {
+            if (options[SKIP_KTOR_SERVER] != "true") {
                 // generate general ktor files
                 generateKtorServer(pack, options)
             }

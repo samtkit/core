@@ -14,7 +14,7 @@ class PackageType(val sourcePackage: Package) : Type {
 /**
  * A type that could not be parsed correctly
  */
-object UnknownType : Type {
+data object UnknownType : Type {
     override val humanReadableName: String = "Unknown"
 }
 
@@ -25,7 +25,7 @@ sealed interface LiteralNumberType : LiteralType
 /**
  * 32-bit whole number, signed
  */
-object IntType : LiteralNumberType {
+data object IntType : LiteralNumberType {
     override val humanReadableName: String
         get() = "Int"
 }
@@ -33,7 +33,7 @@ object IntType : LiteralNumberType {
 /**
  * 64-bit whole number, signed
  */
-object LongType : LiteralNumberType {
+data object LongType : LiteralNumberType {
     override val humanReadableName: String
         get() = "Long"
 }
@@ -41,7 +41,7 @@ object LongType : LiteralNumberType {
 /**
  * 32-bit floating point number, signed
  */
-object FloatType : LiteralNumberType {
+data object FloatType : LiteralNumberType {
     override val humanReadableName: String
         get() = "Float"
 }
@@ -49,7 +49,7 @@ object FloatType : LiteralNumberType {
 /**
  * 64-bit floating point number, signed
  */
-object DoubleType : LiteralNumberType {
+data object DoubleType : LiteralNumberType {
     override val humanReadableName: String
         get() = "Double"
 }
@@ -57,7 +57,7 @@ object DoubleType : LiteralNumberType {
 /**
  * Arbitrary precision number, fixed amount of digits before and after decimal point
  */
-object DecimalType : LiteralNumberType {
+data object DecimalType : LiteralNumberType {
     override val humanReadableName: String
         get() = "Decimal"
 }
@@ -65,7 +65,7 @@ object DecimalType : LiteralNumberType {
 /**
  * Can be true or false
  */
-object BooleanType : LiteralType {
+data object BooleanType : LiteralType {
     override val humanReadableName: String
         get() = "Boolean"
 }
@@ -73,7 +73,7 @@ object BooleanType : LiteralType {
 /**
  * UTF-8 encoded text
  */
-object StringType : LiteralType {
+data object StringType : LiteralType {
     override val humanReadableName: String
         get() = "String"
 }
@@ -81,7 +81,7 @@ object StringType : LiteralType {
 /**
  * Arbitrary binary data
  */
-object BytesType : LiteralType {
+data object BytesType : LiteralType {
     override val humanReadableName: String
         get() = "Bytes"
 }
@@ -89,7 +89,7 @@ object BytesType : LiteralType {
 /**
  * A date without a time
  */
-object DateType : LiteralType {
+data object DateType : LiteralType {
     override val humanReadableName: String
         get() = "Date"
 }
@@ -97,7 +97,7 @@ object DateType : LiteralType {
 /**
  * A date with a time, defaults to millisecond precision
  */
-object DateTimeType : LiteralType {
+data object DateTimeType : LiteralType {
     override val humanReadableName: String
         get() = "DateTime"
 }
@@ -105,7 +105,7 @@ object DateTimeType : LiteralType {
 /**
  * Time duration, millisecond precision
  */
-object DurationType : LiteralType {
+data object DurationType : LiteralType {
     override val humanReadableName: String
         get() = "Duration"
 }

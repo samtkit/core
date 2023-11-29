@@ -20,7 +20,7 @@ dependencyResolutionManagement {
         val kover = "0.7.4"
         val gitVersioning = "6.4.3"
         val lsp4j = "0.21.1"
-        val dokka = "1.8.20"
+        val dokka = "1.9.10"
 
         create("libs") {
             version("kotlin", kotlin)

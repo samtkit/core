@@ -18,7 +18,7 @@ dependencyResolutionManagement {
         val kotlinxSerialization = "1.6.2"
         val kamlVersion = "0.55.0"
         val kover = "0.7.4"
-        val gitVersioning = "6.4.2"
+        val gitVersioning = "6.4.3"
         val lsp4j = "0.21.1"
         val dokka = "1.8.20"
 

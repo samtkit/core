@@ -11,7 +11,7 @@ include(
 
 dependencyResolutionManagement {
     versionCatalogs {
-        val kotlin = "1.9.10"
+        val kotlin = "1.9.22"
         val shadow = "8.1.1"
         val jCommander = "1.82"
         val mordant = "2.1.0"

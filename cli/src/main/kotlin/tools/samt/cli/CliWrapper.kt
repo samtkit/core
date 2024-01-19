@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import tools.samt.common.DiagnosticController
 import java.io.File
-import java.net.URL
+import java.net.URI
 
 internal fun wrapper(command: WrapperCommand, terminal: Terminal, controller: DiagnosticController) {
     val workingDirectory = File(controller.workingDirectory)
@@ -27,7 +27,7 @@ internal fun wrapper(command: WrapperCommand, terminal: Terminal, controller: Di
                 val targetFile = File(targetDirectory, file)
                 val fileExisted = targetFile.exists()
 
-                URL(fileName).openStream().use { input ->
+                URI(fileName).toURL().openStream().use { input ->
                     targetFile.outputStream().use { output ->
                         input.copyTo(output)
                     }
@@ -64,7 +64,7 @@ internal fun wrapper(command: WrapperCommand, terminal: Terminal, controller: Di
     val newVersion = when (command.version) {
         "latest" -> {
             try {
-                URL(command.latestVersionSource).openStream().use { input ->
+                URI(command.latestVersionSource).toURL().openStream().use { input ->
                     val response = json.decodeFromString<LatestSamtVersionResponse>(input.reader().readText())
                     response.tagName
                 }
